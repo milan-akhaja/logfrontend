@@ -79,9 +79,23 @@ function AppContent({
   // Helper for quick actions
   const handleShopNowTrigger = async (productId) => {
     try {
+      const normalizedProductId = (() => {
+        const raw = String(productId || '').trim();
+        const match = raw.match(/\/product\/([^/?#]+)/i);
+        if (match) return decodeURIComponent(match[1]);
+        if (/^https?:\/\//i.test(raw)) {
+          try {
+            const url = new URL(raw);
+            return decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || raw);
+          } catch {
+            return raw;
+          }
+        }
+        return raw;
+      })();
       const res = await fetch('/api/products');
       const products = await res.json();
-      const found = products.find(p => p.id === productId);
+      const found = products.find(p => p.id === normalizedProductId);
       if (found) {
         setSizePopupProduct(found);
       }

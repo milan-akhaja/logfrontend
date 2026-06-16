@@ -111,7 +111,7 @@ export default function Footer({ onToast }) {
           
           {/* Brand Info & Support Contact Panel */}
           <div className="footer-brand">
-            <h2 style={{ fontSize: '28px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '15px' }}>LOG</h2>
+            <h2 style={{ fontSize: '28px', fontWeight: '700', letterSpacing: 0, textTransform: 'uppercase', marginBottom: '15px', fontFamily: "'Montserrat', sans-serif" }}>LOG</h2>
             <p style={{ fontSize: '13px', color: 'var(--grey-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
               Streetwear built with a conscience. 240 GSM French Terry cotton. DTF printed.
             </p>

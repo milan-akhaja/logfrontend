@@ -4,6 +4,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
   const [activeIndex, setActiveIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [failedMedia, setFailedMedia] = useState({});
   const timerRef = useRef(null);
   const videoRef = useRef(null);
 
@@ -13,6 +14,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
       setActiveIndex(0);
       setProgress(0);
       setIsPaused(false);
+      setFailedMedia({});
     } else {
       document.body.style.overflow = '';
       if (timerRef.current) clearInterval(timerRef.current);
@@ -71,7 +73,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
       if (prev < stories.length - 1) {
         return prev + 1;
       } else {
-        onClose();
+        setTimeout(onClose, 0);
         return 0;
       }
     });
@@ -100,6 +102,15 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
   };
 
   const currentStory = stories[activeIndex];
+  const primaryMediaUrl = currentStory.mediaUrl || currentStory.image || '';
+  const fallbackMediaUrl = currentStory.fallbackMediaUrl || '';
+  const shouldUseFallback = failedMedia[currentStory.id] && fallbackMediaUrl && fallbackMediaUrl !== primaryMediaUrl;
+  const currentMediaUrl = shouldUseFallback ? fallbackMediaUrl : primaryMediaUrl;
+  const hasMediaError = failedMedia[currentStory.id] && !shouldUseFallback;
+
+  const handleMediaError = () => {
+    setFailedMedia(prev => ({ ...prev, [currentStory.id]: true }));
+  };
 
   return (
     <div className="story-overlay" onClick={onClose}>
@@ -162,19 +173,25 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
           {currentStory.mediaType === 'video' ? (
             <video
               ref={videoRef}
-              src={currentStory.mediaUrl}
+              src={currentMediaUrl}
               autoPlay
               muted
               playsInline
               onTimeUpdate={handleVideoTimeUpdate}
               onEnded={handleVideoEnded}
+              onError={handleMediaError}
               className="story-media-element"
             />
+          ) : hasMediaError ? (
+            <div className="story-media-error">
+              <span>Story media unavailable</span>
+            </div>
           ) : (
             <img 
-              src={currentStory.mediaUrl} 
+              src={currentMediaUrl} 
               alt={currentStory.caption || 'Story'} 
               className="story-media-element"
+              onError={handleMediaError}
             />
           )}
 

@@ -12,18 +12,21 @@ export default function CartDrawer({
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
+    country: 'India',
     address: '',
-    phone: ''
+    apartment: '',
+    city: '',
+    state: 'Gujarat',
+    pinCode: '',
+    dob: '',
+    saveInfo: false
   });
   const [paymentMethod, setPaymentMethod] = useState('online'); // online or cod
 
-  // Coupon state
-  const [couponInput, setCouponInput] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState('');
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [couponError, setCouponError] = useState('');
   const [lastDonation, setLastDonation] = useState(0);
   const [emailHtml, setEmailHtml] = useState('');
 
@@ -41,20 +44,8 @@ export default function CartDrawer({
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Calculate discount based on subtotal
-  useEffect(() => {
-    if (appliedCoupon === 'LOG10') {
-      setDiscountAmount(Math.round(subtotal * 0.10));
-    } else if (appliedCoupon === 'LOG20') {
-      setDiscountAmount(Math.round(subtotal * 0.20));
-    } else if (appliedCoupon === 'SPYSTUDIO') {
-      setDiscountAmount(Math.round(subtotal * 0.15));
-    } else {
-      setDiscountAmount(0);
-    }
-  }, [subtotal, appliedCoupon]);
-
-  const netSubtotal = Math.max(0, subtotal - discountAmount);
+  const discountAmount = 0;
+  const netSubtotal = subtotal;
   const shipping = netSubtotal > 799 ? 0 : (cart.length > 0 ? 80 : 0);
   const total = netSubtotal + shipping;
 
@@ -63,29 +54,28 @@ export default function CartDrawer({
   const donation = totalItemsQty * 23;
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCustomerInfo(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setCustomerInfo(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
-  const handleApplyCoupon = (e) => {
-    e.preventDefault();
-    const code = couponInput.trim().toUpperCase();
-    if (!code) return;
+  const getOrderCustomerInfo = () => {
+    const fullName = `${customerInfo.firstName} ${customerInfo.lastName}`.trim();
+    const fullAddress = [
+      customerInfo.address,
+      customerInfo.apartment,
+      customerInfo.city,
+      customerInfo.state,
+      customerInfo.pinCode,
+      customerInfo.country
+    ].filter(Boolean).join(', ');
 
-    if (code === 'LOG10' || code === 'LOG20' || code === 'SPYSTUDIO') {
-      setAppliedCoupon(code);
-      setCouponError('');
-      onToast(`Coupon ${code} applied successfully!`);
-    } else {
-      setCouponError('Invalid coupon code');
-    }
-  };
-
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon('');
-    setCouponInput('');
-    setDiscountAmount(0);
-    setCouponError('');
+    return {
+      ...customerInfo,
+      name: fullName,
+      address: fullAddress,
+      shippingAddressLine1: customerInfo.address,
+      shippingAddressLine2: customerInfo.apartment
+    };
   };
 
   const loadRazorpayScript = () => {
@@ -104,6 +94,7 @@ export default function CartDrawer({
 
     const currentDonation = donation;
     setLastDonation(currentDonation);
+    const orderCustomerInfo = getOrderCustomerInfo();
 
     try {
       if (paymentMethod === 'cod') {
@@ -118,9 +109,9 @@ export default function CartDrawer({
               quantity: item.quantity,
               selectedSize: item.selectedSize
             })),
-            customerInfo,
+            customerInfo: orderCustomerInfo,
             paymentId: 'COD',
-            couponCode: appliedCoupon || null,
+            couponCode: null,
             discountAmount: discountAmount
           })
         });
@@ -131,7 +122,6 @@ export default function CartDrawer({
           onClearCart();
           setShowCheckoutForm(false);
           setShowSuccessModal(true);
-          handleRemoveCoupon();
         } else {
           onToast('Failed to place Cash on Delivery order.');
         }
@@ -177,9 +167,9 @@ export default function CartDrawer({
               quantity: item.quantity,
               selectedSize: item.selectedSize
             })),
-            customerInfo,
+            customerInfo: orderCustomerInfo,
             paymentId: 'mock_payment_' + Date.now(),
-            couponCode: appliedCoupon || null,
+            couponCode: null,
             discountAmount: discountAmount
           })
         });
@@ -190,7 +180,6 @@ export default function CartDrawer({
           onClearCart();
           setShowCheckoutForm(false);
           setShowSuccessModal(true);
-          handleRemoveCoupon();
         } else {
           onToast('Failed to place order record.');
         }
@@ -229,9 +218,9 @@ export default function CartDrawer({
                     quantity: item.quantity,
                     selectedSize: item.selectedSize
                   })),
-                  customerInfo,
+                  customerInfo: orderCustomerInfo,
                   paymentId: response.razorpay_payment_id,
-                  couponCode: appliedCoupon || null,
+                  couponCode: null,
                   discountAmount: discountAmount
                 })
               });
@@ -242,7 +231,6 @@ export default function CartDrawer({
                 onClearCart();
                 setShowCheckoutForm(false);
                 setShowSuccessModal(true);
-                handleRemoveCoupon();
               } else {
                 onToast('Payment verified, but failed to log order record.');
               }
@@ -255,9 +243,9 @@ export default function CartDrawer({
           }
         },
         prefill: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          contact: customerInfo.phone
+          name: orderCustomerInfo.name,
+          email: orderCustomerInfo.email,
+          contact: orderCustomerInfo.phone
         },
         theme: {
           color: '#E53E3E'
@@ -288,114 +276,94 @@ export default function CartDrawer({
 
         <div className="cart-body">
           {showCheckoutForm ? (
-            <form onSubmit={handleCheckoutSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '10px' }}>Shipping Details</h3>
-              
-              <div className="admin-form-group" style={{ marginBottom: '10px' }}>
-                <label className="admin-label" style={{ fontSize: '11px' }}>Full Name</label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={customerInfo.name} 
-                  onChange={handleInputChange} 
-                  required 
-                  className="admin-input" 
-                  style={{ padding: '8px 12px', fontSize: '13px' }}
-                />
+            <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
+              <h3 className="checkout-delivery-title">Delivery</h3>
+
+              <div className="checkout-field">
+                <label>Country/Region</label>
+                <select name="country" value={customerInfo.country} onChange={handleInputChange} required>
+                  <option value="India">India</option>
+                </select>
               </div>
 
-              <div className="admin-form-group" style={{ marginBottom: '10px' }}>
-                <label className="admin-label" style={{ fontSize: '11px' }}>Email Address</label>
-                <input 
-                  type="email" 
-                  name="email" 
-                  value={customerInfo.email} 
-                  onChange={handleInputChange} 
-                  required 
-                  className="admin-input" 
-                  style={{ padding: '8px 12px', fontSize: '13px' }}
-                />
+              <div className="checkout-two-col">
+                <input type="text" name="firstName" value={customerInfo.firstName} onChange={handleInputChange} required placeholder="First name" />
+                <input type="text" name="lastName" value={customerInfo.lastName} onChange={handleInputChange} required placeholder="Last name" />
               </div>
 
-              <div className="admin-form-group" style={{ marginBottom: '10px' }}>
-                <label className="admin-label" style={{ fontSize: '11px' }}>Phone Number</label>
-                <input 
-                  type="tel" 
-                  name="phone" 
-                  value={customerInfo.phone} 
-                  onChange={handleInputChange} 
-                  required 
-                  className="admin-input" 
-                  style={{ padding: '8px 12px', fontSize: '13px' }}
-                />
+              <input type="email" name="email" value={customerInfo.email} onChange={handleInputChange} required className="checkout-input" placeholder="Email" />
+              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address" />
+              <input type="text" name="apartment" value={customerInfo.apartment} onChange={handleInputChange} className="checkout-input" placeholder="Apartment, suite, etc. (optional)" />
+
+              <div className="checkout-three-col">
+                <input type="text" name="city" value={customerInfo.city} onChange={handleInputChange} required placeholder="City" />
+                <select name="state" value={customerInfo.state} onChange={handleInputChange} required>
+                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                  <option value="Assam">Assam</option>
+                  <option value="Bihar">Bihar</option>
+                  <option value="Chandigarh">Chandigarh</option>
+                  <option value="Chhattisgarh">Chhattisgarh</option>
+                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Goa">Goa</option>
+                  <option value="Gujarat">Gujarat</option>
+                  <option value="Haryana">Haryana</option>
+                  <option value="Himachal Pradesh">Himachal Pradesh</option>
+                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                  <option value="Jharkhand">Jharkhand</option>
+                  <option value="Karnataka">Karnataka</option>
+                  <option value="Kerala">Kerala</option>
+                  <option value="Ladakh">Ladakh</option>
+                  <option value="Lakshadweep">Lakshadweep</option>
+                  <option value="Madhya Pradesh">Madhya Pradesh</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Manipur">Manipur</option>
+                  <option value="Meghalaya">Meghalaya</option>
+                  <option value="Mizoram">Mizoram</option>
+                  <option value="Nagaland">Nagaland</option>
+                  <option value="Odisha">Odisha</option>
+                  <option value="Puducherry">Puducherry</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Rajasthan">Rajasthan</option>
+                  <option value="Sikkim">Sikkim</option>
+                  <option value="Tamil Nadu">Tamil Nadu</option>
+                  <option value="Telangana">Telangana</option>
+                  <option value="Tripura">Tripura</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  <option value="Uttarakhand">Uttarakhand</option>
+                  <option value="West Bengal">West Bengal</option>
+                </select>
+                <input type="text" name="pinCode" value={customerInfo.pinCode} onChange={handleInputChange} required inputMode="numeric" placeholder="PIN code" />
               </div>
 
-              <div className="admin-form-group" style={{ marginBottom: '10px' }}>
-                <label className="admin-label" style={{ fontSize: '11px' }}>Shipping Address</label>
-                <textarea 
-                  name="address" 
-                  value={customerInfo.address} 
-                  onChange={handleInputChange} 
-                  required 
-                  className="admin-textarea" 
-                  rows="3"
-                  style={{ padding: '8px 12px', fontSize: '13px' }}
-                />
+              <input type="tel" name="phone" value={customerInfo.phone} onChange={handleInputChange} required className="checkout-input" placeholder="Phone" />
+
+              <div className="checkout-field">
+                <label>Date of Birth</label>
+                <input type="date" name="dob" value={customerInfo.dob} onChange={handleInputChange} required />
               </div>
 
-              <div className="admin-form-group" style={{ marginBottom: '15px' }}>
-                <label className="admin-label" style={{ fontSize: '11px', marginBottom: '8px', display: 'block' }}>Payment Option</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '10px', 
-                      padding: '12px', 
-                      border: paymentMethod === 'cod' ? '2.5px solid var(--ink)' : '1px solid var(--border)', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      background: paymentMethod === 'cod' ? 'rgba(15, 15, 17, 0.03)' : '#fff',
-                      fontWeight: '800',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="cod" 
-                      checked={paymentMethod === 'cod'} 
-                      onChange={() => setPaymentMethod('cod')}
-                      style={{ accentColor: 'var(--ink)', width: '16px', height: '16px' }}
-                    />
+              <label className="checkout-save-row">
+                <input type="checkbox" name="saveInfo" checked={customerInfo.saveInfo} onChange={handleInputChange} />
+                <span>Save this information for next time</span>
+              </label>
+
+              <div className="checkout-shipping-method">
+                <h4>Shipping method</h4>
+                <div>Enter your shipping address to view available shipping methods.</div>
+              </div>
+
+              <div className="checkout-payment-section">
+                <h4>Payment Option</h4>
+                <div className="checkout-payment-options">
+                  <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
                     Cash on Delivery (COD)
                   </label>
-                  <label 
-                    style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '10px', 
-                      padding: '12px', 
-                      border: paymentMethod === 'online' ? '2.5px solid var(--ink)' : '1px solid var(--border)', 
-                      borderRadius: '4px', 
-                      cursor: 'pointer',
-                      background: paymentMethod === 'online' ? 'rgba(15, 15, 17, 0.03)' : '#fff',
-                      fontWeight: '800',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    <input 
-                      type="radio" 
-                      name="paymentMethod" 
-                      value="online" 
-                      checked={paymentMethod === 'online'} 
-                      onChange={() => setPaymentMethod('online')}
-                      style={{ accentColor: 'var(--ink)', width: '16px', height: '16px' }}
-                    />
+                  <label className={`checkout-payment-card ${paymentMethod === 'online' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="online" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} />
                     Pay by Razorpay
                   </label>
                 </div>
@@ -467,28 +435,6 @@ export default function CartDrawer({
 
         {!showCheckoutForm && cart.length > 0 && (
           <div className="cart-footer">
-            {/* Coupon Section */}
-            <div className="coupon-container" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '15px', marginBottom: '15px' }}>
-              {appliedCoupon ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F1F1EF', padding: '8px 12px', borderRadius: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: '800' }}>COUPON APPLIED: {appliedCoupon} (-₹{discountAmount})</span>
-                  <button onClick={handleRemoveCoupon} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '12px' }}>&times;</button>
-                </div>
-              ) : (
-                <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '8px' }}>
-                  <input 
-                    type="text" 
-                    placeholder="ENTER COUPON CODE" 
-                    value={couponInput}
-                    onChange={(e) => setCouponInput(e.target.value)}
-                    style={{ flex: 1, padding: '8px 12px', fontSize: '11px', border: '1px solid var(--border)', textTransform: 'uppercase', fontFamily: 'inherit', outline: 'none' }}
-                  />
-                  <button type="submit" style={{ padding: '8px 16px', background: 'var(--ink)', color: 'white', border: 'none', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>APPLY</button>
-                </form>
-              )}
-              {couponError && <p style={{ color: 'var(--accent)', fontSize: '11px', marginTop: '6px', fontWeight: '700' }}>{couponError}</p>}
-            </div>
-
             <div className="cart-totals-row">
               <span className="cart-totals-label">Subtotal</span>
               <span className="cart-totals-val">₹{subtotal.toLocaleString('en-IN')}</span>

@@ -27,6 +27,21 @@ const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washe
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
 const DEFAULT_SHIPPING = "Free standard shipping across India. Standard orders are dispatched within 24-48 business hours and delivered within 3-5 business days. Easy exchanges and hassle-free returns within 7 days of delivery.";
 
+const ADMIN_TABS = [
+  ['dashboard', 'Analytics'],
+  ['orders', 'Orders'],
+  ['returns', 'Returns'],
+  ['products', 'Products'],
+  ['inventory', 'Inventory'],
+  ['collections', 'Collections'],
+  ['stories', 'Stories'],
+  ['blogs', 'Blogs'],
+  ['gallery', 'Gallery'],
+  ['comingsoon', 'Coming Soon'],
+  ['newinconfig', 'New In'],
+  ['heroconfig', 'Hero']
+];
+
 export default function Admin({ onToast }) {
   const [token, setToken] = useState(localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || '');
   const [usernameInput, setUsernameInput] = useState('');
@@ -400,6 +415,21 @@ export default function Admin({ onToast }) {
     setSuggestionField(null);
   };
 
+  const normalizeProductId = (value) => {
+    const raw = String(value || '').trim();
+    const match = raw.match(/\/product\/([^/?#]+)/i);
+    if (match) return decodeURIComponent(match[1]);
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const url = new URL(raw);
+        return decodeURIComponent(url.pathname.split('/').filter(Boolean).pop() || raw);
+      } catch {
+        return raw;
+      }
+    }
+    return raw;
+  };
+
   // Base64 file upload helper
   const handleDirectUpload = async (e, onUploadDone) => {
     const file = e.target.files[0];
@@ -557,11 +587,15 @@ export default function Admin({ onToast }) {
   // Stories
   const handleSaveStory = async (e) => {
     e.preventDefault();
+    const storyPayload = {
+      ...newStory,
+      productId: normalizeProductId(newStory.productId)
+    };
     try {
       const res = await fetch('/api/stories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStory)
+        body: JSON.stringify(storyPayload)
       });
       if (res.ok) {
         onToast('Story published successfully!');
@@ -748,7 +782,7 @@ export default function Admin({ onToast }) {
           backdropFilter: 'blur(20px)'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '35px' }}>
-            <h1 style={{ fontSize: '28px', fontWeight: '900', letterSpacing: '0.1em', margin: 0, textTransform: 'uppercase' }}>LOG</h1>
+            <h1 style={{ fontSize: '34px', fontWeight: '700', letterSpacing: 0, margin: 0, textTransform: 'uppercase', fontFamily: "'Montserrat', sans-serif" }}>LOG</h1>
             <p style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.2em', color: 'var(--grey-muted)', textTransform: 'uppercase', marginTop: '5px' }}>CONTROL PANEL</p>
           </div>
           <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -975,6 +1009,19 @@ export default function Admin({ onToast }) {
         </div>
 
         {/* ── TAB: DASHBOARD (4 DASHBOARDS SYSTEM) ── */}
+        <div className="admin-panel-switcher">
+          {ADMIN_TABS.map(([tab, label]) => (
+            <button
+              type="button"
+              key={tab}
+              className={`admin-panel-switcher-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
         {activeTab === 'dashboard' && analytics && (
           <div>
             {/* Dashboard Tabs Selector */}

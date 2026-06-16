@@ -45,7 +45,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   useEffect(() => {
     fetch('/api/stories')
       .then(res => res.json())
-      .then(data => setStories(data))
+      .then(data => setStories((data || []).filter((story) => story.mediaUrl || story.image)))
       .catch(err => console.error(err));
   }, []);
 

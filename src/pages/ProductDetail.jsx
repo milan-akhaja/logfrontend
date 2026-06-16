@@ -121,7 +121,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
         <div className="product-detail-layout">
           
           {/* Left Side: Product Gallery (Shows all images stacked vertically in log/long line form) */}
-          <div className="product-detail-gallery" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <div className="product-detail-gallery product-detail-gallery-desktop">
             {displayImages.length > 0 ? (
               displayImages.map((imgUrl, idx) => (
                 <div 
@@ -139,6 +139,32 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               ))
             ) : (
               <div className="main-display-image-frame">
+                <div className={`product-graphic ${product.graphicClass}`} style={{ width: '100%', height: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div
+            className="product-detail-gallery-mobile"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            {displayImages.length > 0 ? (
+              <div className="main-display-image-frame mobile-swipe-frame">
+                <img
+                  src={displayImages[slideIdx]}
+                  alt={`${product.name} detail view ${slideIdx + 1}`}
+                  className="main-detail-img"
+                />
+                <div className="mobile-gallery-count">
+                  {slideIdx + 1} / {displayImages.length}
+                </div>
+              </div>
+            ) : (
+              <div className="main-display-image-frame mobile-swipe-frame">
                 <div className={`product-graphic ${product.graphicClass}`} style={{ width: '100%', height: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
                 </div>

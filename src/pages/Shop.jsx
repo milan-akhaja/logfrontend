@@ -132,13 +132,12 @@ export function ProductGridCard({ product, onAddToCart }) {
       
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
-        <p className="product-desc">{product.desc}</p>
         <div className="product-price-row">
           <div className="product-prices" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span className="price-current">₹{product.price}</span>
+              <span className="price-current">RS. {product.price}</span>
               {product.originalPrice && product.originalPrice > product.price && (
-                <span className="price-original" style={{ textDecoration: 'line-through', fontSize: '12px', color: 'var(--grey-muted)' }}>₹{product.originalPrice}</span>
+                <span className="price-original" style={{ textDecoration: 'line-through', fontSize: '12px', color: 'var(--grey-muted)' }}>RS. {product.originalPrice}</span>
               )}
             </div>
             {discountPercent > 0 && (
@@ -155,8 +154,8 @@ export function ProductGridCard({ product, onAddToCart }) {
                 onAddToCart(product);
               }}
             >
-              <span className="add-to-bag-text">Add to Bag</span>
-              <span className="add-to-bag-icon"><ShoppingCart size={16} /></span>
+              <span className="add-to-bag-text">Add to Cart</span>
+              <span className="add-to-bag-icon" aria-hidden="true">+</span>
             </button>
           ) : (
             <button 
@@ -166,7 +165,7 @@ export function ProductGridCard({ product, onAddToCart }) {
               disabled
             >
               <span className="add-to-bag-text">Sold Out</span>
-              <span className="add-to-bag-icon" style={{ fontSize: '10px', fontWeight: '800' }}>SO</span>
+              <span className="add-to-bag-icon" style={{ fontSize: '10px', fontWeight: '800' }}>x</span>
             </button>
           )}
         </div>
@@ -265,8 +264,9 @@ function GalleryScroller() {
 export default function Shop({ onAddToCart }) {
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [comingSoon, setComingSoon] = useState({ imageUrl: '', title: 'New Drop Coming', desc: 'Follow on Instagram to be the first to know', link: 'https://instagram.com' });
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [mobileVideoSrc, setMobileVideoSrc] = useState('');
+  const mobileHeroVideoRef = useRef(null);
   const [heroConfig, setHeroConfig] = useState({
     tagline: 'New Season Drop',
     title: 'Wear\nSome\nthing\nReal.',
@@ -291,13 +291,11 @@ export default function Shop({ onAddToCart }) {
     Promise.all([
       fetch('/api/products').then(res => res.json()),
       fetch('/api/collections').then(res => res.json()),
-      fetch('/api/coming-soon').then(res => res.json()),
       fetch('/api/hero-config').then(res => res.json())
     ])
-      .then(([productsData, collectionsData, comingSoonData, heroConfigData]) => {
+      .then(([productsData, collectionsData, heroConfigData]) => {
         setProducts(productsData || []);
         setCollections(collectionsData || []);
-        if (comingSoonData) setComingSoon(comingSoonData);
         if (heroConfigData) setHeroConfig(heroConfigData);
       })
       .catch(err => console.error('Error fetching catalog data:', err));
@@ -312,6 +310,33 @@ export default function Shop({ onAddToCart }) {
       })
     }).catch(() => { });
   }, []);
+
+  useEffect(() => {
+    setMobileVideoSrc(heroConfig.mobileVideoUrl || VIDEO_URLS[0]);
+  }, [heroConfig.mobileVideoUrl]);
+
+  useEffect(() => {
+    const video = mobileHeroVideoRef.current;
+    if (!video || !mobileVideoSrc) return;
+
+    const playVideo = () => {
+      video.muted = true;
+      video.playsInline = true;
+      video.play().catch(() => {});
+    };
+
+    video.load();
+    playVideo();
+    video.addEventListener('loadedmetadata', playVideo);
+    video.addEventListener('canplay', playVideo);
+    window.addEventListener('touchstart', playVideo, { once: true, passive: true });
+
+    return () => {
+      video.removeEventListener('loadedmetadata', playVideo);
+      video.removeEventListener('canplay', playVideo);
+      window.removeEventListener('touchstart', playVideo);
+    };
+  }, [mobileVideoSrc]);
 
   // Sync route query parameters for search/filters
   useEffect(() => {
@@ -425,7 +450,25 @@ export default function Shop({ onAddToCart }) {
 
       {/* MOBILE HERO SECTION (Single Autoplay Video) */}
       <section className="mobile-hero-video mobile-only">
-        <video src={heroConfig.mobileVideoUrl} autoPlay loop muted playsInline />
+        {mobileVideoSrc && (
+          <video
+            ref={mobileHeroVideoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            controls={false}
+            poster={heroConfig.bgImage}
+            onError={() => {
+              if (mobileVideoSrc !== VIDEO_URLS[0]) {
+                setMobileVideoSrc(VIDEO_URLS[0]);
+              }
+            }}
+          >
+            <source src={mobileVideoSrc} type="video/mp4" />
+          </video>
+        )}
         <div className="mobile-hero-shop-now">
           <a 
             href="#shop-catalog"
@@ -467,11 +510,8 @@ export default function Shop({ onAddToCart }) {
         <div className="section-header reveal">
           <div>
             <h2 className="section-title">
-              {searchQuery ? `Search: "${searchQuery}"` : collectionFilter ? 'Collection Items' : 'Best Sellers'}
+              {searchQuery ? `Search: "${searchQuery}"` : collectionFilter ? 'Collection Items' : 'New Drop'}
             </h2>
-            <div className="section-subtitle">
-              {filteredProducts.length} items available
-            </div>
           </div>
         </div>
 
@@ -485,43 +525,6 @@ export default function Shop({ onAddToCart }) {
               key={product.id}
             />
           ))}
-
-          {/* Dynamic Coming Soon Card */}
-          {comingSoon && comingSoon.visible !== false && comingSoon.visible !== 'false' && (
-            <div className="product-card reveal" style={{ background: 'var(--ink)', color: 'white', borderColor: 'var(--ink)' }}>
-              <div className="product-img-wrapper" style={{ background: 'var(--ink)' }}>
-                {comingSoon.imageUrl ? (
-                  <img src={comingSoon.imageUrl} alt={comingSoon.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <>
-                    <div className="product-placeholder-text" style={{ color: 'rgba(255,255,255,0.12)' }}>NEXT<br />DROP</div>
-                    <div className="product-graphic graphic-coming" style={{ background: 'white', color: 'var(--ink)' }}>
-                      <div className="graphic-print">SOON</div>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="product-info" style={{ color: 'white' }}>
-                <h3 className="product-name" style={{ color: 'white' }}>{comingSoon.title}</h3>
-                <p className="product-desc" style={{ color: 'rgba(255,255,255,0.7)' }}>{comingSoon.desc}</p>
-                <div className="product-price-row">
-                  <div className="product-prices">
-                    <span className="price-current" style={{ color: 'white' }}>Coming Soon</span>
-                  </div>
-                  <button
-                    className="notify-me-btn"
-                    onClick={() => {
-                      if (comingSoon.link) {
-                        window.open(comingSoon.link, '_blank');
-                      }
-                    }}
-                  >
-                    Notify Me
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Discover More Button */}
@@ -600,3 +603,4 @@ export default function Shop({ onAddToCart }) {
     </>
   );
 }
+
