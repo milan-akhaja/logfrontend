@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, MessageSquare, Mail, Clock, ShoppingCart } from 'lucide-react';
+import { appPath, mediaUrl } from '../lib/urls';
 
 export default function NewIn({ onAddToCart, onToast }) {
   const [products, setProducts] = useState([]);
@@ -68,11 +69,11 @@ export default function NewIn({ onAddToCart, onToast }) {
             {newInConfig.desc}
           </p>
           <div className="hero-buttons">
-            <a href={newInConfig.buttonLink} className="btn btn-accent" style={{ padding: '14px 28px' }}>{newInConfig.buttonText}</a>
+            <a href={appPath(newInConfig.buttonLink)} className="btn btn-accent" style={{ padding: '14px 28px' }}>{newInConfig.buttonText}</a>
           </div>
         </div>
         <div className="lookbook-banner-right reveal">
-          <img src={newInConfig.imageUrl} alt="LOG streetwear editorial model" />
+          <img src={mediaUrl(newInConfig.imageUrl)} alt="LOG streetwear editorial model" />
         </div>
       </section>
 
@@ -101,7 +102,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                 <div className="product-img-wrapper">
                   <span className="product-tag tag-new" style={{ background: 'var(--ink)' }}>New In</span>
                   {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={mediaUrl(product.imageUrl)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <>
                       <div className="product-placeholder-text" dangerouslySetInnerHTML={{ __html: product.graphicText }}></div>

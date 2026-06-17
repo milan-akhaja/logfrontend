@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft } from 'lucide-react';
+import { mediaUrl } from '../lib/urls';
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -73,7 +74,7 @@ export default function BlogDetail() {
         return (
           <div key={index} style={{ margin: '30px 0', textAlign: 'center' }}>
             <img
-              src={block.url}
+              src={mediaUrl(block.url)}
               alt="Blog attachment"
               style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: 'var(--shadow-sm)' }}
             />
@@ -90,7 +91,7 @@ export default function BlogDetail() {
         {/* Cover Section */}
         <div style={{ position: 'relative', height: '400px', width: '100%', overflow: 'hidden', background: '#111113' }}>
           <img
-            src={blog.coverImage || 'assets/lookbook_polaroid_1.png'}
+            src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')}
             alt={blog.title}
             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }}
           />

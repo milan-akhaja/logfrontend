@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { mediaUrl } from '../lib/urls';
 
 export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -105,7 +106,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
   const primaryMediaUrl = currentStory.mediaUrl || currentStory.image || '';
   const fallbackMediaUrl = currentStory.fallbackMediaUrl || '';
   const shouldUseFallback = failedMedia[currentStory.id] && fallbackMediaUrl && fallbackMediaUrl !== primaryMediaUrl;
-  const currentMediaUrl = shouldUseFallback ? fallbackMediaUrl : primaryMediaUrl;
+  const currentMediaUrl = mediaUrl(shouldUseFallback ? fallbackMediaUrl : primaryMediaUrl);
   const hasMediaError = failedMedia[currentStory.id] && !shouldUseFallback;
 
   const handleMediaError = () => {

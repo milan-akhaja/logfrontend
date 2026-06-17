@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { appPath, mediaUrl } from '../lib/urls';
 
 export default function LogBook() {
   const [blogs, setBlogs] = useState([]);
@@ -80,7 +81,7 @@ export default function LogBook() {
                 >
                   <div className="polaroid-image-frame">
                     <img 
-                      src={blog.coverImage || 'assets/lookbook_polaroid_1.png'} 
+                      src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')} 
                       alt={blog.title} 
                       className="polaroid-image" 
                     />
@@ -118,7 +119,7 @@ export default function LogBook() {
             Every product item represents a double footprint: an aesthetic garment in your hands, and a fixed ₹23 contribution directly supporting real community programs. No middlemen, no fine print.
           </p>
           <div className="hero-buttons">
-            <a href="/our-mission" className="btn btn-outline" style={{ fontSize: '11px', padding: '12px 24px' }}>View the Promise</a>
+            <a href={appPath('/our-mission')} className="btn btn-outline" style={{ fontSize: '11px', padding: '12px 24px' }}>View the Promise</a>
           </div>
         </div>
         <div className="lookbook-banner-right reveal">
@@ -131,7 +132,7 @@ export default function LogBook() {
         <div className="container">
           <h2 className="statement-title reveal">Liked the fits? <br /><span className="outline">Get Yours.</span></h2>
           <p className="statement-sub reveal">Explore heavyweight styles crafted for streetwear enthusiasts.</p>
-          <a href="/" className="btn btn-white reveal">Shop the Drops</a>
+          <a href={appPath('/')} className="btn btn-white reveal">Shop the Drops</a>
         </div>
       </section>
     </>

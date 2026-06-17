@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
 import { ProductGridCard } from './Shop';
+import { mediaUrl } from '../lib/urls';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -130,7 +131,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   style={{ display: 'flex', height: 'auto', aspectRatio: 'auto' }}
                 >
                   <img 
-                    src={imgUrl} 
+                    src={mediaUrl(imgUrl)} 
                     alt={`${product.name} detail view ${idx + 1}`} 
                     className="main-detail-img" 
                     style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }}
@@ -155,7 +156,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             {displayImages.length > 0 ? (
               <div className="main-display-image-frame mobile-swipe-frame">
                 <img
-                  src={displayImages[slideIdx]}
+                  src={mediaUrl(displayImages[slideIdx])}
                   alt={`${product.name} detail view ${slideIdx + 1}`}
                   className="main-detail-img"
                 />

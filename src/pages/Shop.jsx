@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Package, Gift, ArrowRight } from 'lucide-react';
+import { appPath, mediaUrl } from '../lib/urls';
 
 const VIDEO_URLS = [
   "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba276ebdc230c7ec44da58ad9029&profile_id=139&oauth2_token_id=57447761",
@@ -103,7 +104,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         {/* Carousel Slides */}
         {displayImages.map((imgUrl, idx) => (
           slideIdx === idx && (
-            <img key={idx} src={imgUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img key={idx} src={mediaUrl(imgUrl)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )
         ))}
 
@@ -223,8 +224,8 @@ function GalleryScroller() {
                 key={item.id || idx}
                 className={getSlideClass(idx)}
               >
-                <a href={item.link || '#'} className="gallery-item-link-card">
-                  <img src={item.imageUrl} alt={item.title || 'Gallery Image'} />
+                <a href={appPath(item.link || '#')} className="gallery-item-link-card">
+                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} />
                   {item.title && (
                     <div className="gallery-slide-text-overlay">
                       <span className="gallery-slide-title-text">{item.title}</span>
@@ -262,6 +263,7 @@ function GalleryScroller() {
 }
 
 export default function Shop({ onAddToCart }) {
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [showAllProducts, setShowAllProducts] = useState(false);
@@ -409,7 +411,7 @@ export default function Shop({ onAddToCart }) {
     <>
       {/* PC HERO SECTION */}
       <section className="hero-section pc-only">
-        <img src={heroConfig.bgImage} alt="LOG streetwear background" className="hero-bg-image" />
+        <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" />
         <div className="hero-overlay"></div>
         <div className="container" style={{ position: 'relative', zIndex: 10, width: '100%' }}>
           <div className="hero-content reveal">
@@ -418,7 +420,7 @@ export default function Shop({ onAddToCart }) {
             <p className="hero-desc">{heroConfig.desc}</p>
             <div className="hero-buttons">
               <a 
-                href={heroConfig.button1Link} 
+                href={appPath(heroConfig.button1Link)} 
                 className="btn btn-accent"
                 onClick={() => {
                   fetch('/api/track', {
@@ -431,7 +433,7 @@ export default function Shop({ onAddToCart }) {
                 {heroConfig.button1Text}
               </a>
               <a 
-                href={heroConfig.button2Link} 
+                href={appPath(heroConfig.button2Link)} 
                 className="btn btn-outline"
                 onClick={() => {
                   fetch('/api/track', {
@@ -459,14 +461,14 @@ export default function Shop({ onAddToCart }) {
             playsInline
             preload="auto"
             controls={false}
-            poster={heroConfig.bgImage}
+            poster={mediaUrl(heroConfig.bgImage)}
             onError={() => {
               if (mobileVideoSrc !== VIDEO_URLS[0]) {
                 setMobileVideoSrc(VIDEO_URLS[0]);
               }
             }}
           >
-            <source src={mobileVideoSrc} type="video/mp4" />
+            <source src={mediaUrl(mobileVideoSrc)} type="video/mp4" />
           </video>
         )}
         <div className="mobile-hero-shop-now">
@@ -603,4 +605,3 @@ export default function Shop({ onAddToCart }) {
     </>
   );
 }
-

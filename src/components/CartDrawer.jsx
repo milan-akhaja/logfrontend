@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { mediaUrl } from '../lib/urls';
 
 export default function CartDrawer({ 
   isOpen, 
@@ -404,7 +405,7 @@ export default function CartDrawer({
                 <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F3', borderRadius: '4px', overflow: 'hidden' }}>
                   {item.imageUrl ? (
                     <img 
-                      src={item.imageUrl} 
+                      src={mediaUrl(item.imageUrl)} 
                       alt={item.name} 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />

@@ -22,6 +22,7 @@ import {
   FolderPlus,
   Upload
 } from 'lucide-react';
+import { mediaUrl } from '../lib/urls';
 
 const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washed\nDesign: DTF printing\nStyle: Oversize and Half sleeve\n* Designed for a relaxed drop-shoulder streetwear fit. Order your usual size.";
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
@@ -2027,9 +2028,9 @@ export default function Admin({ onToast }) {
                       <tr key={s.id}>
                         <td>
                           {s.mediaType === 'video' ? (
-                            <video src={s.mediaUrl} style={{ width: '50px', height: '50px', objectFit: 'cover' }} muted />
+                            <video src={mediaUrl(s.mediaUrl)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} muted />
                           ) : (
-                            <img src={s.mediaUrl} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Preview" />
+                            <img src={mediaUrl(s.mediaUrl)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Preview" />
                           )}
                         </td>
                         <td>{s.mediaType}</td>
@@ -2189,7 +2190,7 @@ export default function Admin({ onToast }) {
                     {blogs.map(b => (
                       <tr key={b.id}>
                         <td>
-                          <img src={b.coverImage} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Cover" />
+                          <img src={mediaUrl(b.coverImage)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Cover" />
                         </td>
                         <td><strong>{b.title}</strong></td>
                         <td>{new Date(b.date).toLocaleDateString()}</td>
@@ -2299,7 +2300,7 @@ export default function Admin({ onToast }) {
                   {galleryItems.map(item => (
                     <tr key={item.id}>
                       <td>
-                        <img src={item.imageUrl} alt={item.title} style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <img src={mediaUrl(item.imageUrl)} alt={item.title} style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
                       </td>
                       <td>{item.title || '(No Title)'}</td>
                       <td><code>{item.link}</code></td>
@@ -2374,7 +2375,7 @@ export default function Admin({ onToast }) {
                   {comingSoon.imageUrl && (
                     <div style={{ marginTop: '10px' }}>
                       <label className="admin-label">Image Preview:</label>
-                      <img src={comingSoon.imageUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
+                      <img src={mediaUrl(comingSoon.imageUrl)} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
                     </div>
                   )}
                 </div>
@@ -2546,7 +2547,7 @@ export default function Admin({ onToast }) {
                   {newInConfig.imageUrl && (
                     <div style={{ marginTop: '10px' }}>
                       <label className="admin-label">Image Preview:</label>
-                      <img src={newInConfig.imageUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
+                      <img src={mediaUrl(newInConfig.imageUrl)} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
                     </div>
                   )}
                 </div>
@@ -2911,7 +2912,7 @@ export default function Admin({ onToast }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
                     <div key={idx} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '4px', overflow: 'hidden', height: '100px' }}>
-                      <img src={url} alt={`Product image ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={mediaUrl(url)} alt={`Product image ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <button 
                         type="button" 
                         onClick={() => {

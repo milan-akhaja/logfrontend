@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { routerBasename } from './lib/urls';
 
 // Layout Components
 import Navbar from './components/Navbar';
@@ -253,7 +254,7 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename()}>
       <ScrollToTop />
       <AppContent 
         cart={cart}

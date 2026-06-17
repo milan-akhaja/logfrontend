@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { appPath } from '../lib/urls';
 
 export default function OurMission() {
   const [donationCount, setDonationCount] = useState(0);
@@ -124,7 +125,7 @@ export default function OurMission() {
         <div className="container">
           <h2 className="statement-title reveal" style={{ color: 'white' }}>Join The <span className="outline" style={{ WebkitTextStroke: '1px white' }}>Movement.</span></h2>
           <p className="statement-sub reveal" style={{ color: 'rgba(255,255,255,0.7)' }}>Minimal styles. Heavyweight fabrics. Direct social support.</p>
-          <a href="/" className="btn btn-accent reveal">Shop Collections</a>
+          <a href={appPath('/')} className="btn btn-accent reveal">Shop Collections</a>
         </div>
       </section>
     </>
