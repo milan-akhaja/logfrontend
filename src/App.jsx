@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Layout Components
 import Navbar from './components/Navbar';
@@ -159,6 +160,8 @@ function AppContent({
         <span className="toast-dot"></span>
         <span>{toast}</span>
       </div>
+
+      <SpeedInsights />
     </>
   );
 }
