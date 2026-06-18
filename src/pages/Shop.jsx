@@ -14,8 +14,8 @@ const VIDEO_URLS = [
 
 // Sub-component for product card carousels with auto-scroll and manual arrows
 export function ProductGridCard({ product, onAddToCart }) {
-  const displayImages = product.imageUrls && product.imageUrls.length > 0 
-    ? product.imageUrls 
+  const displayImages = product.imageUrls && product.imageUrls.length > 0
+    ? product.imageUrls
     : (product.imageUrl ? [product.imageUrl] : []);
 
   const totalSlides = displayImages.length > 0 ? displayImages.length : 2;
@@ -51,7 +51,7 @@ export function ProductGridCard({ product, onAddToCart }) {
       setSlideIdx(prev => (prev - 1 + totalSlides) % totalSlides);
     }
   };
-  
+
   useEffect(() => {
     if (!isHovered) return;
     const timer = setInterval(() => {
@@ -77,8 +77,8 @@ export function ProductGridCard({ product, onAddToCart }) {
     : 0;
 
   return (
-    <div 
-      className="product-card reveal" 
+    <div
+      className="product-card reveal"
       style={{ cursor: 'pointer' }}
       onClick={() => navigate(`/product/${product.id}`)}
       onMouseEnter={() => setIsHovered(true)}
@@ -87,7 +87,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         setSlideIdx(0);
       }}
     >
-      <div 
+      <div
         className="product-img-wrapper"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -130,7 +130,7 @@ export function ProductGridCard({ product, onAddToCart }) {
           ))}
         </div>
       </div>
-      
+
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
         <div className="product-price-row">
@@ -148,8 +148,8 @@ export function ProductGridCard({ product, onAddToCart }) {
             )}
           </div>
           {product.stock > 0 ? (
-            <button 
-              className="add-to-bag-btn" 
+            <button
+              className="add-to-bag-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart(product);
@@ -159,10 +159,10 @@ export function ProductGridCard({ product, onAddToCart }) {
               <span className="add-to-bag-icon" aria-hidden="true">+</span>
             </button>
           ) : (
-            <button 
-              className="add-to-bag-btn sold-out-btn" 
-              style={{ opacity: 0.5, cursor: 'not-allowed' }} 
-              onClick={(e) => e.stopPropagation()} 
+            <button
+              className="add-to-bag-btn sold-out-btn"
+              style={{ opacity: 0.5, cursor: 'not-allowed' }}
+              onClick={(e) => e.stopPropagation()}
               disabled
             >
               <span className="add-to-bag-text">Sold Out</span>
@@ -291,7 +291,7 @@ export default function Shop({ onAddToCart }) {
     Promise.all([
       fetch('/api/products').then(res => res.json()),
       fetch('/api/collections').then(res => res.json()),
-      fetch('/api/hero-config').then(res => res.json())
+      fetch('/api/hero-config', { cache: 'no-store' }).then(res => res.json())
     ])
       .then(([productsData, collectionsData, heroConfigData]) => {
         setProducts(productsData || []);
@@ -422,50 +422,15 @@ export default function Shop({ onAddToCart }) {
     <>
       {/* PC HERO SECTION */}
       <section className="hero-section pc-only">
-        <img
-          src={mediaUrl(heroConfig.bgImage)}
-          alt="LOG streetwear background"
-          className="hero-bg-image"
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
-        />
+        <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
         <div className="hero-overlay"></div>
-        <div className="container" style={{ position: 'relative', zIndex: 10, width: '100%' }}>
-          <div className="hero-content reveal">
-            <div className="hero-tagline">{heroConfig.tagline}</div>
-            <h1 className="hero-title" style={{ whiteSpace: 'pre-line' }}>{heroConfig.title}</h1>
-            <p className="hero-desc">{heroConfig.desc}</p>
-            <div className="hero-buttons">
-              <a 
-                href={appPath(heroConfig.button1Link)} 
-                className="btn btn-accent"
-                onClick={() => {
-                  fetch('/api/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'click_button', buttonId: `${heroConfig.button1Text}_Hero_Accent`, sessionId: localStorage.getItem('log_session_id') || 'guest' })
-                  }).catch(() => {});
-                }}
-              >
-                {heroConfig.button1Text}
-              </a>
-              <a 
-                href={appPath(heroConfig.button2Link)} 
-                className="btn btn-outline"
-                onClick={() => {
-                  fetch('/api/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'click_button', buttonId: `${heroConfig.button2Text}_Hero_Outline`, sessionId: localStorage.getItem('log_session_id') || 'guest' })
-                  }).catch(() => {});
-                }}
-              >
-                {heroConfig.button2Text}
-              </a>
-            </div>
-          </div>
-        </div>
+        <a
+          href={appPath(heroShopLink)}
+          className="hero-shop-now"
+          onClick={() => trackHeroShopNow('Desktop')}
+        >
+          Shop now
+        </a>
       </section>
 
       {/* MOBILE HERO SECTION (Single Autoplay Video) */}
@@ -490,8 +455,8 @@ export default function Shop({ onAddToCart }) {
           </video>
         )}
         <div className="mobile-hero-shop-now">
-          <a 
-            href={heroShopLink}
+          <a
+            href={appPath(heroShopLink)}
             onClick={() => trackHeroShopNow('Mobile')}
           >
             Shop now

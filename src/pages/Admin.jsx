@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Home, 
-  ShoppingBag, 
-  Package, 
-  Tag, 
-  Users, 
-  BarChart2, 
-  RefreshCw, 
-  Plus, 
-  Trash2, 
-  Edit, 
-  Eye, 
-  TrendingUp, 
-  ChevronRight, 
+import {
+  Home,
+  ShoppingBag,
+  Package,
+  Tag,
+  Users,
+  BarChart2,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Edit,
+  Eye,
+  TrendingUp,
+  ChevronRight,
   Truck,
   CheckCircle,
   XCircle,
@@ -38,7 +38,6 @@ const ADMIN_TABS = [
   ['stories', 'Stories'],
   ['blogs', 'Blogs'],
   ['gallery', 'Gallery'],
-  ['comingsoon', 'Coming Soon'],
   ['newinconfig', 'New In'],
   ['heroconfig', 'Hero']
 ];
@@ -169,7 +168,7 @@ export default function Admin({ onToast }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  
+
   // Product state
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -219,7 +218,6 @@ export default function Admin({ onToast }) {
   // Gallery Lookbook State
   const [galleryItems, setGalleryItems] = useState([]);
   const [newGalleryItem, setNewGalleryItem] = useState({ imageUrl: '', title: '', link: '' });
-  const [comingSoon, setComingSoon] = useState({ imageUrl: '', title: 'New Drop Coming', desc: 'Follow on Instagram to be the first to know', link: 'https://instagram.com' });
   const [newInConfig, setNewInConfig] = useState({ tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
 
   // Autocomplete Suggestions State
@@ -244,7 +242,7 @@ export default function Admin({ onToast }) {
   // Fetch all data
   const fetchData = async () => {
     try {
-      const [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, comingSoonRes, heroRes, returnsRes, newInRes] = await Promise.all([
+      const [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes] = await Promise.all([
         fetch('/api/analytics'),
         fetch('/api/orders'),
         fetch('/api/products'),
@@ -253,14 +251,13 @@ export default function Admin({ onToast }) {
         fetch('/api/collections'),
         fetch('/api/blogs'),
         fetch('/api/gallery'),
-        fetch('/api/coming-soon'),
         fetch('/api/hero-config'),
         fetch('/api/returns'),
         fetch('/api/new-in-config')
       ]);
 
       const results = await Promise.all(
-        [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, comingSoonRes, heroRes, returnsRes, newInRes].map(async (res) => {
+        [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes].map(async (res) => {
           if (!res.ok) return null;
           try {
             return await res.json();
@@ -270,7 +267,7 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, comingSoonData, heroData, returnsData, newInData] = results;
+      const [analyticsData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData] = results;
 
       if (analyticsData) setAnalytics(analyticsData);
       if (ordersData) setOrders(ordersData);
@@ -281,7 +278,6 @@ export default function Admin({ onToast }) {
       if (blogsData) setBlogs(blogsData);
       if (returnsData) setReturns(returnsData);
       setGalleryItems(galleryData || []);
-      setComingSoon(comingSoonData || { imageUrl: '', title: 'New Drop Coming', desc: 'Follow on Instagram to be the first to know', link: 'https://instagram.com' });
       setNewInConfig(newInData || { tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
       setHeroConfig(heroData || {
         tagline: '',
@@ -553,12 +549,12 @@ export default function Admin({ onToast }) {
         setNewSubCategoryInput('');
         setNewColorInput('');
         clearSuggestions();
-        setNewProduct({ 
-          name: '', 
-          price: 0, 
+        setNewProduct({
+          name: '',
+          price: 0,
           originalPrice: 0,
-          desc: '', 
-          category: 'top', 
+          desc: '',
+          category: 'top',
           subCategories: [],
           colors: [],
           imageUrl: '',
@@ -582,9 +578,9 @@ export default function Admin({ onToast }) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    const updatedSizes = { 
-      ...(product.sizes || { S: 0, M: 0, L: 0, XL: 0 }), 
-      [size]: parseInt(newQty || 0) 
+    const updatedSizes = {
+      ...(product.sizes || { S: 0, M: 0, L: 0, XL: 0 }),
+      [size]: parseInt(newQty || 0)
     };
 
     try {
@@ -806,7 +802,7 @@ export default function Admin({ onToast }) {
     const height = 40;
     const max = Math.max(...points) || 1;
     const step = width / (points.length - 1);
-    
+
     return points.map((p, idx) => {
       const x = idx * step;
       const y = height - (p / max) * height + 2; // Offset
@@ -848,8 +844,8 @@ export default function Admin({ onToast }) {
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.05em', color: 'var(--grey-muted)', textTransform: 'uppercase' }}>Admin Username</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 required
@@ -858,16 +854,16 @@ export default function Admin({ onToast }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <label style={{ fontSize: '11px', fontWeight: '800', letterSpacing: '0.05em', color: 'var(--grey-muted)', textTransform: 'uppercase' }}>Password</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 required
                 style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', borderRadius: '6px', color: 'white', fontWeight: '600', fontFamily: 'inherit' }}
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               style={{ background: 'white', color: '#0F0F11', border: 'none', padding: '14px', borderRadius: '6px', cursor: 'pointer', fontWeight: '800', letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '10px', transition: 'opacity 0.2s' }}
             >
               Sign In
@@ -880,7 +876,7 @@ export default function Admin({ onToast }) {
 
   return (
     <div className="admin-layout">
-      {/* ── SIDEBAR ─────────────────────────────────────────── */}
+      {/* â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <div className="admin-sidebar-logo">
@@ -889,7 +885,7 @@ export default function Admin({ onToast }) {
         </div>
         <ul className="admin-menu">
           <li className="admin-menu-item">
-            <div 
+            <div
               className={`admin-menu-link ${activeTab === 'dashboard' ? 'active' : ''}`}
               onClick={() => setActiveTab('dashboard')}
             >
@@ -912,7 +908,7 @@ export default function Admin({ onToast }) {
             {salesOpen && (
               <ul className="admin-submenu">
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'orders' ? 'active' : ''}`}
                     onClick={() => setActiveTab('orders')}
                   >
@@ -920,7 +916,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'returns' ? 'active' : ''}`}
                     onClick={() => setActiveTab('returns')}
                   >
@@ -943,7 +939,7 @@ export default function Admin({ onToast }) {
             {catalogOpen && (
               <ul className="admin-submenu">
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'products' ? 'active' : ''}`}
                     onClick={() => setActiveTab('products')}
                   >
@@ -951,7 +947,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'inventory' ? 'active' : ''}`}
                     onClick={() => setActiveTab('inventory')}
                   >
@@ -959,7 +955,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'collections' ? 'active' : ''}`}
                     onClick={() => setActiveTab('collections')}
                   >
@@ -967,7 +963,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'stories' ? 'active' : ''}`}
                     onClick={() => setActiveTab('stories')}
                   >
@@ -975,7 +971,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'blogs' ? 'active' : ''}`}
                     onClick={() => setActiveTab('blogs')}
                   >
@@ -983,7 +979,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'gallery' ? 'active' : ''}`}
                     onClick={() => setActiveTab('gallery')}
                   >
@@ -991,15 +987,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
-                    className={`admin-submenu-link ${activeTab === 'comingsoon' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('comingsoon')}
-                  >
-                    Coming Soon Settings
-                  </div>
-                </li>
-                <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'newinconfig' ? 'active' : ''}`}
                     onClick={() => setActiveTab('newinconfig')}
                   >
@@ -1007,7 +995,7 @@ export default function Admin({ onToast }) {
                   </div>
                 </li>
                 <li>
-                  <div 
+                  <div
                     className={`admin-submenu-link ${activeTab === 'heroconfig' ? 'active' : ''}`}
                     onClick={() => setActiveTab('heroconfig')}
                   >
@@ -1021,7 +1009,7 @@ export default function Admin({ onToast }) {
       </aside>
 
 
-      {/* ── MAIN WORKSPACE ──────────────────────────────────── */}
+      {/* â”€â”€ MAIN WORKSPACE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <main className="admin-content">
         <div className="admin-header">
           <div className="admin-title-wrap">
@@ -1035,7 +1023,6 @@ export default function Admin({ onToast }) {
               {activeTab === 'stories' && 'Stories Publisher'}
               {activeTab === 'blogs' && 'Log Book Blogs Manager'}
               {activeTab === 'gallery' && 'Homepage Gallery Lookbook'}
-              {activeTab === 'comingsoon' && 'Coming Soon Drop Settings'}
               {activeTab === 'newinconfig' && 'New In Page Settings'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
             </h1>
@@ -1049,7 +1036,7 @@ export default function Admin({ onToast }) {
               <span>Logout</span>
             </button>
             {activeTab === 'products' && (
-              <button 
+              <button
                 className="admin-btn admin-btn-primary"
                 onClick={() => {
                   setEditingProduct(null);
@@ -1063,7 +1050,7 @@ export default function Admin({ onToast }) {
           </div>
         </div>
 
-        {/* ── TAB: DASHBOARD (4 DASHBOARDS SYSTEM) ── */}
+        {/* â”€â”€ TAB: DASHBOARD (4 DASHBOARDS SYSTEM) â”€â”€ */}
         <div className="admin-panel-switcher">
           {ADMIN_TABS.map(([tab, label]) => (
             <button
@@ -1081,10 +1068,10 @@ export default function Admin({ onToast }) {
           <div>
             {/* Dashboard Tabs Selector */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', borderBottom: '2px solid var(--admin-border)', paddingBottom: '10px' }}>
-              <button 
-                onClick={() => setDashboardTab('highlights')} 
-                style={{ 
-                  background: dashboardTab === 'highlights' ? 'var(--ink)' : 'none', 
+              <button
+                onClick={() => setDashboardTab('highlights')}
+                style={{
+                  background: dashboardTab === 'highlights' ? 'var(--ink)' : 'none',
                   color: dashboardTab === 'highlights' ? 'white' : 'var(--admin-text-main)',
                   border: dashboardTab === 'highlights' ? '2px solid var(--ink)' : '2px solid transparent',
                   padding: '10px 18px',
@@ -1096,10 +1083,10 @@ export default function Admin({ onToast }) {
               >
                 Highlights
               </button>
-              <button 
-                onClick={() => setDashboardTab('traffic')} 
-                style={{ 
-                  background: dashboardTab === 'traffic' ? 'var(--ink)' : 'none', 
+              <button
+                onClick={() => setDashboardTab('traffic')}
+                style={{
+                  background: dashboardTab === 'traffic' ? 'var(--ink)' : 'none',
                   color: dashboardTab === 'traffic' ? 'white' : 'var(--admin-text-main)',
                   border: dashboardTab === 'traffic' ? '2px solid var(--ink)' : '2px solid transparent',
                   padding: '10px 18px',
@@ -1111,10 +1098,10 @@ export default function Admin({ onToast }) {
               >
                 Traffic
               </button>
-              <button 
-                onClick={() => setDashboardTab('behaviour')} 
-                style={{ 
-                  background: dashboardTab === 'behaviour' ? 'var(--ink)' : 'none', 
+              <button
+                onClick={() => setDashboardTab('behaviour')}
+                style={{
+                  background: dashboardTab === 'behaviour' ? 'var(--ink)' : 'none',
                   color: dashboardTab === 'behaviour' ? 'white' : 'var(--admin-text-main)',
                   border: dashboardTab === 'behaviour' ? '2px solid var(--ink)' : '2px solid transparent',
                   padding: '10px 18px',
@@ -1126,10 +1113,10 @@ export default function Admin({ onToast }) {
               >
                 Behaviour Overviews
               </button>
-              <button 
-                onClick={() => setDashboardTab('benchmarks')} 
-                style={{ 
-                  background: dashboardTab === 'benchmarks' ? 'var(--ink)' : 'none', 
+              <button
+                onClick={() => setDashboardTab('benchmarks')}
+                style={{
+                  background: dashboardTab === 'benchmarks' ? 'var(--ink)' : 'none',
                   color: dashboardTab === 'benchmarks' ? 'white' : 'var(--admin-text-main)',
                   border: dashboardTab === 'benchmarks' ? '2px solid var(--ink)' : '2px solid transparent',
                   padding: '10px 18px',
@@ -1147,10 +1134,10 @@ export default function Admin({ onToast }) {
             {dashboardTab === 'highlights' && (
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', marginBottom: '15px' }}>
-                  💡 Click any card below to view detailed historical breakdown overlays.
+                  Click any card below to view detailed historical breakdown overlays.
                 </div>
                 <div className="admin-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-                  
+
                   <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Site Sessions', value: analytics.siteSessions, key: 'siteSessions', desc: 'Number of active browsing sessions on the website.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Site sessions</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1471,30 +1458,30 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: HERO BANNERS CONFIG ── */}
+        {/* â”€â”€ TAB: HERO BANNERS CONFIG â”€â”€ */}
         {activeTab === 'heroconfig' && (
           <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Manage Homepage Hero Banner</h2>
             </div>
-            
+
             <form onSubmit={handleSaveHeroConfig} style={{ padding: '20px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '700px' }}>
-                
+
                 <h3 style={{ borderBottom: '1px solid var(--admin-border)', paddingBottom: '8px', fontSize: '15px', fontWeight: '700' }}>Hero Media</h3>
 
                 <div className="admin-form-group">
                   <label className="admin-label">PC Background Image File/Link</label>
-                  <input 
-                    type="file" 
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png" 
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, bgImage: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Or enter background image url path..." 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Or enter background image url path..."
                     value={heroConfig.bgImage}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, bgImage: e.target.value }))}
                   />
@@ -1502,9 +1489,9 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Shop Now Link Target</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
+                  <input
+                    type="text"
+                    className="admin-input"
                     placeholder="#shop-catalog or /shop"
                     value={heroConfig.button1Link}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, button1Link: e.target.value }))}
@@ -1515,16 +1502,16 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Mobile Autoplay Video URL (MP4 looping link)</label>
-                  <input 
-                    type="file" 
-                    accept="video/*" 
+                  <input
+                    type="file"
+                    accept="video/*"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, mobileVideoUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Enter mobile loop mp4 video url path..." 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Enter mobile loop mp4 video url path..."
                     value={heroConfig.mobileVideoUrl}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileVideoUrl: e.target.value }))}
                   />
@@ -1536,7 +1523,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: RETURNS ── */}
+        {/* â”€â”€ TAB: RETURNS â”€â”€ */}
         {activeTab === 'returns' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1579,8 +1566,8 @@ export default function Admin({ onToast }) {
                       <td>
                         {req.status === 'Pending' && (
                           <div style={{ display: 'flex', gap: '5px' }}>
-                            <button 
-                              className="admin-btn-small" 
+                            <button
+                              className="admin-btn-small"
                               style={{ background: 'var(--admin-success)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                               onClick={async () => {
                                 if (!window.confirm('Approve this request?')) return;
@@ -1604,8 +1591,8 @@ export default function Admin({ onToast }) {
                             >
                               Approve
                             </button>
-                            <button 
-                              className="admin-btn-small" 
+                            <button
+                              className="admin-btn-small"
                               style={{ background: 'var(--admin-danger)', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}
                               onClick={async () => {
                                 if (!window.confirm('Reject this request?')) return;
@@ -1621,7 +1608,10 @@ export default function Admin({ onToast }) {
                                   } else {
                                     onToast(await getApiError(res, 'Request reject failed.'));
                                   }
-                                } catch (e) { console.error(e); }
+                                } catch (e) {
+                                  console.error(e);
+                                  onToast('Request reject failed.');
+                                }
                               }}
                             >
                               Reject
@@ -1645,7 +1635,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: ORDERS ── */}
+        {/* â”€â”€ TAB: ORDERS â”€â”€ */}
         {activeTab === 'orders' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1723,13 +1713,13 @@ export default function Admin({ onToast }) {
                       <td>{product.stock} units</td>
                       <td>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            className="admin-icon-btn" 
+                          <button
+                            className="admin-icon-btn"
                             onClick={() => {
                               setEditingProduct({
                                 ...product,
-                                imageUrls: product.imageUrls && product.imageUrls.length > 0 
-                                  ? product.imageUrls 
+                                imageUrls: product.imageUrls && product.imageUrls.length > 0
+                                  ? product.imageUrls
                                   : (product.imageUrl ? [product.imageUrl] : []),
                                 details: product.details !== undefined ? product.details : DEFAULT_DETAILS,
                                 washcare: product.washcare !== undefined ? product.washcare : DEFAULT_WASHCARE,
@@ -1753,7 +1743,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: INVENTORY CONTROL ── */}
+        {/* â”€â”€ TAB: INVENTORY CONTROL â”€â”€ */}
         {activeTab === 'inventory' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1781,36 +1771,36 @@ export default function Admin({ onToast }) {
                           <span style={{ fontSize: '11px', fontFamily: 'monospace' }}>{product.id}</span>
                         </td>
                         <td>
-                          <input 
-                            type="number" 
-                            className="admin-input" 
+                          <input
+                            type="number"
+                            className="admin-input"
                             style={{ width: '70px', padding: '6px' }}
                             value={sizes.S}
                             onChange={(e) => handleUpdateStock(product.id, 'S', e.target.value)}
                           />
                         </td>
                         <td>
-                          <input 
-                            type="number" 
-                            className="admin-input" 
+                          <input
+                            type="number"
+                            className="admin-input"
                             style={{ width: '70px', padding: '6px' }}
                             value={sizes.M}
                             onChange={(e) => handleUpdateStock(product.id, 'M', e.target.value)}
                           />
                         </td>
                         <td>
-                          <input 
-                            type="number" 
-                            className="admin-input" 
+                          <input
+                            type="number"
+                            className="admin-input"
                             style={{ width: '70px', padding: '6px' }}
                             value={sizes.L}
                             onChange={(e) => handleUpdateStock(product.id, 'L', e.target.value)}
                           />
                         </td>
                         <td>
-                          <input 
-                            type="number" 
-                            className="admin-input" 
+                          <input
+                            type="number"
+                            className="admin-input"
                             style={{ width: '70px', padding: '6px' }}
                             value={sizes.XL}
                             onChange={(e) => handleUpdateStock(product.id, 'XL', e.target.value)}
@@ -1826,7 +1816,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: COLLECTIONS PANEL ── */}
+        {/* â”€â”€ TAB: COLLECTIONS PANEL â”€â”€ */}
         {activeTab === 'collections' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
             <div className="admin-card">
@@ -1836,8 +1826,8 @@ export default function Admin({ onToast }) {
               <form onSubmit={handleSaveCollection}>
                 <div className="admin-form-group">
                   <label className="admin-label">Collection Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="admin-input"
                     value={newCollection.name}
                     onChange={(e) => setNewCollection(prev => ({ ...prev, name: e.target.value }))}
@@ -1851,7 +1841,7 @@ export default function Admin({ onToast }) {
                   <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--admin-border)', borderRadius: '4px', padding: '10px' }}>
                     {products.map(p => (
                       <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <input 
+                        <input
                           type="checkbox"
                           id={`col-p-${p.id}`}
                           checked={newCollection.productIds.includes(p.id)}
@@ -1901,7 +1891,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: STORIES PANEL ── */}
+        {/* â”€â”€ TAB: STORIES PANEL â”€â”€ */}
         {activeTab === 'stories' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
             <div className="admin-card">
@@ -1911,15 +1901,15 @@ export default function Admin({ onToast }) {
               <form onSubmit={handleSaveStory}>
                 <div className="admin-form-group">
                   <label className="admin-label">Direct Media Upload</label>
-                  <input 
-                    type="file" 
-                    accept="image/*,video/*"
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png,video/*"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewStory(prev => ({ ...prev, mediaUrl: url })))}
                     style={{ marginBottom: '10px' }}
                   />
                   <label className="admin-label">Or Media URL</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="admin-input"
                     value={newStory.mediaUrl}
                     onChange={(e) => setNewStory(prev => ({ ...prev, mediaUrl: e.target.value }))}
@@ -1930,7 +1920,7 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Media Type</label>
-                  <select 
+                  <select
                     className="admin-select"
                     value={newStory.mediaType}
                     onChange={(e) => setNewStory(prev => ({ ...prev, mediaType: e.target.value }))}
@@ -1942,8 +1932,8 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Caption</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="admin-input"
                     value={newStory.caption}
                     onChange={(e) => setNewStory(prev => ({ ...prev, caption: e.target.value }))}
@@ -1953,7 +1943,7 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input 
+                    <input
                       type="checkbox"
                       id="shopNowEnabled"
                       checked={newStory.shopNowEnabled}
@@ -1968,8 +1958,8 @@ export default function Admin({ onToast }) {
                 {newStory.shopNowEnabled && (
                   <div className="admin-form-group" style={{ position: 'relative' }}>
                     <label className="admin-label">Link to Catalog Product (Search product name/ID)</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="admin-input"
                       value={newStory.productId || ''}
                       onChange={(e) => {
@@ -1983,8 +1973,8 @@ export default function Admin({ onToast }) {
                     {suggestionField === 'productId' && suggestions.length > 0 && (
                       <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
                         {suggestions.map((s, idx) => (
-                          <div 
-                            key={idx} 
+                          <div
+                            key={idx}
                             className="suggestion-item"
                             style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
                             onClick={() => {
@@ -2046,7 +2036,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: LOG BOOK (BLOGS) GOOGLE DOCS BLOCK EDITOR ── */}
+        {/* â”€â”€ TAB: LOG BOOK (BLOGS) GOOGLE DOCS BLOCK EDITOR â”€â”€ */}
         {activeTab === 'blogs' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px' }}>
             <div className="admin-card">
@@ -2056,8 +2046,8 @@ export default function Admin({ onToast }) {
               <form onSubmit={handleSaveBlog}>
                 <div className="admin-form-group">
                   <label className="admin-label">Blog Title</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="admin-input"
                     value={blogTitleInput}
                     onChange={(e) => setBlogTitleInput(e.target.value)}
@@ -2068,15 +2058,15 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Direct Cover Image Upload</label>
-                  <input 
-                    type="file" 
-                    accept="image/*"
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={(e) => handleDirectUpload(e, (url) => setBlogCoverInput(url))}
                     style={{ marginBottom: '10px' }}
                   />
                   <label className="admin-label">Or Cover Image URL</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     className="admin-input"
                     value={blogCoverInput}
                     onChange={(e) => setBlogCoverInput(e.target.value)}
@@ -2102,8 +2092,8 @@ export default function Admin({ onToast }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
                   {newBlog.content.map((block, idx) => (
                     <div key={idx} style={{ padding: '15px', background: 'white', border: '1px solid var(--admin-border)', borderRadius: '4px', position: 'relative' }}>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => handleRemoveBlogBlock(idx)}
                         style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', color: 'red', fontWeight: '800' }}
                       >
@@ -2115,14 +2105,14 @@ export default function Admin({ onToast }) {
 
                       {block.type === 'image' ? (
                         <div>
-                          <input 
-                            type="file" 
-                            accept="image/*"
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                             onChange={(e) => handleDirectUpload(e, (url) => handleUpdateBlogBlock(idx, { url }))}
                             style={{ marginBottom: '10px' }}
                           />
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             className="admin-input"
                             value={block.url}
                             onChange={(e) => handleUpdateBlogBlock(idx, { url: e.target.value })}
@@ -2131,7 +2121,7 @@ export default function Admin({ onToast }) {
                         </div>
                       ) : (
                         <div>
-                          <textarea 
+                          <textarea
                             className="admin-textarea"
                             value={block.text}
                             onChange={(e) => handleUpdateBlogBlock(idx, { text: e.target.value })}
@@ -2141,7 +2131,7 @@ export default function Admin({ onToast }) {
                           />
                           <div style={{ display: 'flex', gap: '15px' }}>
                             <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <input 
+                              <input
                                 type="checkbox"
                                 checked={block.highlight}
                                 onChange={(e) => handleUpdateBlogBlock(idx, { highlight: e.target.checked })}
@@ -2149,7 +2139,7 @@ export default function Admin({ onToast }) {
                               Highlight text
                             </label>
                             <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <input 
+                              <input
                                 type="checkbox"
                                 checked={block.uppercase}
                                 onChange={(e) => handleUpdateBlogBlock(idx, { uppercase: e.target.checked })}
@@ -2205,29 +2195,29 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: GALLERY ── */}
+        {/* â”€â”€ TAB: GALLERY â”€â”€ */}
         {activeTab === 'gallery' && (
           <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Manage Homepage Gallery</h2>
             </div>
-            
+
             {/* Gallery Upload Form */}
             <form onSubmit={handleSaveGalleryItem} style={{ padding: '20px', borderBottom: '1px solid var(--admin-border)' }}>
               <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-                
+
                 <div className="admin-form-group">
                   <label className="admin-label">Image Link / Upload</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewGalleryItem(prev => ({ ...prev, imageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Or enter image URL" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Or enter image URL"
                     value={newGalleryItem.imageUrl || ''}
                     onChange={(e) => setNewGalleryItem(prev => ({ ...prev, imageUrl: e.target.value }))}
                     required
@@ -2236,10 +2226,10 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Custom Title</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. Winter Drop 2025" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="e.g. Winter Drop 2025"
                     value={newGalleryItem.title || ''}
                     onChange={(e) => setNewGalleryItem(prev => ({ ...prev, title: e.target.value }))}
                   />
@@ -2247,10 +2237,10 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group" style={{ position: 'relative' }}>
                   <label className="admin-label">Redirect Link (Auto-suggest)</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Type to search link..." 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Type to search link..."
                     value={newGalleryItem.link || ''}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -2263,8 +2253,8 @@ export default function Admin({ onToast }) {
                   {suggestionField === 'link' && suggestions.length > 0 && (
                     <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
                       {suggestions.map((s, idx) => (
-                        <div 
-                          key={idx} 
+                        <div
+                          key={idx}
                           className="suggestion-item"
                           style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
                           onClick={() => {
@@ -2314,137 +2304,12 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* ── TAB: COMING SOON SETTINGS ── */}
-        {activeTab === 'comingsoon' && (
-          <div className="admin-card">
-            <div className="admin-card-header">
-              <h2 className="admin-card-title">Manage Coming Soon Drop Card</h2>
-            </div>
-            
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                const res = await fetch('/api/coming-soon', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(comingSoon)
-                });
-                if (res.ok) {
-                  onToast('Coming Soon settings updated successfully!');
-                  fetchData();
-                } else {
-                  onToast(await getApiError(res, 'Failed to update Coming Soon settings.'));
-                }
-              } catch (err) {
-                console.error(err);
-                onToast('Error saving Coming Soon settings.');
-              }
-            }} style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '600px' }}>
-                
-                <div className="admin-form-group">
-                  <label className="admin-label">Visibility Status</label>
-                  <select 
-                    className="admin-select"
-                    value={comingSoon.visible !== false && comingSoon.visible !== 'false' ? 'show' : 'hide'}
-                    onChange={(e) => setComingSoon(prev => ({ ...prev, visible: e.target.value === 'show' }))}
-                  >
-                    <option value="show">Show Coming Soon Card</option>
-                    <option value="hide">Hide Coming Soon Card</option>
-                  </select>
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Card Image Link / Upload</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => handleDirectUpload(e, (url) => setComingSoon(prev => ({ ...prev, imageUrl: url })))}
-                    style={{ marginBottom: '5px', display: 'block' }}
-                  />
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Or enter image URL" 
-                    value={comingSoon.imageUrl || ''}
-                    onChange={(e) => setComingSoon(prev => ({ ...prev, imageUrl: e.target.value }))}
-                  />
-                  {comingSoon.imageUrl && (
-                    <div style={{ marginTop: '10px' }}>
-                      <label className="admin-label">Image Preview:</label>
-                      <img src={mediaUrl(comingSoon.imageUrl)} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Title</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. New Drop Coming" 
-                    value={comingSoon.title || ''}
-                    onChange={(e) => setComingSoon(prev => ({ ...prev, title: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Description</label>
-                  <textarea 
-                    className="admin-textarea" 
-                    placeholder="e.g. Follow on Instagram to be the first to know" 
-                    value={comingSoon.desc || ''}
-                    onChange={(e) => setComingSoon(prev => ({ ...prev, desc: e.target.value }))}
-                    rows="3"
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group" style={{ position: 'relative' }}>
-                  <label className="admin-label">Notification/Social Link (Auto-suggest)</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. https://instagram.com" 
-                    value={comingSoon.link || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setComingSoon(prev => ({ ...prev, link: val }));
-                      showSuggestions(val, 'link');
-                    }}
-                  />
-                  {suggestionField === 'link' && suggestions.length > 0 && (
-                    <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
-                      {suggestions.map((s, idx) => (
-                        <div 
-                          key={idx} 
-                          className="suggestion-item"
-                          style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
-                          onClick={() => {
-                            setComingSoon(prev => ({ ...prev, link: s.value }));
-                            clearSuggestions();
-                          }}
-                        >
-                          <span className="suggestion-type" style={{ fontWeight: 'bold', marginRight: '5px' }}>[{s.type}]</span> {s.label}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <button type="submit" className="btn btn-accent" style={{ alignSelf: 'flex-start', padding: '10px 24px' }}>Save Settings</button>
-              </div>
-            </form>
-          </div>
-        )}
-        {/* ── TAB: NEW IN PAGE SETTINGS ── */}
         {activeTab === 'newinconfig' && (
           <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Manage New In Page Editorial Hero</h2>
             </div>
-            
+
             <form onSubmit={async (e) => {
               e.preventDefault();
               try {
@@ -2465,13 +2330,13 @@ export default function Admin({ onToast }) {
               }
             }} style={{ padding: '20px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '600px' }}>
-                
+
                 <div className="admin-form-group">
                   <label className="admin-label">Hero Tagline</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. Summer Drop 2026" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="e.g. Summer Drop 2026"
                     value={newInConfig.tagline || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, tagline: e.target.value }))}
                     required
@@ -2480,9 +2345,9 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Hero Title (supports newline \n)</label>
-                  <textarea 
-                    className="admin-textarea" 
-                    placeholder="e.g. The Racing &\nRebirth Drop." 
+                  <textarea
+                    className="admin-textarea"
+                    placeholder="e.g. The Racing &\nRebirth Drop."
                     value={newInConfig.title || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, title: e.target.value }))}
                     rows="3"
@@ -2492,9 +2357,9 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Hero Description</label>
-                  <textarea 
-                    className="admin-textarea" 
-                    placeholder="Describe this new drop..." 
+                  <textarea
+                    className="admin-textarea"
+                    placeholder="Describe this new drop..."
                     value={newInConfig.desc || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, desc: e.target.value }))}
                     rows="4"
@@ -2504,10 +2369,10 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Button Text</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. Explore Drops" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="e.g. Explore Drops"
                     value={newInConfig.buttonText || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, buttonText: e.target.value }))}
                     required
@@ -2516,10 +2381,10 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Button Link Target</label>
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="e.g. #new-drops-catalog" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="e.g. #new-drops-catalog"
                     value={newInConfig.buttonLink || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, buttonLink: e.target.value }))}
                     required
@@ -2528,16 +2393,16 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Hero Image Link / Upload</label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewInConfig(prev => ({ ...prev, imageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
-                  <input 
-                    type="text" 
-                    className="admin-input" 
-                    placeholder="Or enter image URL" 
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Or enter image URL"
                     value={newInConfig.imageUrl || ''}
                     onChange={(e) => setNewInConfig(prev => ({ ...prev, imageUrl: e.target.value }))}
                   />
@@ -2556,7 +2421,7 @@ export default function Admin({ onToast }) {
         )}
       </main>
 
-      {/* ── ORDER DETAIL MODAL ── */}
+      {/* â”€â”€ ORDER DETAIL MODAL â”€â”€ */}
       {selectedOrder && (
         <div className="admin-modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -2622,7 +2487,7 @@ export default function Admin({ onToast }) {
         </div>
       )}
 
-      {/* ── PRODUCT CREATION / EDITING MODAL ── */}
+      {/* â”€â”€ PRODUCT CREATION / EDITING MODAL â”€â”€ */}
       {showProductModal && (
         <div className="admin-modal-overlay" onClick={() => setShowProductModal(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -2633,8 +2498,8 @@ export default function Admin({ onToast }) {
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '20px' }}>
               <div className="admin-form-group">
                 <label className="admin-label">Product Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="admin-input"
                   value={editingProduct ? editingProduct.name : newProduct.name}
                   onChange={(e) => {
@@ -2649,8 +2514,8 @@ export default function Admin({ onToast }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                 <div className="admin-form-group">
                   <label className="admin-label">Selling Price (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     className="admin-input"
                     value={editingProduct ? editingProduct.price : newProduct.price}
                     onChange={(e) => {
@@ -2664,8 +2529,8 @@ export default function Admin({ onToast }) {
 
                 <div className="admin-form-group">
                   <label className="admin-label">Original Price (₹)</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     className="admin-input"
                     value={editingProduct ? (editingProduct.originalPrice || editingProduct.price) : newProduct.originalPrice}
                     onChange={(e) => {
@@ -2679,7 +2544,7 @@ export default function Admin({ onToast }) {
 
               <div className="admin-form-group">
                 <label className="admin-label">Description</label>
-                <textarea 
+                <textarea
                   className="admin-textarea"
                   value={editingProduct ? editingProduct.desc : newProduct.desc}
                   onChange={(e) => {
@@ -2693,7 +2558,7 @@ export default function Admin({ onToast }) {
 
               <div className="admin-form-group">
                 <label className="admin-label">Product Details (Autofilled)</label>
-                <textarea 
+                <textarea
                   className="admin-textarea"
                   value={editingProduct ? editingProduct.details : newProduct.details}
                   onChange={(e) => {
@@ -2708,7 +2573,7 @@ export default function Admin({ onToast }) {
 
               <div className="admin-form-group">
                 <label className="admin-label">Wash Care Details (Autofilled)</label>
-                <textarea 
+                <textarea
                   className="admin-textarea"
                   value={editingProduct ? editingProduct.washcare : newProduct.washcare}
                   onChange={(e) => {
@@ -2723,7 +2588,7 @@ export default function Admin({ onToast }) {
 
               <div className="admin-form-group">
                 <label className="admin-label">Shipping Details (Autofilled)</label>
-                <textarea 
+                <textarea
                   className="admin-textarea"
                   value={editingProduct ? editingProduct.shipping : newProduct.shipping}
                   onChange={(e) => {
@@ -2738,7 +2603,7 @@ export default function Admin({ onToast }) {
 
               <div className="admin-form-group">
                 <label className="admin-label">Main Category</label>
-                <select 
+                <select
                   className="admin-select"
                   value={editingProduct ? editingProduct.category : newProduct.category}
                   onChange={(e) => {
@@ -2760,8 +2625,8 @@ export default function Admin({ onToast }) {
                   {(editingProduct ? editingProduct.subCategories || [] : newProduct.subCategories || []).map(sub => (
                     <span key={sub} style={{ background: '#FAF9F6', border: '1px solid var(--admin-border)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       {sub}
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           const list = editingProduct ? editingProduct.subCategories : newProduct.subCategories;
                           const updated = list.filter(s => s !== sub);
@@ -2777,9 +2642,9 @@ export default function Admin({ onToast }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
-                    <input 
-                      type="text" 
-                      className="admin-input" 
+                    <input
+                      type="text"
+                      className="admin-input"
                       value={newSubCategoryInput}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -2793,8 +2658,8 @@ export default function Admin({ onToast }) {
                     {suggestionField === 'subcategory' && suggestions.length > 0 && (
                       <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
                         {suggestions.map((s, idx) => (
-                          <div 
-                            key={idx} 
+                          <div
+                            key={idx}
                             className="suggestion-item"
                             style={{ padding: '8px', cursor: 'pointer' }}
                             onClick={() => {
@@ -2808,8 +2673,8 @@ export default function Admin({ onToast }) {
                       </div>
                     )}
                   </div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="admin-btn"
                     onClick={() => {
                       if (!newSubCategoryInput.trim()) return;
@@ -2835,8 +2700,8 @@ export default function Admin({ onToast }) {
                   {(editingProduct ? editingProduct.colors || [] : newProduct.colors || []).map(color => (
                     <span key={color} style={{ background: '#FAF9F6', border: '1px solid var(--admin-border)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                       {color}
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           const list = editingProduct ? editingProduct.colors : newProduct.colors;
                           const updated = list.filter(c => c !== color);
@@ -2852,9 +2717,9 @@ export default function Admin({ onToast }) {
                 </div>
                 <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
                   <div style={{ flex: 1, position: 'relative' }}>
-                    <input 
-                      type="text" 
-                      className="admin-input" 
+                    <input
+                      type="text"
+                      className="admin-input"
                       value={newColorInput}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -2867,8 +2732,8 @@ export default function Admin({ onToast }) {
                     {suggestionField === 'color' && suggestions.length > 0 && (
                       <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
                         {suggestions.map((s, idx) => (
-                          <div 
-                            key={idx} 
+                          <div
+                            key={idx}
                             className="suggestion-item"
                             style={{ padding: '8px', cursor: 'pointer' }}
                             onClick={() => {
@@ -2882,8 +2747,8 @@ export default function Admin({ onToast }) {
                       </div>
                     )}
                   </div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     className="admin-btn"
                     onClick={() => {
                       if (!newColorInput.trim()) return;
@@ -2910,8 +2775,8 @@ export default function Admin({ onToast }) {
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
                     <div key={idx} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '4px', overflow: 'hidden', height: '100px' }}>
                       <img src={mediaUrl(url)} alt={`Product image ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           const list = editingProduct ? editingProduct.imageUrls : newProduct.imageUrls;
                           const updated = list.filter((_, i) => i !== idx);
@@ -2924,14 +2789,14 @@ export default function Admin({ onToast }) {
                       </button>
                     </div>
                   ))}
-                  
+
                   {((editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length < 7) && (
                     <div style={{ border: '2px dashed var(--admin-border)', borderRadius: '4px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
                       <Plus size={20} style={{ color: 'var(--admin-text-muted)' }} />
                       <span style={{ fontSize: '10px', color: 'var(--admin-text-muted)', marginTop: '5px' }}>Upload Image</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                         onChange={(e) => {
                           handleDirectUpload(e, (url) => {
                             const list = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
@@ -2956,7 +2821,7 @@ export default function Admin({ onToast }) {
                     return (
                       <div key={sz}>
                         <label style={{ fontSize: '12px', fontWeight: '800' }}>Size {sz}</label>
-                        <input 
+                        <input
                           type="number"
                           className="admin-input"
                           value={sizes[sz] !== undefined ? sizes[sz] : 0}

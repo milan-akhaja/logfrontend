@@ -93,8 +93,8 @@ export default function NewIn({ onAddToCart, onToast }) {
               : 0;
 
             return (
-              <div 
-                className="product-card reveal" 
+              <div
+                className="product-card reveal"
                 key={product.id}
                 style={{ cursor: 'pointer' }}
                 onClick={() => navigate(`/product/${product.id}`)}
@@ -130,8 +130,8 @@ export default function NewIn({ onAddToCart, onToast }) {
                       )}
                     </div>
                     {product.stock > 0 ? (
-                      <button 
-                        className="add-to-bag-btn" 
+                      <button
+                        className="add-to-bag-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddToCart(product);
@@ -141,10 +141,10 @@ export default function NewIn({ onAddToCart, onToast }) {
                         <span className="add-to-bag-icon"><ShoppingCart size={16} /></span>
                       </button>
                     ) : (
-                      <button 
-                        className="add-to-bag-btn sold-out-btn" 
-                        style={{ opacity: 0.5, cursor: 'not-allowed' }} 
-                        onClick={(e) => e.stopPropagation()} 
+                      <button
+                        className="add-to-bag-btn sold-out-btn"
+                        style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                        onClick={(e) => e.stopPropagation()}
                         disabled
                       >
                         <span className="add-to-bag-text">Sold Out</span>
@@ -167,11 +167,11 @@ export default function NewIn({ onAddToCart, onToast }) {
             <p style={{ fontSize: '13px', color: 'var(--grey-muted)', lineHeight: '1.7', marginBottom: '35px' }}>
               Have questions about your order, sizing, or returns? Get in touch with the LOG support team directly. We are here to help.
             </p>
-            
+
             <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', marginBottom: '30px' }}>
-              <a 
-                href="tel:+917878623123" 
-                onClick={handleContactClick} 
+              <a
+                href="tel:+917878623123"
+                onClick={handleContactClick}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ink)', fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}
               >
                 <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -179,11 +179,11 @@ export default function NewIn({ onAddToCart, onToast }) {
                 </div>
                 <span>Call Us</span>
               </a>
-              
-              <a 
-                href="http://wa.me/917878623123" 
-                target="_blank" 
-                rel="noreferrer" 
+
+              <a
+                href="http://wa.me/917878623123"
+                target="_blank"
+                rel="noreferrer"
                 onClick={handleContactClick}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ink)', fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}
               >
@@ -192,9 +192,9 @@ export default function NewIn({ onAddToCart, onToast }) {
                 </div>
                 <span>WhatsApp</span>
               </a>
-              
-              <a 
-                href="mailto:contact@logcloth.com" 
+
+              <a
+                href="mailto:contact@logcloth.com"
                 onClick={handleContactClick}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ink)', fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}
               >
