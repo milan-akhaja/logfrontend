@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft } from 'lucide-react';
-<<<<<<< Updated upstream
 import { mediaUrl } from '../lib/urls';
-=======
 import SEO, { SITE_URL } from '../components/SEO';
->>>>>>> Stashed changes
 
 export default function BlogDetail() {
   const { id } = useParams();

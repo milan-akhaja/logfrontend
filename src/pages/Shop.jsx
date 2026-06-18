@@ -104,11 +104,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         {/* Carousel Slides */}
         {displayImages.map((imgUrl, idx) => (
           slideIdx === idx && (
-<<<<<<< Updated upstream
-            <img key={idx} src={mediaUrl(imgUrl)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-=======
-            <img key={idx} src={imgUrl} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
->>>>>>> Stashed changes
+            <img key={idx} src={mediaUrl(imgUrl)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )
         ))}
 
@@ -226,13 +222,8 @@ function GalleryScroller() {
                 key={item.id || idx}
                 className={getSlideClass(idx)}
               >
-<<<<<<< Updated upstream
                 <a href={appPath(item.link || '#')} className="gallery-item-link-card">
-                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} />
-=======
-                <a href={item.link || '#'} className="gallery-item-link-card">
-                  <img src={item.imageUrl} alt={item.title || 'Gallery Image'} loading="lazy" decoding="async" />
->>>>>>> Stashed changes
+                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} loading="lazy" decoding="async" />
                   {item.title && (
                     <div className="gallery-slide-text-overlay">
                       <span className="gallery-slide-title-text">{item.title}</span>
@@ -431,8 +422,14 @@ export default function Shop({ onAddToCart }) {
     <>
       {/* PC HERO SECTION */}
       <section className="hero-section pc-only">
-<<<<<<< Updated upstream
-        <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" />
+        <img
+          src={mediaUrl(heroConfig.bgImage)}
+          alt="LOG streetwear background"
+          className="hero-bg-image"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="hero-overlay"></div>
         <div className="container" style={{ position: 'relative', zIndex: 10, width: '100%' }}>
           <div className="hero-content reveal">
@@ -469,17 +466,6 @@ export default function Shop({ onAddToCart }) {
             </div>
           </div>
         </div>
-=======
-        <img src={heroConfig.bgImage} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
-        <div className="hero-overlay"></div>
-        <a
-          href={heroShopLink}
-          className="hero-shop-now"
-          onClick={() => trackHeroShopNow('Desktop')}
-        >
-          Shop now
-        </a>
->>>>>>> Stashed changes
       </section>
 
       {/* MOBILE HERO SECTION (Single Autoplay Video) */}
