@@ -30,6 +30,7 @@ export default function CartDrawer({
 
   const [lastDonation, setLastDonation] = useState(0);
   const [emailHtml, setEmailHtml] = useState('');
+  const [orderEmailSent, setOrderEmailSent] = useState(false);
 
   // Scroll locking
   useEffect(() => {
@@ -106,6 +107,7 @@ export default function CartDrawer({
             items: cart.map(item => ({
               id: item.id,
               name: item.name,
+              imageUrl: item.imageUrl,
               price: item.price,
               quantity: item.quantity,
               selectedSize: item.selectedSize
@@ -120,6 +122,7 @@ export default function CartDrawer({
         if (res.ok) {
           const data = await res.json();
           setEmailHtml(data.emailHtml || '');
+          setOrderEmailSent(Boolean(data.emailSent));
           onClearCart();
           setShowCheckoutForm(false);
           setShowSuccessModal(true);
@@ -164,6 +167,7 @@ export default function CartDrawer({
             items: cart.map(item => ({
               id: item.id,
               name: item.name,
+              imageUrl: item.imageUrl,
               price: item.price,
               quantity: item.quantity,
               selectedSize: item.selectedSize
@@ -178,6 +182,7 @@ export default function CartDrawer({
         if (res.ok) {
           const data = await res.json();
           setEmailHtml(data.emailHtml || '');
+          setOrderEmailSent(Boolean(data.emailSent));
           onClearCart();
           setShowCheckoutForm(false);
           setShowSuccessModal(true);
@@ -215,6 +220,7 @@ export default function CartDrawer({
                   items: cart.map(item => ({
                     id: item.id,
                     name: item.name,
+                    imageUrl: item.imageUrl,
                     price: item.price,
                     quantity: item.quantity,
                     selectedSize: item.selectedSize
@@ -229,6 +235,7 @@ export default function CartDrawer({
               if (res.ok) {
                 const data = await res.json();
                 setEmailHtml(data.emailHtml || '');
+                setOrderEmailSent(Boolean(data.emailSent));
                 onClearCart();
                 setShowCheckoutForm(false);
                 setShowSuccessModal(true);
@@ -407,6 +414,8 @@ export default function CartDrawer({
                     <img 
                       src={mediaUrl(item.imageUrl)} 
                       alt={item.name} 
+                      loading="lazy"
+                      decoding="async"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />
                   ) : (
@@ -522,7 +531,9 @@ export default function CartDrawer({
                 Order placed successfully.
               </h2>
               <p style={{ fontSize: '14px', fontWeight: '600', color: '#388e3c', margin: 0 }}>
-                Order details are received on your mail.
+                {orderEmailSent
+                  ? 'Order details are received on your mail.'
+                  : 'Your order is saved. Our team will contact you if the confirmation email is delayed.'}
               </p>
             </div>
 
@@ -532,6 +543,7 @@ export default function CartDrawer({
               onClick={() => {
                 setShowSuccessModal(false);
                 setEmailHtml('');
+                setOrderEmailSent(false);
                 onClose();
               }}
             >

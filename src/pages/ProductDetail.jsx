@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
+import SEO, { SITE_URL } from '../components/SEO';
 import { ProductGridCard } from './Shop';
 import { mediaUrl } from '../lib/urls';
 
@@ -90,6 +91,26 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const displayImages = product.imageUrls && product.imageUrls.length > 0 
     ? product.imageUrls 
     : (product.imageUrl ? [product.imageUrl] : []);
+  const primaryImage = displayImages[0] || product.imageUrl || `${SITE_URL}/assets/hero_streetwear.png`;
+  const productDescription = product.desc || product.description || `${product.name} from LOG premium Indian streetwear. Oversized fit, heavyweight cotton feel, and Rs. 23 donated from every product.`;
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: displayImages.length ? displayImages : [primaryImage],
+    description: productDescription,
+    brand: {
+      '@type': 'Brand',
+      name: 'LOG'
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `${SITE_URL}/product/${product.id}`,
+      priceCurrency: 'INR',
+      price: product.price,
+      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+    }
+  };
 
   const handleAddToBag = () => {
     if (!selectedSize) {
@@ -118,6 +139,14 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
 
   return (
     <div className="product-detail-page-container">
+      <SEO
+        title={`${product.name} - LOG Streetwear`}
+        description={productDescription}
+        image={primaryImage}
+        type="product"
+        canonicalPath={`/product/${product.id}`}
+        jsonLd={productJsonLd}
+      />
       <div className="container">
         <div className="product-detail-layout">
           
@@ -134,6 +163,8 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                     src={mediaUrl(imgUrl)} 
                     alt={`${product.name} detail view ${idx + 1}`} 
                     className="main-detail-img" 
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
                     style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }}
                   />
                 </div>
@@ -159,6 +190,8 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   src={mediaUrl(displayImages[slideIdx])}
                   alt={`${product.name} detail view ${slideIdx + 1}`}
                   className="main-detail-img"
+                  loading="eager"
+                  decoding="async"
                 />
                 <div className="mobile-gallery-count">
                   {slideIdx + 1} / {displayImages.length}

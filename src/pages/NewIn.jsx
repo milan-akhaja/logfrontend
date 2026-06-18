@@ -73,7 +73,11 @@ export default function NewIn({ onAddToCart, onToast }) {
           </div>
         </div>
         <div className="lookbook-banner-right reveal">
+<<<<<<< Updated upstream
           <img src={mediaUrl(newInConfig.imageUrl)} alt="LOG streetwear editorial model" />
+=======
+          <img src={newInConfig.imageUrl} alt="LOG streetwear editorial model" loading="eager" decoding="async" />
+>>>>>>> Stashed changes
         </div>
       </section>
 
@@ -102,7 +106,11 @@ export default function NewIn({ onAddToCart, onToast }) {
                 <div className="product-img-wrapper">
                   <span className="product-tag tag-new" style={{ background: 'var(--ink)' }}>New In</span>
                   {product.imageUrl ? (
+<<<<<<< Updated upstream
                     <img src={mediaUrl(product.imageUrl)} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+=======
+                    <img src={product.imageUrl} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+>>>>>>> Stashed changes
                   ) : (
                     <>
                       <div className="product-placeholder-text" dangerouslySetInnerHTML={{ __html: product.graphicText }}></div>

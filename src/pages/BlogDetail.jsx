@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft } from 'lucide-react';
+<<<<<<< Updated upstream
 import { mediaUrl } from '../lib/urls';
+=======
+import SEO, { SITE_URL } from '../components/SEO';
+>>>>>>> Stashed changes
 
 export default function BlogDetail() {
   const { id } = useParams();
@@ -42,6 +46,35 @@ export default function BlogDetail() {
     );
   }
 
+  const blogDescription = (blog.content || [])
+    .map(block => block.text)
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 155) || 'Read the latest LOG streetwear story, lookbook entry, and impact update.';
+  const blogImage = blog.coverImage || blog.image || `${SITE_URL}/assets/lookbook_polaroid_1.png`;
+  const blogJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: blog.title,
+    description: blogDescription,
+    image: blogImage,
+    datePublished: blog.date,
+    dateModified: blog.date,
+    author: {
+      '@type': 'Organization',
+      name: blog.author || 'LOG'
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'LOG',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/assets/hero_streetwear.png`
+      }
+    },
+    mainEntityOfPage: `${SITE_URL}/blog/${blog.id}`
+  };
+
   const renderBlock = (block, index) => {
     const textStyle = {
       textTransform: block.uppercase ? 'uppercase' : 'none',
@@ -76,6 +109,8 @@ export default function BlogDetail() {
             <img
               src={mediaUrl(block.url)}
               alt="Blog attachment"
+              loading="lazy"
+              decoding="async"
               style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: 'var(--shadow-sm)' }}
             />
           </div>
@@ -87,12 +122,22 @@ export default function BlogDetail() {
 
   return (
     <>
+      <SEO
+        title={`${blog.title} - LOG Book`}
+        description={blogDescription}
+        image={blogImage}
+        type="article"
+        canonicalPath={`/blog/${blog.id}`}
+        jsonLd={blogJsonLd}
+      />
       <article className="blog-detail-container" style={{ marginTop: '100px', paddingBottom: '80px' }}>
         {/* Cover Section */}
         <div style={{ position: 'relative', height: '400px', width: '100%', overflow: 'hidden', background: '#111113' }}>
           <img
             src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')}
             alt={blog.title}
+            loading="eager"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4 }}
           />
           <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px 0', background: 'linear-gradient(to top, rgba(17,17,19,0.9), transparent)' }}>

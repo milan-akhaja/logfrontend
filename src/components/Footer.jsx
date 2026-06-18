@@ -58,15 +58,14 @@ export default function Footer({ onToast }) {
       <div className="footer-luxury-widget-wrapper">
         <div className="container">
           <div className="footer-luxury-widget">
-            <div className="luxury-widget-left pc-only">
+            <div className="luxury-widget-left luxury-widget-heading">
               <h3>Feel the Luxury of Premium Streetwear with LOG - Best Unisex Clothing Brand in India</h3>
-              <p className="read-more">Read more...</p>
             </div>
             <div className="luxury-widget-right">
               <div className="widget-tabs">
-                <span className={activeTab === 'popular' ? 'active' : ''} onClick={() => setActiveTab('popular')}>Popular searches</span>
-                <span className={activeTab === 'category' ? 'active' : ''} onClick={() => setActiveTab('category')}>Shop by category</span>
-                <span className={activeTab === 'color' ? 'active' : ''} onClick={() => setActiveTab('color')}>Shop by color</span>
+                <button type="button" className={activeTab === 'popular' ? 'active' : ''} onClick={() => setActiveTab('popular')}>Popular searches</button>
+                <button type="button" className={activeTab === 'category' ? 'active' : ''} onClick={() => setActiveTab('category')}>Shop by category</button>
+                <button type="button" className={activeTab === 'color' ? 'active' : ''} onClick={() => setActiveTab('color')}>Shop by color</button>
               </div>
               <div className="widget-links">
                 {activeTab === 'popular' && (
@@ -113,7 +112,8 @@ export default function Footer({ onToast }) {
           <div className="footer-brand">
             <h2 style={{ fontSize: '28px', fontWeight: '700', letterSpacing: 0, textTransform: 'uppercase', marginBottom: '15px', fontFamily: "'Montserrat', sans-serif" }}>LOG</h2>
             <p style={{ fontSize: '13px', color: 'var(--grey-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
-              Streetwear built with a conscience. 240 GSM French Terry cotton. DTF printed.
+              Premium Streetwear,<br />
+              Real Purpose. Real Impact.
             </p>
             
             {/* Outline Contact Icons Panel instead of Newsletter */}
@@ -172,8 +172,6 @@ export default function Footer({ onToast }) {
               We are LOG <span className="accordion-caret pc-only">▾</span>
             </h4>
             <ul className="footer-links always-visible">
-              <li><Link to="/our-mission">Our story</Link></li>
-              <li><Link to="/new-in">New in</Link></li>
               <li><Link to="/our-mission">Our Mission</Link></li>
               <li><Link to="/log-book">Log book</Link></li>
             </ul>
@@ -200,12 +198,6 @@ export default function Footer({ onToast }) {
           <span>
             © 2026 <strong style={{ fontWeight: '900', color: '#FFFFFF' }}>logcloth</strong>. All rights reserved.
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.02em', flexWrap: 'wrap' }}>
-            <span>Design and Develop by</span>
-            <a href="https://www.spystudio.in" target="_blank" rel="noopener noreferrer" style={{ fontWeight: '800', color: 'var(--accent)', borderBottom: '1.5px solid var(--accent)', transition: 'color 0.2s', paddingBottom: '1px' }}>Spy Studio</a>
-            <span>by</span>
-            <strong style={{ fontWeight: '800', color: '#FFFFFF' }}>advyom</strong>
-          </div>
         </div>
       </div>
     </footer>

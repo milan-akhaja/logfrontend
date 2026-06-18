@@ -8,6 +8,7 @@ export default function MakeReturn() {
   const [notes, setNotes] = useState('');
   
   const [submitted, setSubmitted] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -26,6 +27,8 @@ export default function MakeReturn() {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        setEmailSent(Boolean(data.emailSent));
         setSubmitted(true);
       } else {
         const err = await res.json();
@@ -49,7 +52,9 @@ export default function MakeReturn() {
           <div style={{ fontSize: '48px', marginBottom: '15px' }}>✓</div>
           <h2 style={{ fontSize: '22px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px' }}>Request Submitted Successfully!</h2>
           <p style={{ fontSize: '15px', lineHeight: '1.6', color: 'rgba(0, 0, 0, 0.7)', maxWidth: '500px', margin: '0 auto 20px auto' }}>
-            our team connect with you in short will.
+            {emailSent
+              ? 'A confirmation email has been sent to your registered email address.'
+              : 'Your request is saved. Our team will connect with you shortly.'}
           </p>
           <div style={{ background: 'white', border: '1px dashed green', padding: '15px', borderRadius: '6px', maxWidth: '450px', margin: '0 auto', textAlign: 'left', fontSize: '13px', lineHeight: '1.6' }}>
             <strong>Important Next Steps:</strong>

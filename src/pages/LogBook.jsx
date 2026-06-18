@@ -84,6 +84,8 @@ export default function LogBook() {
                       src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')} 
                       alt={blog.title} 
                       className="polaroid-image" 
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div className="polaroid-caption" style={{ fontWeight: '800', textTransform: 'uppercase' }}>
@@ -123,7 +125,7 @@ export default function LogBook() {
           </div>
         </div>
         <div className="lookbook-banner-right reveal">
-          <img src="assets/lookbook_polaroid_1.png" alt="LOG streetwear models lookbook" />
+          <img src="assets/lookbook_polaroid_1.png" alt="LOG streetwear models lookbook" loading="lazy" decoding="async" />
         </div>
       </section>
 
