@@ -1,5 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { mediaUrl } from '../lib/urls';
+import { apiJson } from '../lib/apiClient';
+
+const CHECKOUT_DRAFT_KEY = 'log_checkout_customer_draft';
+const CHECKOUT_ORDER_KEY = 'log_checkout_client_order_id';
+
+function getSavedCustomerInfo(defaultInfo) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CHECKOUT_DRAFT_KEY) || 'null');
+    return saved && typeof saved === 'object' ? { ...defaultInfo, ...saved } : defaultInfo;
+  } catch {
+    return defaultInfo;
+  }
+}
+
+function getClientOrderId() {
+  let value = localStorage.getItem(CHECKOUT_ORDER_KEY);
+  if (!value) {
+    value = window.crypto?.randomUUID ? window.crypto.randomUUID() : `checkout-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(CHECKOUT_ORDER_KEY, value);
+  }
+  return value;
+}
 
 export default function CartDrawer({ 
   isOpen, 
@@ -12,7 +34,7 @@ export default function CartDrawer({
 }) {
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({
+  const defaultCustomerInfo = {
     firstName: '',
     lastName: '',
     email: '',
@@ -25,8 +47,10 @@ export default function CartDrawer({
     pinCode: '',
     dob: '',
     saveInfo: false
-  });
+  };
+  const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
   const [paymentMethod, setPaymentMethod] = useState('online'); // online or cod
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const [lastDonation, setLastDonation] = useState(0);
   const [emailHtml, setEmailHtml] = useState('');
@@ -43,6 +67,10 @@ export default function CartDrawer({
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(customerInfo));
+  }, [customerInfo]);
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
@@ -82,6 +110,16 @@ export default function CartDrawer({
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true), { once: true });
+        existing.addEventListener('error', () => resolve(false), { once: true });
+        return;
+      }
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
       script.onload = () => resolve(true);
@@ -92,103 +130,89 @@ export default function CartDrawer({
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isSubmittingOrder) return;
 
     const currentDonation = donation;
     setLastDonation(currentDonation);
     const orderCustomerInfo = getOrderCustomerInfo();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orderCustomerInfo.email)) {
+      onToast('Enter a valid email address.');
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(String(orderCustomerInfo.phone || '').replace(/\D/g, ''))) {
+      onToast('Enter a valid 10 digit Indian phone number.');
+      return;
+    }
+    if (!/^\d{6}$/.test(String(orderCustomerInfo.pinCode || '').trim())) {
+      onToast('Enter a valid 6 digit PIN code.');
+      return;
+    }
+
+    const clientOrderId = getClientOrderId();
+    const orderItems = cart.map(item => ({
+      id: item.id,
+      name: item.name,
+      imageUrl: item.imageUrl,
+      price: item.price,
+      quantity: item.quantity,
+      selectedSize: item.selectedSize
+    }));
+    const saveOrder = (paymentId) => apiJson('/api/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: orderItems,
+        customerInfo: orderCustomerInfo,
+        paymentId,
+        clientOrderId,
+        couponCode: null,
+        discountAmount
+      })
+    });
 
     try {
+      setIsSubmittingOrder(true);
       if (paymentMethod === 'cod') {
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: cart.map(item => ({
-              id: item.id,
-              name: item.name,
-              imageUrl: item.imageUrl,
-              price: item.price,
-              quantity: item.quantity,
-              selectedSize: item.selectedSize
-            })),
-            customerInfo: orderCustomerInfo,
-            paymentId: 'COD',
-            couponCode: null,
-            discountAmount: discountAmount
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setEmailHtml(data.emailHtml || '');
-          setOrderEmailSent(Boolean(data.emailSent));
-          onClearCart();
-          setShowCheckoutForm(false);
-          setShowSuccessModal(true);
-        } else {
-          onToast('Failed to place Cash on Delivery order.');
-        }
+        const data = await saveOrder('COD');
+        setEmailHtml(data.emailHtml || '');
+        setOrderEmailSent(Boolean(data.emailSent));
+        localStorage.removeItem(CHECKOUT_ORDER_KEY);
+        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        onClearCart();
+        setShowCheckoutForm(false);
+        setShowSuccessModal(true);
+        setIsSubmittingOrder(false);
         return;
       }
 
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded) {
         onToast('Razorpay SDK failed to load. Check your internet.');
+        setIsSubmittingOrder(false);
         return;
       }
 
-      const keyRes = await fetch('/api/payments/key');
-      const { key } = await keyRes.json();
+      const { key } = await apiJson('/api/payments/key');
 
-      const orderRes = await fetch('/api/payments/order', {
+      const razorpayOrder = await apiJson('/api/payments/order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: total * 100,
           currency: 'INR'
         })
       });
 
-      const razorpayOrder = await orderRes.json();
-
-      if (!orderRes.ok) {
-        onToast(razorpayOrder.error || 'Failed to initiate checkout.');
-        return;
-      }
-
       // Fallback sandbox payment
       if (razorpayOrder.is_mock) {
         onToast('API keys default: Simulating sandbox order...');
-        const res = await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: cart.map(item => ({
-              id: item.id,
-              name: item.name,
-              imageUrl: item.imageUrl,
-              price: item.price,
-              quantity: item.quantity,
-              selectedSize: item.selectedSize
-            })),
-            customerInfo: orderCustomerInfo,
-            paymentId: 'mock_payment_' + Date.now(),
-            couponCode: null,
-            discountAmount: discountAmount
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setEmailHtml(data.emailHtml || '');
-          setOrderEmailSent(Boolean(data.emailSent));
-          onClearCart();
-          setShowCheckoutForm(false);
-          setShowSuccessModal(true);
-        } else {
-          onToast('Failed to place order record.');
-        }
+        const data = await saveOrder('mock_payment_' + Date.now());
+        setEmailHtml(data.emailHtml || '');
+        setOrderEmailSent(Boolean(data.emailSent));
+        localStorage.removeItem(CHECKOUT_ORDER_KEY);
+        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        onClearCart();
+        setShowCheckoutForm(false);
+        setShowSuccessModal(true);
+        setIsSubmittingOrder(false);
         return;
       }
 
@@ -201,54 +225,36 @@ export default function CartDrawer({
         order_id: razorpayOrder.id,
         handler: async function (response) {
           try {
-            const verifyRes = await fetch('/api/payments/verify', {
+            const verification = await apiJson('/api/payments/verify', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
               })
             });
-            const verification = await verifyRes.json();
 
-            if (verifyRes.ok && verification.verified) {
-              const res = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  items: cart.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    imageUrl: item.imageUrl,
-                    price: item.price,
-                    quantity: item.quantity,
-                    selectedSize: item.selectedSize
-                  })),
-                  customerInfo: orderCustomerInfo,
-                  paymentId: response.razorpay_payment_id,
-                  couponCode: null,
-                  discountAmount: discountAmount
-                })
-              });
-
-              if (res.ok) {
-                const data = await res.json();
-                setEmailHtml(data.emailHtml || '');
-                setOrderEmailSent(Boolean(data.emailSent));
-                onClearCart();
-                setShowCheckoutForm(false);
-                setShowSuccessModal(true);
-              } else {
-                onToast('Payment verified, but failed to log order record.');
-              }
+            if (verification.verified) {
+              const data = await saveOrder(response.razorpay_payment_id);
+              setEmailHtml(data.emailHtml || '');
+              setOrderEmailSent(Boolean(data.emailSent));
+              localStorage.removeItem(CHECKOUT_ORDER_KEY);
+              localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+              onClearCart();
+              setShowCheckoutForm(false);
+              setShowSuccessModal(true);
             } else {
               onToast('Payment verification failed.');
             }
           } catch (err) {
             console.error(err);
             onToast('Error verifying transaction.');
+          } finally {
+            setIsSubmittingOrder(false);
           }
+        },
+        modal: {
+          ondismiss: () => setIsSubmittingOrder(false)
         },
         prefill: {
           name: orderCustomerInfo.name,
@@ -265,7 +271,8 @@ export default function CartDrawer({
 
     } catch (err) {
       console.error(err);
-      onToast('Network error during checkout.');
+      onToast(err.message || 'Network error during checkout.');
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -389,9 +396,10 @@ export default function CartDrawer({
                 <button 
                   type="submit" 
                   className="btn btn-accent" 
+                  disabled={isSubmittingOrder}
                   style={{ flex: 1, padding: '12px', fontSize: '11px' }}
                 >
-                  Place Order
+                  {isSubmittingOrder ? 'Placing Order...' : 'Place Order'}
                 </button>
               </div>
             </form>
@@ -420,7 +428,7 @@ export default function CartDrawer({
                     />
                   ) : (
                     <div className={`product-graphic ${item.graphicClass}`}>
-                      <div className={item.printClass} dangerouslySetInnerHTML={{ __html: item.printText }}></div>
+                      <div className={item.printClass}>{item.printText}</div>
                     </div>
                   )}
                 </div>

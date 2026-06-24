@@ -105,9 +105,9 @@ export default function NewIn({ onAddToCart, onToast }) {
                     <img src={mediaUrl(product.imageUrl)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
                     <>
-                      <div className="product-placeholder-text" dangerouslySetInnerHTML={{ __html: product.graphicText }}></div>
+                      <div className="product-placeholder-text">{product.graphicText}</div>
                       <div className={`product-graphic ${product.graphicClass}`}>
-                        <div className={product.printClass} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                        <div className={product.printClass}>{product.printText}</div>
                       </div>
                     </>
                   )}

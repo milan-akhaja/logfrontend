@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
@@ -15,36 +15,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const [relatedProducts, setRelatedProducts] = useState([]);
   
   const [slideIdx, setSlideIdx] = useState(0);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd || !product) return;
-    const images = product.imageUrls && product.imageUrls.length > 0 
-      ? product.imageUrls 
-      : (product.imageUrl ? [product.imageUrl] : []);
-    if (images.length === 0) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    if (isLeftSwipe) {
-      setSlideIdx(prev => (prev + 1) % images.length);
-    }
-    if (isRightSwipe) {
-      setSlideIdx(prev => (prev - 1 + images.length) % images.length);
-    }
-  };
+  const mobileGalleryRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/products')
@@ -76,6 +47,19 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
       })
       .catch(err => console.error(err));
   }, [id]);
+
+  useEffect(() => {
+    setSlideIdx(0);
+    if (mobileGalleryRef.current) {
+      mobileGalleryRef.current.scrollTo({ left: 0, behavior: 'auto' });
+    }
+  }, [id]);
+
+  const handleMobileGalleryScroll = () => {
+    const node = mobileGalleryRef.current;
+    if (!node || !node.clientWidth) return;
+    setSlideIdx(Math.round(node.scrollLeft / node.clientWidth));
+  };
 
   if (!product) {
     return (
@@ -172,27 +156,32 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             ) : (
               <div className="main-display-image-frame">
                 <div className={`product-graphic ${product.graphicClass}`} style={{ width: '100%', height: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                  <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>{product.printText}</div>
                 </div>
               </div>
             )}
           </div>
 
-          <div
-            className="product-detail-gallery-mobile"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
+          <div className="product-detail-gallery-mobile">
             {displayImages.length > 0 ? (
               <div className="main-display-image-frame mobile-swipe-frame">
-                <img
-                  src={mediaUrl(displayImages[slideIdx])}
-                  alt={`${product.name} detail view ${slideIdx + 1}`}
-                  className="main-detail-img"
-                  loading="eager"
-                  decoding="async"
-                />
+                <div
+                  ref={mobileGalleryRef}
+                  className="mobile-gallery-scroll"
+                  onScroll={handleMobileGalleryScroll}
+                >
+                  {displayImages.map((imgUrl, idx) => (
+                    <div className="mobile-gallery-slide" key={`${imgUrl}-${idx}`}>
+                      <img
+                        src={mediaUrl(imgUrl)}
+                        alt={`${product.name} detail view ${idx + 1}`}
+                        className="main-detail-img"
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                    </div>
+                  ))}
+                </div>
                 <div className="mobile-gallery-count">
                   {slideIdx + 1} / {displayImages.length}
                 </div>
@@ -200,7 +189,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             ) : (
               <div className="main-display-image-frame mobile-swipe-frame">
                 <div className={`product-graphic ${product.graphicClass}`} style={{ width: '100%', height: '100%', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                  <div className={product.printClass} style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>{product.printText}</div>
                 </div>
               </div>
             )}

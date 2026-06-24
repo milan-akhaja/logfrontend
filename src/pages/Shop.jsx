@@ -112,12 +112,12 @@ export function ProductGridCard({ product, onAddToCart }) {
           <>
             {slideIdx === 0 && (
               <div className={`product-graphic ${product.graphicClass}`}>
-                <div className={product.printClass} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                <div className={product.printClass}>{product.printText}</div>
               </div>
             )}
             {slideIdx === 1 && (
               <div className={`product-graphic ${product.graphicClass}`} style={{ transform: 'scale(1.18)' }}>
-                <div className={product.printClass} style={{ fontSize: '13px' }} dangerouslySetInnerHTML={{ __html: product.printText }}></div>
+                <div className={product.printClass} style={{ fontSize: '13px' }}>{product.printText}</div>
               </div>
             )}
           </>

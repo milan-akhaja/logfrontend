@@ -66,14 +66,51 @@ export function configureApiClient() {
   }
 
   const originalFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => {
+  const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  const shouldRetry = (method, response, error) => {
+    const safeMethod = method === 'GET' || method === 'HEAD';
+    if (!safeMethod) return false;
+    if (error) return true;
+    return response && [408, 425, 429, 500, 502, 503, 504].includes(response.status);
+  };
+
+  window.fetch = async (input, init = {}) => {
+    let requestInput = input;
     if (typeof input === 'string') {
-      return originalFetch(apiUrl(input), init);
+      requestInput = apiUrl(input);
+    } else if (input instanceof Request) {
+      requestInput = new Request(apiUrl(input.url), input);
     }
-    if (input instanceof Request) {
-      return originalFetch(new Request(apiUrl(input.url), input), init);
+
+    const method = String(init.method || (requestInput instanceof Request ? requestInput.method : 'GET') || 'GET').toUpperCase();
+    const retries = init.retries ?? (method === 'GET' || method === 'HEAD' ? 2 : 0);
+    const timeoutMs = init.timeoutMs ?? (method === 'GET' || method === 'HEAD' ? 12000 : 30000);
+    let lastError;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await originalFetch(requestInput, {
+          ...init,
+          signal: init.signal || controller.signal
+        });
+        window.clearTimeout(timeoutId);
+        if (attempt < retries && shouldRetry(method, response, null)) {
+          await sleep(350 * (attempt + 1));
+          continue;
+        }
+        return response;
+      } catch (error) {
+        window.clearTimeout(timeoutId);
+        lastError = error;
+        if (init.signal?.aborted || attempt >= retries || !shouldRetry(method, null, error)) {
+          throw error;
+        }
+        await sleep(350 * (attempt + 1));
+      }
     }
-    return originalFetch(input, init);
+    throw lastError;
   };
 
   window.__logApiClientConfigured = true;

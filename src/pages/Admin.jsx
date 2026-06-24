@@ -42,6 +42,69 @@ const ADMIN_TABS = [
   ['heroconfig', 'Hero']
 ];
 
+const PRODUCT_IMAGE_LIMIT = 20;
+const MAX_UPLOAD_MB = 25;
+const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png'];
+const IMAGE_UPLOAD_TYPES = ['image/jpeg', 'image/png'];
+const PRODUCT_DRAFT_KEY = 'log_admin_product_draft';
+
+const emptyProductDraft = {
+  name: '',
+  price: 0,
+  originalPrice: 0,
+  desc: '',
+  category: 'top',
+  subCategories: [],
+  colors: [],
+  imageUrl: '',
+  imageUrls: [],
+  sizes: { S: 10, M: 10, L: 10, XL: 10 },
+  details: DEFAULT_DETAILS,
+  washcare: DEFAULT_WASHCARE,
+  shipping: DEFAULT_SHIPPING
+};
+
+function loadProductDraft() {
+  if (typeof window === 'undefined') return emptyProductDraft;
+  try {
+    const saved = JSON.parse(localStorage.getItem(PRODUCT_DRAFT_KEY) || 'null');
+    return saved && typeof saved === 'object' ? { ...emptyProductDraft, ...saved } : emptyProductDraft;
+  } catch {
+    return emptyProductDraft;
+  }
+}
+
+function compressImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const maxWidth = 1800;
+      const maxHeight = 2400;
+      const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+      const width = Math.max(1, Math.round(image.width * ratio));
+      const height = Math.max(1, Math.round(image.height * ratio));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { alpha: false });
+      ctx.drawImage(image, 0, 0, width, height);
+      const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+      resolve({
+        fileName: `${baseName || 'upload'}.webp`,
+        fileType: 'image/webp',
+        fileData: canvas.toDataURL('image/webp', 0.82)
+      });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error(`Could not compress ${file.name}`));
+    };
+    image.src = objectUrl;
+  });
+}
+
 export default function Admin({ onToast }) {
   const [token, setToken] = useState(localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || '');
   const [usernameInput, setUsernameInput] = useState('');
@@ -168,23 +231,11 @@ export default function Admin({ onToast }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState(0);
 
   // Product state
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    price: 0,
-    originalPrice: 0,
-    desc: '',
-    category: 'top', // top, bottom, accessories
-    subCategories: [],
-    colors: [],
-    imageUrl: '',
-    imageUrls: [],
-    sizes: { S: 10, M: 10, L: 10, XL: 10 },
-    details: DEFAULT_DETAILS,
-    washcare: DEFAULT_WASHCARE,
-    shipping: DEFAULT_SHIPPING
-  });
+  const [newProduct, setNewProduct] = useState(loadProductDraft);
 
   // Dynamic Categories inputs
   const [newSubCategoryInput, setNewSubCategoryInput] = useState('');
@@ -320,6 +371,12 @@ export default function Admin({ onToast }) {
     if (token) fetchData();
   }, [token]);
 
+  useEffect(() => {
+    if (!editingProduct) {
+      localStorage.setItem(PRODUCT_DRAFT_KEY, JSON.stringify(newProduct));
+    }
+  }, [newProduct, editingProduct]);
+
   const handleSaveGalleryItem = async (e) => {
     e.preventDefault();
     if (!newGalleryItem.imageUrl || !newGalleryItem.link) return;
@@ -446,35 +503,62 @@ export default function Admin({ onToast }) {
   };
 
   // Base64 file upload helper
-  const handleDirectUpload = async (e, onUploadDone) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleDirectUpload = async (e, onUploadDone, { allowVideo = true } = {}) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
+    const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = () => reject(new Error(`Could not read ${file.name}`));
+      reader.readAsDataURL(file);
+    });
+
+    setUploadingFiles(prev => prev + files.length);
+    for (const file of files) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || '';
+      const isAllowedImage = IMAGE_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || IMAGE_UPLOAD_TYPES.includes(file.type));
+      const isVideo = allowVideo && file.type.startsWith('video/');
+      if (!isAllowedImage && !isVideo) {
+        onToast(`${file.name} is not supported. Use JPG, JPEG, PNG, or video where allowed.`);
+        setUploadingFiles(prev => Math.max(0, prev - 1));
+        continue;
+      }
+      if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+        onToast(`${file.name} is too large. Keep each upload under ${MAX_UPLOAD_MB}MB.`);
+        setUploadingFiles(prev => Math.max(0, prev - 1));
+        continue;
+      }
+
       try {
+        const payload = isAllowedImage
+          ? await compressImageFile(file)
+          : {
+              fileName: file.name,
+              fileType: file.type,
+              fileData: await readFileAsDataUrl(file)
+            };
         const res = await fetch('/api/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileType: file.type,
-            fileData: event.target.result
-          })
+          body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.success) {
           onUploadDone(data.url);
-          onToast('File uploaded successfully!');
+          onToast(`${file.name} uploaded successfully.`);
         } else {
-          onToast(data.error || 'Failed to upload file.');
+          onToast(data.error || `Failed to upload ${file.name}.`);
         }
       } catch (err) {
         console.error(err);
-        onToast('Upload request failed.');
+        onToast(`${file.name} upload request failed. Check backend connection and file size.`);
+      } finally {
+        setUploadingFiles(prev => Math.max(0, prev - 1));
       }
-    };
-    reader.readAsDataURL(file);
+    }
+
+    e.target.value = '';
   };
 
   // Orders Actions
@@ -519,7 +603,20 @@ export default function Admin({ onToast }) {
   // Product Save
   const handleSaveProduct = async (e) => {
     e.preventDefault();
+    if (savingProduct) return;
+    if (uploadingFiles > 0) {
+      onToast('Please wait for uploads to finish before saving the product.');
+      return;
+    }
     const productData = { ...(editingProduct || newProduct) };
+    if (!String(productData.name || '').trim()) {
+      onToast('Product name is required.');
+      return;
+    }
+    if (Number(productData.price || 0) <= 0) {
+      onToast('Product price must be greater than zero.');
+      return;
+    }
 
     // Recalculate total stock from sizes
     const sizes = productData.sizes || { S: 0, M: 0, L: 0, XL: 0 };
@@ -536,6 +633,7 @@ export default function Admin({ onToast }) {
     }
 
     try {
+      setSavingProduct(true);
       const res = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -549,21 +647,8 @@ export default function Admin({ onToast }) {
         setNewSubCategoryInput('');
         setNewColorInput('');
         clearSuggestions();
-        setNewProduct({
-          name: '',
-          price: 0,
-          originalPrice: 0,
-          desc: '',
-          category: 'top',
-          subCategories: [],
-          colors: [],
-          imageUrl: '',
-          imageUrls: [],
-          sizes: { S: 10, M: 10, L: 10, XL: 10 },
-          details: DEFAULT_DETAILS,
-          washcare: DEFAULT_WASHCARE,
-          shipping: DEFAULT_SHIPPING
-        });
+        localStorage.removeItem(PRODUCT_DRAFT_KEY);
+        setNewProduct(emptyProductDraft);
         fetchData();
       } else {
         onToast(await getApiError(res, editingProduct ? 'Product update failed.' : 'Product creation failed.'));
@@ -571,6 +656,8 @@ export default function Admin({ onToast }) {
     } catch (err) {
       console.error(err);
       onToast(editingProduct ? 'Product update request failed.' : 'Product creation request failed.');
+    } finally {
+      setSavingProduct(false);
     }
   };
 
@@ -876,7 +963,7 @@ export default function Admin({ onToast }) {
 
   return (
     <div className="admin-layout">
-      {/* â”€â”€ SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar-header">
           <div className="admin-sidebar-logo">
@@ -1009,7 +1096,7 @@ export default function Admin({ onToast }) {
       </aside>
 
 
-      {/* â”€â”€ MAIN WORKSPACE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* Main workspace */}
       <main className="admin-content">
         <div className="admin-header">
           <div className="admin-title-wrap">
@@ -1050,7 +1137,7 @@ export default function Admin({ onToast }) {
           </div>
         </div>
 
-        {/* â”€â”€ TAB: DASHBOARD (4 DASHBOARDS SYSTEM) â”€â”€ */}
+        {/* Dashboard */}
         <div className="admin-panel-switcher">
           {ADMIN_TABS.map(([tab, label]) => (
             <button
@@ -1458,7 +1545,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: HERO BANNERS CONFIG â”€â”€ */}
+        {/* Hero banners config */}
         {activeTab === 'heroconfig' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1523,7 +1610,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: RETURNS â”€â”€ */}
+        {/* Returns */}
         {activeTab === 'returns' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1635,7 +1722,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: ORDERS â”€â”€ */}
+        {/* Orders */}
         {activeTab === 'orders' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1743,7 +1830,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: INVENTORY CONTROL â”€â”€ */}
+        {/* Inventory control */}
         {activeTab === 'inventory' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -1816,7 +1903,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: COLLECTIONS PANEL â”€â”€ */}
+        {/* Collections panel */}
         {activeTab === 'collections' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
             <div className="admin-card">
@@ -1891,7 +1978,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: STORIES PANEL â”€â”€ */}
+        {/* Stories panel */}
         {activeTab === 'stories' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
             <div className="admin-card">
@@ -2036,7 +2123,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: LOG BOOK (BLOGS) GOOGLE DOCS BLOCK EDITOR â”€â”€ */}
+        {/* Log book editor */}
         {activeTab === 'blogs' && (
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px' }}>
             <div className="admin-card">
@@ -2195,7 +2282,7 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
-        {/* â”€â”€ TAB: GALLERY â”€â”€ */}
+        {/* Gallery */}
         {activeTab === 'gallery' && (
           <div className="admin-card">
             <div className="admin-card-header">
@@ -2421,7 +2508,7 @@ export default function Admin({ onToast }) {
         )}
       </main>
 
-      {/* â”€â”€ ORDER DETAIL MODAL â”€â”€ */}
+      {/* Order detail modal */}
       {selectedOrder && (
         <div className="admin-modal-overlay" onClick={() => setSelectedOrder(null)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
@@ -2487,7 +2574,7 @@ export default function Admin({ onToast }) {
         </div>
       )}
 
-      {/* â”€â”€ PRODUCT CREATION / EDITING MODAL â”€â”€ */}
+      {/* Product creation and editing modal */}
       {showProductModal && (
         <div className="admin-modal-overlay" onClick={() => setShowProductModal(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -2768,9 +2855,12 @@ export default function Admin({ onToast }) {
                 </div>
               </div>
 
-              {/* Product Images Manager (Up to 7 Images) */}
+              {/* Product Images Manager */}
               <div className="admin-form-group">
-                <label className="admin-label">Product Images/Photos (Up to 7 images)</label>
+                <label className="admin-label">Product Images/Photos (Up to {PRODUCT_IMAGE_LIMIT} images)</label>
+                <p style={{ margin: '0 0 10px', color: 'var(--admin-text-muted)', fontSize: '12px' }}>
+                  Select one or many JPG, JPEG, or PNG files. Each file must be under {MAX_UPLOAD_MB}MB.
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
                     <div key={idx} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '4px', overflow: 'hidden', height: '100px' }}>
@@ -2790,20 +2880,28 @@ export default function Admin({ onToast }) {
                     </div>
                   ))}
 
-                  {((editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length < 7) && (
+                  {((editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length < PRODUCT_IMAGE_LIMIT) && (
                     <div style={{ border: '2px dashed var(--admin-border)', borderRadius: '4px', height: '100px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
                       <Plus size={20} style={{ color: 'var(--admin-text-muted)' }} />
-                      <span style={{ fontSize: '10px', color: 'var(--admin-text-muted)', marginTop: '5px' }}>Upload Image</span>
+                      <span style={{ fontSize: '10px', color: 'var(--admin-text-muted)', marginTop: '5px' }}>Upload Images</span>
                       <input
                         type="file"
                         accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                        multiple
                         onChange={(e) => {
+                          const currentList = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
+                          const selectedCount = e.target.files?.length || 0;
+                          if (currentList.length + selectedCount > PRODUCT_IMAGE_LIMIT) {
+                            onToast(`You can add up to ${PRODUCT_IMAGE_LIMIT} product images. Remove some images or select fewer files.`);
+                            e.target.value = '';
+                            return;
+                          }
                           handleDirectUpload(e, (url) => {
                             const list = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
-                            const updated = [...list, url];
+                            const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
                             if (editingProduct) setEditingProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
                             else setNewProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
-                          });
+                          }, { allowVideo: false });
                         }}
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                       />
@@ -2839,8 +2937,17 @@ export default function Admin({ onToast }) {
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '14px' }}>
-                {editingProduct ? 'Update Product Details' : 'Publish Product'}
+              <button
+                type="submit"
+                className="btn btn-accent"
+                disabled={savingProduct || uploadingFiles > 0}
+                style={{ width: '100%', padding: '14px', opacity: savingProduct || uploadingFiles > 0 ? 0.65 : 1, cursor: savingProduct || uploadingFiles > 0 ? 'not-allowed' : 'pointer' }}
+              >
+                {uploadingFiles > 0
+                  ? `Uploading ${uploadingFiles} file${uploadingFiles > 1 ? 's' : ''}...`
+                  : savingProduct
+                    ? 'Saving Product...'
+                    : editingProduct ? 'Update Product Details' : 'Publish Product'}
               </button>
             </form>
           </div>
@@ -2849,4 +2956,3 @@ export default function Admin({ onToast }) {
     </div>
   );
 }
-
