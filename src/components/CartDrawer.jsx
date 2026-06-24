@@ -49,7 +49,7 @@ export default function CartDrawer({
     saveInfo: false
   };
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
-  const [paymentMethod, setPaymentMethod] = useState('online'); // online or cod
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const [lastDonation, setLastDonation] = useState(0);
@@ -168,6 +168,32 @@ export default function CartDrawer({
         discountAmount
       })
     });
+    const redirectToPayu = async () => {
+      const data = await apiJson('/api/payments/payu/initiate', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: total,
+          items: orderItems,
+          customerInfo: orderCustomerInfo,
+          clientOrderId,
+          couponCode: null,
+          discountAmount
+        })
+      });
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = data.action;
+      form.style.display = 'none';
+      Object.entries(data.fields || {}).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value ?? '';
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
+    };
 
     try {
       setIsSubmittingOrder(true);
@@ -181,6 +207,11 @@ export default function CartDrawer({
         setShowCheckoutForm(false);
         setShowSuccessModal(true);
         setIsSubmittingOrder(false);
+        return;
+      }
+
+      if (paymentMethod === 'payu') {
+        await redirectToPayu();
         return;
       }
 
@@ -377,9 +408,13 @@ export default function CartDrawer({
                     <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
                     Cash on Delivery (COD)
                   </label>
-                  <label className={`checkout-payment-card ${paymentMethod === 'online' ? 'selected' : ''}`}>
-                    <input type="radio" name="paymentMethod" value="online" checked={paymentMethod === 'online'} onChange={() => setPaymentMethod('online')} />
+                  <label className={`checkout-payment-card ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} />
                     Pay by Razorpay
+                  </label>
+                  <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
+                    Pay by PayU
                   </label>
                 </div>
               </div>

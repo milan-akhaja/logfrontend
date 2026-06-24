@@ -2897,10 +2897,19 @@ export default function Admin({ onToast }) {
                             return;
                           }
                           handleDirectUpload(e, (url) => {
-                            const list = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
-                            const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
-                            if (editingProduct) setEditingProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
-                            else setNewProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
+                            if (editingProduct) {
+                              setEditingProduct(prev => {
+                                const list = prev?.imageUrls || [];
+                                const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
+                                return { ...prev, imageUrls: updated, imageUrl: updated[0] || '' };
+                              });
+                            } else {
+                              setNewProduct(prev => {
+                                const list = prev?.imageUrls || [];
+                                const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
+                                return { ...prev, imageUrls: updated, imageUrl: updated[0] || '' };
+                              });
+                            }
                           }, { allowVideo: false });
                         }}
                         style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}

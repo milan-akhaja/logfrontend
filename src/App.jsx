@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 
@@ -75,9 +75,25 @@ function AppContent({
   onBuyNow
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const isAdmin = location.pathname.startsWith('/admin');
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const payment = params.get('payment');
+    if (payment === 'payu-success') {
+      onClearCart();
+      localStorage.removeItem('log_checkout_client_order_id');
+      localStorage.removeItem('log_checkout_customer_draft');
+      showToast(`PayU payment successful${params.get('orderId') ? `: ${params.get('orderId')}` : ''}`);
+      navigate(location.pathname || '/', { replace: true });
+    } else if (payment === 'payu-failed') {
+      showToast('PayU payment failed or was cancelled. Your cart is still saved.');
+      navigate(location.pathname || '/', { replace: true });
+    }
+  }, [location.search]);
 
   // Helper for quick actions
   const handleShopNowTrigger = async (productId) => {
