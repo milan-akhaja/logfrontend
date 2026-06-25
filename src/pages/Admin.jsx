@@ -43,9 +43,11 @@ const ADMIN_TABS = [
 ];
 
 const PRODUCT_IMAGE_LIMIT = 20;
-const MAX_UPLOAD_MB = 25;
-const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png'];
-const IMAGE_UPLOAD_TYPES = ['image/jpeg', 'image/png'];
+const MAX_IMAGE_UPLOAD_MB = 25;
+const MAX_VIDEO_UPLOAD_MB = 80;
+const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+const VIDEO_UPLOAD_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v'];
+const UNSAFE_IMAGE_TYPES = ['image/svg+xml'];
 const PRODUCT_DRAFT_KEY = 'log_admin_product_draft';
 
 const emptyProductDraft = {
@@ -527,15 +529,16 @@ export default function Admin({ onToast }) {
     setUploadingFiles(prev => prev + files.length);
     for (const file of files) {
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      const isAllowedImage = IMAGE_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || IMAGE_UPLOAD_TYPES.includes(file.type));
-      const isVideo = allowVideo && file.type.startsWith('video/');
+      const isAllowedImage = IMAGE_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || (file.type.startsWith('image/') && !UNSAFE_IMAGE_TYPES.includes(file.type)));
+      const isVideo = allowVideo && VIDEO_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || file.type.startsWith('video/') || file.type === 'application/octet-stream');
       if (!isAllowedImage && !isVideo) {
-        onToast(`${file.name} is not supported. Use JPG, JPEG, PNG, or video where allowed.`);
+        onToast(`${file.name} is not supported. Use JPG, JPEG, PNG, WEBP, GIF, AVIF, MP4, MOV, or WEBM where allowed.`);
         setUploadingFiles(prev => Math.max(0, prev - 1));
         continue;
       }
-      if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
-        onToast(`${file.name} is too large. Keep each upload under ${MAX_UPLOAD_MB}MB.`);
+      const maxUploadMb = isVideo ? MAX_VIDEO_UPLOAD_MB : MAX_IMAGE_UPLOAD_MB;
+      if (file.size > maxUploadMb * 1024 * 1024) {
+        onToast(`${file.name} is too large. Keep ${isVideo ? 'videos' : 'images'} under ${maxUploadMb}MB.`);
         setUploadingFiles(prev => Math.max(0, prev - 1));
         continue;
       }
@@ -548,7 +551,7 @@ export default function Admin({ onToast }) {
               fileType: file.type,
               fileData: await readFileAsDataUrl(file)
             };
-        const res = await fetch('/api/upload', {
+        const res = await authenticatedFetch('/api/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1583,7 +1586,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">PC / Laptop Hero Photo File/Link</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, bgImage: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -1600,14 +1603,14 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">PC / Laptop Hero Video File/Link</label>
                   <input
                     type="file"
-                    accept="video/*"
+                    accept=".mp4,.mov,.webm,.m4v,video/mp4,video/quicktime,video/webm"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, desktopVideoUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
                   <input
                     type="text"
                     className="admin-input"
-                    placeholder="Enter desktop mp4/webm video url path..."
+                    placeholder="Enter desktop MP4, MOV, or WEBM video url path..."
                     value={heroConfig.desktopVideoUrl || ''}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopVideoUrl: e.target.value }))}
                   />
@@ -1642,7 +1645,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Mobile Hero Photo File/Link</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, mobileImageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -1656,10 +1659,10 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-label">Mobile Hero Video URL (MP4 looping link)</label>
+                  <label className="admin-label">Mobile Hero Video File/Link</label>
                   <input
                     type="file"
-                    accept="video/*"
+                    accept=".mp4,.mov,.webm,.m4v,video/mp4,video/quicktime,video/webm"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, mobileVideoUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -2058,7 +2061,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Direct Media Upload</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png,video/*"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.mov,.webm,.m4v,image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/quicktime,video/webm"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewStory(prev => ({ ...prev, mediaUrl: url })))}
                     style={{ marginBottom: '10px' }}
                   />
@@ -2215,7 +2218,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Direct Cover Image Upload</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                     onChange={(e) => handleDirectUpload(e, (url) => setBlogCoverInput(url))}
                     style={{ marginBottom: '10px' }}
                   />
@@ -2262,7 +2265,7 @@ export default function Admin({ onToast }) {
                         <div>
                           <input
                             type="file"
-                            accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                            accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                             onChange={(e) => handleDirectUpload(e, (url) => handleUpdateBlogBlock(idx, { url }))}
                             style={{ marginBottom: '10px' }}
                           />
@@ -2365,7 +2368,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Image Link / Upload</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewGalleryItem(prev => ({ ...prev, imageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -2550,7 +2553,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Hero Image Link / Upload</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                     onChange={(e) => handleDirectUpload(e, (url) => setNewInConfig(prev => ({ ...prev, imageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -2927,7 +2930,7 @@ export default function Admin({ onToast }) {
               <div className="admin-form-group">
                 <label className="admin-label">Product Images/Photos (Up to {PRODUCT_IMAGE_LIMIT} images)</label>
                 <p style={{ margin: '0 0 10px', color: 'var(--admin-text-muted)', fontSize: '12px' }}>
-                  Select one or many JPG, JPEG, or PNG files. Each file must be under {MAX_UPLOAD_MB}MB.
+                  Select one or many JPG, JPEG, PNG, WEBP, GIF, or AVIF files. Each file must be under {MAX_IMAGE_UPLOAD_MB}MB.
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
@@ -2954,7 +2957,7 @@ export default function Admin({ onToast }) {
                       <span style={{ fontSize: '10px', color: 'var(--admin-text-muted)', marginTop: '5px' }}>Upload Images</span>
                       <input
                         type="file"
-                        accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                        accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
                         multiple
                         onChange={(e) => {
                           const currentList = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
