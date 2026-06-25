@@ -106,15 +106,17 @@ function compressImageFile(file) {
 }
 
 export default function Admin({ onToast }) {
-  const [token, setToken] = useState(localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || '');
+  const [token, setToken] = useState(() => {
+    localStorage.removeItem('admin_token');
+    return sessionStorage.getItem('admin_token') || '';
+  });
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
   const handleLogout = async () => {
-    const activeToken = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || token;
+    const activeToken = sessionStorage.getItem('admin_token') || token;
     setToken('');
-    localStorage.removeItem('admin_token');
     sessionStorage.removeItem('admin_token');
     try {
       await window.fetch('/api/admin/logout', {
@@ -128,7 +130,7 @@ export default function Admin({ onToast }) {
 
   // Local fetch override with auth token
   const fetch = async (url, options = {}) => {
-    const activeToken = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token') || token;
+    const activeToken = sessionStorage.getItem('admin_token') || token;
     const headers = {
       ...options.headers,
       'Authorization': `Bearer ${activeToken}`
@@ -148,7 +150,6 @@ export default function Admin({ onToast }) {
       return fallback;
     }
   };
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
@@ -161,7 +162,8 @@ export default function Admin({ onToast }) {
       if (res.ok) {
         const data = await res.json();
         setToken(data.token);
-        localStorage.setItem('admin_token', data.token);
+        localStorage.removeItem('admin_token');
+        sessionStorage.setItem('admin_token', data.token);
         onToast('Admin login successful.');
       } else {
         const data = await res.json();
