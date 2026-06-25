@@ -551,7 +551,7 @@ export default function Admin({ onToast }) {
               fileType: file.type,
               fileData: await readFileAsDataUrl(file)
             };
-        const res = await authenticatedFetch('/api/upload', {
+        const res = await fetch('/api/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -1669,7 +1669,7 @@ export default function Admin({ onToast }) {
                   <input
                     type="text"
                     className="admin-input"
-                    placeholder="Enter mobile loop mp4 video url path..."
+                    placeholder="Enter mobile MP4, MOV, or WEBM video url path..."
                     value={heroConfig.mobileVideoUrl}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileVideoUrl: e.target.value }))}
                   />
