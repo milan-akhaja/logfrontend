@@ -3901,15 +3901,15 @@ header.scrolled .nav-action-icon-btn {
 .gallery-coverflow-wrapper {
   position: relative;
   width: 100%;
-  max-width: 980px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: 46px 0 20px;
+  padding: 32px 0 16px;
   overflow: hidden;
 }
 
 .gallery-slides-container {
   position: relative;
-  height: 520px;
+  height: 430px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3918,8 +3918,8 @@ header.scrolled .nav-action-icon-btn {
 
 .gallery-slide {
   position: absolute;
-  width: min(56vw, 460px);
-  height: min(72vw, 520px);
+  width: min(48vw, 380px);
+  height: min(58vw, 430px);
   transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease, filter 0.55s ease;
   z-index: 1;
   opacity: 0;
@@ -3943,7 +3943,7 @@ header.scrolled .nav-action-icon-btn {
 .gallery-slide.prev {
   z-index: 5;
   opacity: 0.72;
-  transform: translate3d(-280px, 10px, -120px) scale(0.82);
+  transform: translate3d(-235px, 8px, -120px) scale(0.82);
   pointer-events: auto;
   filter: saturate(0.86) brightness(0.92);
 }
@@ -3952,7 +3952,7 @@ header.scrolled .nav-action-icon-btn {
 .gallery-slide.next {
   z-index: 5;
   opacity: 0.72;
-  transform: translate3d(280px, 10px, -120px) scale(0.82);
+  transform: translate3d(235px, 8px, -120px) scale(0.82);
   pointer-events: auto;
   filter: saturate(0.86) brightness(0.92);
 }
