@@ -281,7 +281,11 @@ export default function Admin({ onToast }) {
     tagline: '',
     title: '',
     desc: '',
+    desktopMediaType: 'image',
     bgImage: '',
+    desktopVideoUrl: '',
+    mobileMediaType: 'video',
+    mobileImageUrl: '',
     button1Text: '',
     button1Link: '',
     button2Text: '',
@@ -336,7 +340,11 @@ export default function Admin({ onToast }) {
         tagline: '',
         title: '',
         desc: '',
+        desktopMediaType: 'image',
         bgImage: '',
+        desktopVideoUrl: '',
+        mobileMediaType: 'video',
+        mobileImageUrl: '',
         button1Text: '',
         button1Link: '',
         button2Text: '',
@@ -1560,7 +1568,19 @@ export default function Admin({ onToast }) {
                 <h3 style={{ borderBottom: '1px solid var(--admin-border)', paddingBottom: '8px', fontSize: '15px', fontWeight: '700' }}>Hero Media</h3>
 
                 <div className="admin-form-group">
-                  <label className="admin-label">PC Background Image File/Link</label>
+                  <label className="admin-label">PC / Laptop Hero Type</label>
+                  <select
+                    className="admin-input"
+                    value={heroConfig.desktopMediaType || 'image'}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopMediaType: e.target.value }))}
+                  >
+                    <option value="image">Photo</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">PC / Laptop Hero Photo File/Link</label>
                   <input
                     type="file"
                     accept=".jpg,.jpeg,.png,image/jpeg,image/png"
@@ -1573,6 +1593,23 @@ export default function Admin({ onToast }) {
                     placeholder="Or enter background image url path..."
                     value={heroConfig.bgImage}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, bgImage: e.target.value }))}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">PC / Laptop Hero Video File/Link</label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, desktopVideoUrl: url })))}
+                    style={{ marginBottom: '5px', display: 'block' }}
+                  />
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Enter desktop mp4/webm video url path..."
+                    value={heroConfig.desktopVideoUrl || ''}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopVideoUrl: e.target.value }))}
                   />
                 </div>
 
@@ -1590,7 +1627,36 @@ export default function Admin({ onToast }) {
                 <h3 style={{ borderBottom: '1px solid var(--admin-border)', paddingBottom: '8px', fontSize: '15px', fontWeight: '700', marginTop: '10px' }}>Mobile Layout Settings</h3>
 
                 <div className="admin-form-group">
-                  <label className="admin-label">Mobile Autoplay Video URL (MP4 looping link)</label>
+                  <label className="admin-label">Mobile Hero Type</label>
+                  <select
+                    className="admin-input"
+                    value={heroConfig.mobileMediaType || 'video'}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileMediaType: e.target.value }))}
+                  >
+                    <option value="image">Photo</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Mobile Hero Photo File/Link</label>
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                    onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, mobileImageUrl: url })))}
+                    style={{ marginBottom: '5px', display: 'block' }}
+                  />
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Enter mobile hero image url path..."
+                    value={heroConfig.mobileImageUrl || ''}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileImageUrl: e.target.value }))}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Mobile Hero Video URL (MP4 looping link)</label>
                   <input
                     type="file"
                     accept="video/*"

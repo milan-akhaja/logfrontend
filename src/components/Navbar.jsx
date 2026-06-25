@@ -51,7 +51,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
 
   return (
     <>
-      <header className={`${scrolled ? 'scrolled' : ''} ${!isHome ? 'solid-black-menu' : ''}`}>
+      <header className={`${scrolled ? 'scrolled' : ''} ${!isHome ? 'transparent-inner-menu' : ''}`}>
         <div className="nav-container nav-bluorng-style">
 
           {/* Left: uppercase links */}

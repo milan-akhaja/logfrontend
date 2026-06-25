@@ -82,7 +82,6 @@ export default function NewIn({ onAddToCart, onToast }) {
         <div className="section-header reveal" style={{ padding: '20px 0 20px' }}>
           <div>
             <h2 className="section-title">New Arrivals</h2>
-            <div className="section-subtitle">Freshly loaded on the shelves</div>
           </div>
         </div>
 

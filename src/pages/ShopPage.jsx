@@ -121,9 +121,6 @@ export default function ShopPage({ onAddToCart }) {
                     ? `Search: "${searchQuery}"` 
                     : 'Shop All'}
           </h1>
-          <p style={{ color: 'var(--grey-muted)', fontSize: '13px', marginTop: '5px' }}>
-            Showing {filteredProducts.length} items
-          </p>
         </div>
 
         <div className="shoppage-layout">

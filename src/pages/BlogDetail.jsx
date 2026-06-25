@@ -36,7 +36,8 @@ export default function BlogDetail() {
   if (!blog) {
     return (
       <div className="container" style={{ padding: '160px 40px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>Blog Post Not Found</h2>
+        <SEO title="Blog Post Not Found" description="The LOG Book entry you requested could not be found." noindex canonicalPath={`/blog/${id}`} />
+        <h1 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>Blog Post Not Found</h1>
         <p style={{ color: 'var(--grey-muted)', marginBottom: '30px' }}>The entry you are looking for does not exist or has been deleted.</p>
         <button className="btn btn-accent" onClick={() => navigate('/log-book')}>Back to Log Book</button>
       </div>

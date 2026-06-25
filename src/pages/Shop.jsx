@@ -12,7 +12,7 @@ const VIDEO_URLS = [
   "https://player.vimeo.com/external/435674703.sd.mp4?s=6f4af4f691684c9fb647146522c0e86b240ff11c&profile_id=165&oauth2_token_id=57447761"
 ];
 
-// Sub-component for product card carousels with auto-scroll and manual arrows
+// Sub-component for product card carousels with manual arrows and touch swipes.
 export function ProductGridCard({ product, onAddToCart }) {
   const displayImages = product.imageUrls && product.imageUrls.length > 0
     ? product.imageUrls
@@ -21,7 +21,6 @@ export function ProductGridCard({ product, onAddToCart }) {
   const totalSlides = displayImages.length > 0 ? displayImages.length : 2;
 
   const [slideIdx, setSlideIdx] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
 
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -52,14 +51,6 @@ export function ProductGridCard({ product, onAddToCart }) {
     }
   };
 
-  useEffect(() => {
-    if (!isHovered) return;
-    const timer = setInterval(() => {
-      setSlideIdx(prev => (prev + 1) % totalSlides);
-    }, 2500);
-    return () => clearInterval(timer);
-  }, [isHovered, totalSlides]);
-
   const nextSlide = (e) => {
     e.stopPropagation();
     setSlideIdx(prev => (prev + 1) % totalSlides);
@@ -81,11 +72,6 @@ export function ProductGridCard({ product, onAddToCart }) {
       className="product-card reveal"
       style={{ cursor: 'pointer' }}
       onClick={() => navigate(`/product/${product.id}`)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setSlideIdx(0);
-      }}
     >
       <div
         className="product-img-wrapper"
@@ -233,26 +219,6 @@ function GalleryScroller() {
               </div>
             ))}
           </div>
-
-          {/* Dot Pagination Controls */}
-          <div className="gallery-dots-pagination" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '30px' }}>
-            {items.map((_, idx) => (
-              <span
-                key={idx}
-                onClick={() => setActiveIdx(idx)}
-                className={`gallery-pagination-dot ${idx === activeIdx ? 'active' : ''}`}
-                style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  background: idx === activeIdx ? 'var(--ink)' : 'rgba(15, 15, 17, 0.2)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  border: '1px solid transparent'
-                }}
-              />
-            ))}
-          </div>
         </div>
 
       </div>
@@ -271,7 +237,11 @@ export default function Shop({ onAddToCart }) {
     tagline: 'New Season Drop',
     title: 'Wear\nSome\nthing\nReal.',
     desc: 'Streetwear built for India. Minimal by choice, meaningful by design. Every product you buy puts ₹23 into the hands of someone who needs it more.',
+    desktopMediaType: 'image',
     bgImage: 'assets/hero_streetwear.png',
+    desktopVideoUrl: '',
+    mobileMediaType: 'video',
+    mobileImageUrl: '',
     button1Text: 'Shop the Drop',
     button1Link: '#shop-catalog',
     button2Text: 'Our Mission',
@@ -406,6 +376,10 @@ export default function Shop({ onAddToCart }) {
     : filteredProducts;
 
   const heroShopLink = heroConfig.button1Link || '#shop-catalog';
+  const desktopHeroMediaType = heroConfig.desktopMediaType === 'video' ? 'video' : 'image';
+  const mobileHeroMediaType = heroConfig.mobileMediaType === 'image' ? 'image' : 'video';
+  const desktopVideoUrl = heroConfig.desktopVideoUrl || heroConfig.mobileVideoUrl || '';
+  const mobileImageUrl = heroConfig.mobileImageUrl || heroConfig.bgImage;
   const trackHeroShopNow = (placement) => {
     fetch('/api/track', {
       method: 'POST',
@@ -422,7 +396,21 @@ export default function Shop({ onAddToCart }) {
     <>
       {/* PC HERO SECTION */}
       <section className="hero-section pc-only">
-        <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+        {desktopHeroMediaType === 'video' && desktopVideoUrl ? (
+          <video
+            className="hero-bg-image hero-bg-video"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster={mediaUrl(heroConfig.bgImage)}
+          >
+            <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
+          </video>
+        ) : (
+          <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+        )}
         <div className="hero-overlay"></div>
         <a
           href={appPath(heroShopLink)}
@@ -433,9 +421,18 @@ export default function Shop({ onAddToCart }) {
         </a>
       </section>
 
-      {/* MOBILE HERO SECTION (Single Autoplay Video) */}
+      {/* MOBILE HERO SECTION */}
       <section className="mobile-hero-video mobile-only">
-        {mobileVideoSrc && (
+        {mobileHeroMediaType === 'image' ? (
+          <img
+            src={mediaUrl(mobileImageUrl)}
+            alt="LOG streetwear mobile hero"
+            className="mobile-hero-image"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
+        ) : mobileVideoSrc && (
           <video
             ref={mobileHeroVideoRef}
             autoPlay

@@ -49,7 +49,7 @@ export default function CartDrawer({
     saveInfo: false
   };
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
-  const [paymentMethod, setPaymentMethod] = useState('razorpay');
+  const [paymentMethod, setPaymentMethod] = useState('payu');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const [lastDonation, setLastDonation] = useState(0);
@@ -106,26 +106,6 @@ export default function CartDrawer({
       shippingAddressLine1: customerInfo.address,
       shippingAddressLine2: customerInfo.apartment
     };
-  };
-
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-      if (existing) {
-        existing.addEventListener('load', () => resolve(true), { once: true });
-        existing.addEventListener('error', () => resolve(false), { once: true });
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
   };
 
   const handleCheckoutSubmit = async (e) => {
@@ -214,91 +194,8 @@ export default function CartDrawer({
         await redirectToPayu();
         return;
       }
-
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        onToast('Razorpay SDK failed to load. Check your internet.');
-        setIsSubmittingOrder(false);
-        return;
-      }
-
-      const { key } = await apiJson('/api/payments/key');
-
-      const razorpayOrder = await apiJson('/api/payments/order', {
-        method: 'POST',
-        body: JSON.stringify({
-          amount: total * 100,
-          currency: 'INR'
-        })
-      });
-
-      // Fallback sandbox payment
-      if (razorpayOrder.is_mock) {
-        onToast('API keys default: Simulating sandbox order...');
-        const data = await saveOrder('mock_payment_' + Date.now());
-        setEmailHtml(data.emailHtml || '');
-        setOrderEmailSent(Boolean(data.emailSent));
-        localStorage.removeItem(CHECKOUT_ORDER_KEY);
-        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
-        onClearCart();
-        setShowCheckoutForm(false);
-        setShowSuccessModal(true);
-        setIsSubmittingOrder(false);
-        return;
-      }
-
-      const options = {
-        key: key,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        name: 'LOG Clothing',
-        description: 'Streetwear purchase',
-        order_id: razorpayOrder.id,
-        handler: async function (response) {
-          try {
-            const verification = await apiJson('/api/payments/verify', {
-              method: 'POST',
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              })
-            });
-
-            if (verification.verified) {
-              const data = await saveOrder(response.razorpay_payment_id);
-              setEmailHtml(data.emailHtml || '');
-              setOrderEmailSent(Boolean(data.emailSent));
-              localStorage.removeItem(CHECKOUT_ORDER_KEY);
-              localStorage.removeItem(CHECKOUT_DRAFT_KEY);
-              onClearCart();
-              setShowCheckoutForm(false);
-              setShowSuccessModal(true);
-            } else {
-              onToast('Payment verification failed.');
-            }
-          } catch (err) {
-            console.error(err);
-            onToast('Error verifying transaction.');
-          } finally {
-            setIsSubmittingOrder(false);
-          }
-        },
-        modal: {
-          ondismiss: () => setIsSubmittingOrder(false)
-        },
-        prefill: {
-          name: orderCustomerInfo.name,
-          email: orderCustomerInfo.email,
-          contact: orderCustomerInfo.phone
-        },
-        theme: {
-          color: '#E53E3E'
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+      onToast('Select a valid payment option.');
+      setIsSubmittingOrder(false);
 
     } catch (err) {
       console.error(err);
@@ -407,10 +304,6 @@ export default function CartDrawer({
                   <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
                     Cash on Delivery (COD)
-                  </label>
-                  <label className={`checkout-payment-card ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
-                    <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} />
-                    Pay by Razorpay
                   </label>
                   <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />

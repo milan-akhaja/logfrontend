@@ -24,6 +24,7 @@ import MakeReturn from './pages/MakeReturn';
 import ShippingPolicy from './pages/ShippingPolicy';
 import FAQs from './pages/FAQs';
 import Terms from './pages/Terms';
+import NotFound from './pages/NotFound';
 
 // Page Tracker Wrapper to track sessions & page views
 function PageTracker() {
@@ -149,6 +150,7 @@ function AppContent({
         <Route path="/shipping-policy" element={<><SEO title="Shipping Policy" description="Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders." canonicalPath="/shipping-policy" /><ShippingPolicy /></>} />
         <Route path="/faqs" element={<><SEO title="FAQs - LOG Clothing" description="Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations." canonicalPath="/faqs" /><FAQs /></>} />
         <Route path="/terms" element={<><SEO title="Terms & Conditions" description="Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com." canonicalPath="/terms" /><Terms /></>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
 
       {!isAdmin && (

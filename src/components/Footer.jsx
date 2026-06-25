@@ -172,6 +172,7 @@ export default function Footer({ onToast }) {
               We are LOG <span className="accordion-caret pc-only">▾</span>
             </h4>
             <ul className="footer-links always-visible">
+              <li><Link to="/new-in">New in</Link></li>
               <li><Link to="/our-mission">Our Mission</Link></li>
               <li><Link to="/log-book">Log book</Link></li>
             </ul>

@@ -20,7 +20,7 @@ export default function OurMission() {
     fetch('/api/donations/total')
       .then(res => res.json())
       .then(data => {
-        const targetAmount = data.total || 184184;
+        const targetAmount = data.total || 759;
         const duration = 2000;
         const startTime = performance.now();
         let current = 0;
@@ -46,7 +46,7 @@ export default function OurMission() {
       })
       .catch(err => {
         console.error('Error loading donation total:', err);
-        setDonationCount(184184); // Fallback baseline
+        setDonationCount(759);
       });
  
     return () => {

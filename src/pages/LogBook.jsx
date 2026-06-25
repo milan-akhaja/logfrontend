@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { appPath, mediaUrl } from '../lib/urls';
+import { mediaUrl } from '../lib/urls';
 
 export default function LogBook() {
   const [blogs, setBlogs] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(8);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,110 +31,68 @@ export default function LogBook() {
 
   const truncateTitle = (title) => {
     if (!title) return '';
-    const words = title.split(/\s+/);
-    if (words.length <= 5) return title;
-    return words.slice(0, 5).join(' ') + '...';
+    return title.length > 52 ? `${title.slice(0, 52).trim()}...` : title;
+  };
+
+  const getBlogExcerpt = (blog) => {
+    const content = Array.isArray(blog.content)
+      ? blog.content.map(block => block.text).filter(Boolean).join(' ')
+      : String(blog.content || '');
+    const text = content || blog.excerpt || blog.description || '';
+    return text.length > 155 ? `${text.slice(0, 155).trim()}...` : text;
   };
 
   const handleLoadMore = () => {
     setVisibleCount(prev => prev + 6);
   };
 
-  // Helper rotation classes to keep the "perfect polaroid layout" look
-  const getRotationClass = (index) => {
-    const classes = [
-      'polaroid-rotate-left',
-      'polaroid-rotate-right',
-      'polaroid-rotate-left-slight',
-      'polaroid-rotate-right-slight'
-    ];
-    return classes[index % classes.length];
-  };
-
   return (
     <>
-      {/* LOOKBOOK HEADER */}
-      <section className="lookbook-header" style={{ background: '#111113', color: 'white', padding: '120px 0 60px', borderBottom: '1px solid var(--border)' }}>
-        <div className="container reveal">
-          <h1 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: '900', textTransform: 'uppercase', color: 'white' }}>Log Book</h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '10px' }}>
-            Aesthetic diary, styling showcase, and stories of social impact
-          </p>
-        </div>
-      </section>
-
-      {/* POLAROIDS GRID */}
-      <section className="container lookbook-polaroids-container" style={{ paddingBottom: '40px' }}>
-        {blogs.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--grey-muted)', padding: '80px 0', fontSize: '15px' }}>
-            No log entries written yet. Check back soon!
-          </p>
-        ) : (
-          <>
-            <div className="polaroid-grid">
-              {blogs.slice(0, visibleCount).map((blog, index) => (
-                <div 
-                  className={`polaroid-card ${getRotationClass(index)} reveal`} 
-                  key={blog.id}
-                  onClick={() => navigate(`/blog/${blog.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div className="polaroid-image-frame">
-                    <img 
-                      src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')} 
-                      alt={blog.title} 
-                      className="polaroid-image" 
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  <div className="polaroid-caption" style={{ fontWeight: '800', textTransform: 'uppercase' }}>
-                    {truncateTitle(blog.title)}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {visibleCount < blogs.length && (
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '50px' }}>
-                <button 
-                  className="btn btn-outline" 
-                  onClick={handleLoadMore}
-                  style={{ color: 'var(--ink)', borderColor: 'var(--ink)', padding: '14px 28px', fontSize: '11px' }}
-                >
-                  LOAD MORE BLOGS
-                </button>
+      <section className="blog-index-page">
+        <div className="blog-index-label">Blogs / News</div>
+        <div className="blog-index-shell">
+          {blogs.length === 0 ? (
+            <p className="blog-empty-state">
+              No log entries written yet. Check back soon!
+            </p>
+          ) : (
+            <>
+              <div className="blog-card-grid">
+                {blogs.slice(0, visibleCount).map((blog) => (
+                  <article
+                    className="blog-card"
+                    key={blog.id}
+                    onClick={() => navigate(`/blog/${blog.id}`)}
+                  >
+                    <div className="blog-card-image-frame">
+                      <img
+                        src={mediaUrl(blog.coverImage || blog.image || 'assets/lookbook_polaroid_1.png')}
+                        alt={blog.title}
+                        className="blog-card-image"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className="blog-card-body">
+                      <h2>{truncateTitle(blog.title)}</h2>
+                      <p>{getBlogExcerpt(blog)}</p>
+                    </div>
+                  </article>
+                ))}
               </div>
-            )}
-          </>
-        )}
-      </section>
 
-      {/* MID SECTION BANNER */}
-      <section className="lookbook-banner">
-        <div className="lookbook-banner-left reveal">
-          <div className="hero-tagline" style={{ color: 'white' }}>Our Vision</div>
-          <h2 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '20px' }}>
-            Designed to last. <br />Earmarked to support.
-          </h2>
-          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', maxWidth: '450px', lineHeight: '1.7', marginBottom: '30px' }}>
-            Every product item represents a double footprint: an aesthetic garment in your hands, and a fixed ₹23 contribution directly supporting real community programs. No middlemen, no fine print.
-          </p>
-          <div className="hero-buttons">
-            <a href={appPath('/our-mission')} className="btn btn-outline" style={{ fontSize: '11px', padding: '12px 24px' }}>View the Promise</a>
-          </div>
-        </div>
-        <div className="lookbook-banner-right reveal">
-          <img src="assets/lookbook_polaroid_1.png" alt="LOG streetwear models lookbook" loading="lazy" decoding="async" />
-        </div>
-      </section>
-
-      {/* STATEMENT CTA */}
-      <section className="statement-section">
-        <div className="container">
-          <h2 className="statement-title reveal">Liked the fits? <br /><span className="outline">Get Yours.</span></h2>
-          <p className="statement-sub reveal">Explore heavyweight styles crafted for streetwear enthusiasts.</p>
-          <a href={appPath('/')} className="btn btn-white reveal">Shop the Drops</a>
+              {visibleCount < blogs.length && (
+                <div className="blog-load-more-row">
+                  <button
+                    className="btn btn-outline"
+                    onClick={handleLoadMore}
+                  >
+                    LOAD MORE BLOGS
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
     </>
