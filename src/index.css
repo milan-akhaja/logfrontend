@@ -3901,15 +3901,15 @@ header.scrolled .nav-action-icon-btn {
 .gallery-coverflow-wrapper {
   position: relative;
   width: 100%;
-  max-width: 1240px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 58px 0 24px;
+  padding: 46px 0 20px;
   overflow: hidden;
 }
 
 .gallery-slides-container {
   position: relative;
-  height: 690px;
+  height: 520px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3918,8 +3918,8 @@ header.scrolled .nav-action-icon-btn {
 
 .gallery-slide {
   position: absolute;
-  width: min(56vw, 630px);
-  height: min(62vw, 690px);
+  width: min(56vw, 460px);
+  height: min(72vw, 520px);
   transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease, filter 0.55s ease;
   z-index: 1;
   opacity: 0;
@@ -3943,7 +3943,7 @@ header.scrolled .nav-action-icon-btn {
 .gallery-slide.prev {
   z-index: 5;
   opacity: 0.72;
-  transform: translate3d(-430px, 28px, -120px) scale(0.72);
+  transform: translate3d(-280px, 10px, -120px) scale(0.82);
   pointer-events: auto;
   filter: saturate(0.86) brightness(0.92);
 }
@@ -3952,7 +3952,7 @@ header.scrolled .nav-action-icon-btn {
 .gallery-slide.next {
   z-index: 5;
   opacity: 0.72;
-  transform: translate3d(430px, 28px, -120px) scale(0.72);
+  transform: translate3d(280px, 10px, -120px) scale(0.82);
   pointer-events: auto;
   filter: saturate(0.86) brightness(0.92);
 }
