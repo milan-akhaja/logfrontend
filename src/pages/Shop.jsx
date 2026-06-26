@@ -12,6 +12,13 @@ const VIDEO_URLS = [
   "https://player.vimeo.com/external/435674703.sd.mp4?s=6f4af4f691684c9fb647146522c0e86b240ff11c&profile_id=165&oauth2_token_id=57447761"
 ];
 
+const slideIntervalMs = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 5000;
+  const milliseconds = parsed <= 60 ? parsed * 1000 : parsed;
+  return Math.min(60000, Math.max(1000, Math.round(milliseconds)));
+};
+
 // Sub-component for product card carousels with manual arrows and touch swipes.
 export function ProductGridCard({ product, onAddToCart }) {
   const displayImages = product.imageUrls && product.imageUrls.length > 0
@@ -358,7 +365,7 @@ export default function Shop({ onAddToCart }) {
 
   useEffect(() => {
     if (heroConfig.desktopMediaType === 'video' || desktopHeroImages.length < 2) return undefined;
-    const delay = Math.min(60000, Math.max(1000, Number(heroConfig.desktopSlideIntervalMs) || 5000));
+    const delay = slideIntervalMs(heroConfig.desktopSlideIntervalMs);
     const timer = window.setInterval(() => {
       setDesktopHeroSlideIndex((index) => (index + 1) % desktopHeroImages.length);
     }, delay);
@@ -367,7 +374,7 @@ export default function Shop({ onAddToCart }) {
 
   useEffect(() => {
     if (heroConfig.mobileMediaType !== 'image' || mobileHeroImages.length < 2) return undefined;
-    const delay = Math.min(60000, Math.max(1000, Number(heroConfig.mobileSlideIntervalMs) || 5000));
+    const delay = slideIntervalMs(heroConfig.mobileSlideIntervalMs);
     const timer = window.setInterval(() => {
       setMobileHeroSlideIndex((index) => (index + 1) % mobileHeroImages.length);
     }, delay);

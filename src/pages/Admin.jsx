@@ -45,10 +45,16 @@ const ADMIN_TABS = [
 const PRODUCT_IMAGE_LIMIT = 20;
 const MAX_IMAGE_UPLOAD_MB = 25;
 const MAX_VIDEO_UPLOAD_MB = 80;
-const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'];
+const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp'];
 const VIDEO_UPLOAD_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v'];
 const UNSAFE_IMAGE_TYPES = ['image/svg+xml'];
 const PRODUCT_DRAFT_KEY = 'log_admin_product_draft';
+
+function intervalSeconds(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 5;
+  return parsed <= 60 ? parsed : parsed / 1000;
+}
 
 const emptyProductDraft = {
   name: '',
@@ -390,6 +396,8 @@ export default function Admin({ onToast }) {
   const appendHeroSlides = (field, url) => {
     setHeroConfig(prev => ({
       ...prev,
+      ...(field === 'desktopSlides' ? { desktopMediaType: 'image' } : {}),
+      ...(field === 'mobileSlides' ? { mobileMediaType: 'image' } : {}),
       [field]: [...(Array.isArray(prev[field]) ? prev[field] : []), url]
     }));
   };
@@ -551,7 +559,7 @@ export default function Admin({ onToast }) {
     setUploadingFiles(prev => prev + files.length);
     for (const file of files) {
       const ext = file.name.split('.').pop()?.toLowerCase() || '';
-      const isAllowedImage = IMAGE_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || (file.type.startsWith('image/') && !UNSAFE_IMAGE_TYPES.includes(file.type)));
+      const isAllowedImage = (IMAGE_UPLOAD_EXTENSIONS.includes(ext) || file.type?.startsWith('image/')) && (!file.type || (file.type.startsWith('image/') && !UNSAFE_IMAGE_TYPES.includes(file.type)));
       const isVideo = allowVideo && VIDEO_UPLOAD_EXTENSIONS.includes(ext) && (!file.type || file.type.startsWith('video/') || file.type === 'application/octet-stream');
       if (!isAllowedImage && !isVideo) {
         onToast(`${file.name} is not supported. Use JPG, JPEG, PNG, WEBP, GIF, AVIF, MP4, MOV, or WEBM where allowed.`);
@@ -1599,7 +1607,7 @@ export default function Admin({ onToast }) {
                     value={heroConfig.desktopMediaType || 'image'}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopMediaType: e.target.value }))}
                   >
-                    <option value="image">Photo</option>
+                    <option value="image">Photo / Slideshow</option>
                     <option value="video">Video</option>
                   </select>
                 </div>
@@ -1608,7 +1616,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">PC / Laptop Hero Photo File/Link</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.bmp,image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, bgImage: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -1626,7 +1634,7 @@ export default function Admin({ onToast }) {
                   <input
                     type="file"
                     multiple
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.bmp,image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp"
                     onChange={(e) => handleDirectUpload(e, (url) => appendHeroSlides('desktopSlides', url), { allowVideo: false })}
                     style={{ marginBottom: '8px', display: 'block' }}
                   />
@@ -1636,8 +1644,10 @@ export default function Admin({ onToast }) {
                     max="60"
                     step="0.5"
                     className="admin-input"
-                    placeholder="Seconds between slides"
-                    value={(Number(heroConfig.desktopSlideIntervalMs || 5000) / 1000).toString()}
+                    placeholder="Transition time in seconds"
+                    aria-label="Desktop slideshow transition time in seconds"
+                    inputMode="decimal"
+                    value={intervalSeconds(heroConfig.desktopSlideIntervalMs || 5000).toString()}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopSlideIntervalMs: Math.round(Number(e.target.value || 5) * 1000) }))}
                   />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', marginTop: '10px' }}>
@@ -1694,7 +1704,7 @@ export default function Admin({ onToast }) {
                     value={heroConfig.mobileMediaType || 'video'}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileMediaType: e.target.value }))}
                   >
-                    <option value="image">Photo</option>
+                    <option value="image">Photo / Slideshow</option>
                     <option value="video">Video</option>
                   </select>
                 </div>
@@ -1703,7 +1713,7 @@ export default function Admin({ onToast }) {
                   <label className="admin-label">Mobile Hero Photo File/Link</label>
                   <input
                     type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.bmp,image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp"
                     onChange={(e) => handleDirectUpload(e, (url) => setHeroConfig(prev => ({ ...prev, mobileImageUrl: url })))}
                     style={{ marginBottom: '5px', display: 'block' }}
                   />
@@ -1721,7 +1731,7 @@ export default function Admin({ onToast }) {
                   <input
                     type="file"
                     multiple
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.avif,.bmp,image/jpeg,image/png,image/webp,image/gif,image/avif,image/bmp"
                     onChange={(e) => handleDirectUpload(e, (url) => appendHeroSlides('mobileSlides', url), { allowVideo: false })}
                     style={{ marginBottom: '8px', display: 'block' }}
                   />
@@ -1731,8 +1741,10 @@ export default function Admin({ onToast }) {
                     max="60"
                     step="0.5"
                     className="admin-input"
-                    placeholder="Seconds between slides"
-                    value={(Number(heroConfig.mobileSlideIntervalMs || 5000) / 1000).toString()}
+                    placeholder="Transition time in seconds"
+                    aria-label="Mobile slideshow transition time in seconds"
+                    inputMode="decimal"
+                    value={intervalSeconds(heroConfig.mobileSlideIntervalMs || 5000).toString()}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileSlideIntervalMs: Math.round(Number(e.target.value || 5) * 1000) }))}
                   />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', marginTop: '10px' }}>
