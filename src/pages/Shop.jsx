@@ -282,6 +282,8 @@ export default function Shop({ onAddToCart }) {
   const [collections, setCollections] = useState([]);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [mobileVideoSrc, setMobileVideoSrc] = useState('');
+  const [desktopHeroSlideIndex, setDesktopHeroSlideIndex] = useState(0);
+  const [mobileHeroSlideIndex, setMobileHeroSlideIndex] = useState(0);
   const mobileHeroVideoRef = useRef(null);
   const [heroConfig, setHeroConfig] = useState({
     tagline: 'New Season Drop',
@@ -290,8 +292,12 @@ export default function Shop({ onAddToCart }) {
     desktopMediaType: 'image',
     bgImage: 'assets/hero_streetwear.png',
     desktopVideoUrl: '',
+    desktopSlides: [],
+    desktopSlideIntervalMs: 5000,
     mobileMediaType: 'video',
     mobileImageUrl: '',
+    mobileSlides: [],
+    mobileSlideIntervalMs: 5000,
     button1Text: 'Shop the Drop',
     button1Link: '#shop-catalog',
     button2Text: 'Our Mission',
@@ -334,6 +340,39 @@ export default function Shop({ onAddToCart }) {
   useEffect(() => {
     setMobileVideoSrc(heroConfig.mobileVideoUrl || VIDEO_URLS[0]);
   }, [heroConfig.mobileVideoUrl]);
+
+  const desktopHeroImages = Array.isArray(heroConfig.desktopSlides) && heroConfig.desktopSlides.length
+    ? heroConfig.desktopSlides
+    : [heroConfig.bgImage].filter(Boolean);
+  const mobileHeroImages = Array.isArray(heroConfig.mobileSlides) && heroConfig.mobileSlides.length
+    ? heroConfig.mobileSlides
+    : [heroConfig.mobileImageUrl || heroConfig.bgImage].filter(Boolean);
+
+  useEffect(() => {
+    setDesktopHeroSlideIndex(0);
+  }, [desktopHeroImages.join('|')]);
+
+  useEffect(() => {
+    setMobileHeroSlideIndex(0);
+  }, [mobileHeroImages.join('|')]);
+
+  useEffect(() => {
+    if (heroConfig.desktopMediaType === 'video' || desktopHeroImages.length < 2) return undefined;
+    const delay = Math.min(60000, Math.max(1000, Number(heroConfig.desktopSlideIntervalMs) || 5000));
+    const timer = window.setInterval(() => {
+      setDesktopHeroSlideIndex((index) => (index + 1) % desktopHeroImages.length);
+    }, delay);
+    return () => window.clearInterval(timer);
+  }, [desktopHeroImages.length, desktopHeroImages.join('|'), heroConfig.desktopMediaType, heroConfig.desktopSlideIntervalMs]);
+
+  useEffect(() => {
+    if (heroConfig.mobileMediaType !== 'image' || mobileHeroImages.length < 2) return undefined;
+    const delay = Math.min(60000, Math.max(1000, Number(heroConfig.mobileSlideIntervalMs) || 5000));
+    const timer = window.setInterval(() => {
+      setMobileHeroSlideIndex((index) => (index + 1) % mobileHeroImages.length);
+    }, delay);
+    return () => window.clearInterval(timer);
+  }, [mobileHeroImages.length, mobileHeroImages.join('|'), heroConfig.mobileMediaType, heroConfig.mobileSlideIntervalMs]);
 
   useEffect(() => {
     const video = mobileHeroVideoRef.current;
@@ -429,7 +468,7 @@ export default function Shop({ onAddToCart }) {
   const desktopHeroMediaType = heroConfig.desktopMediaType === 'video' ? 'video' : 'image';
   const mobileHeroMediaType = heroConfig.mobileMediaType === 'image' ? 'image' : 'video';
   const desktopVideoUrl = heroConfig.desktopVideoUrl || heroConfig.mobileVideoUrl || '';
-  const mobileImageUrl = heroConfig.mobileImageUrl || heroConfig.bgImage;
+  const mobileImageUrl = mobileHeroImages[mobileHeroSlideIndex] || heroConfig.mobileImageUrl || heroConfig.bgImage;
   const trackHeroShopNow = (placement) => {
     fetch('/api/track', {
       method: 'POST',
@@ -459,7 +498,19 @@ export default function Shop({ onAddToCart }) {
             <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
           </video>
         ) : (
-          <img src={mediaUrl(heroConfig.bgImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+          <div className="hero-slideshow" aria-label="LOG streetwear background slideshow">
+            {desktopHeroImages.map((image, index) => (
+              <img
+                key={`${image}-${index}`}
+                src={mediaUrl(image)}
+                alt=""
+                className={`hero-bg-image hero-slideshow-image ${index === desktopHeroSlideIndex ? 'active' : ''}`}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchpriority={index === 0 ? 'high' : 'auto'}
+              />
+            ))}
+          </div>
         )}
         <div className="hero-overlay"></div>
         <a
@@ -474,14 +525,19 @@ export default function Shop({ onAddToCart }) {
       {/* MOBILE HERO SECTION */}
       <section className="mobile-hero-video mobile-only">
         {mobileHeroMediaType === 'image' ? (
-          <img
-            src={mediaUrl(mobileImageUrl)}
-            alt="LOG streetwear mobile hero"
-            className="mobile-hero-image"
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-          />
+          <div className="mobile-hero-slideshow" aria-label="LOG streetwear mobile hero slideshow">
+            {mobileHeroImages.map((image, index) => (
+              <img
+                key={`${image}-${index}`}
+                src={mediaUrl(index === mobileHeroSlideIndex ? mobileImageUrl : image)}
+                alt=""
+                className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                fetchpriority={index === 0 ? 'high' : 'auto'}
+              />
+            ))}
+          </div>
         ) : mobileVideoSrc && (
           <video
             ref={mobileHeroVideoRef}

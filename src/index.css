@@ -377,6 +377,30 @@ header.scrolled .bag-count {
   display: block;
 }
 
+.hero-slideshow,
+.mobile-hero-slideshow {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.hero-slideshow-image,
+.mobile-hero-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 900ms ease, transform 6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+.hero-slideshow-image.active,
+.mobile-hero-slide.active {
+  opacity: 0.95;
+}
+
 .hero-section:hover .hero-bg-image {
   transform: scale(1.02);
 }

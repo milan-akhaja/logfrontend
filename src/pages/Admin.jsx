@@ -286,8 +286,12 @@ export default function Admin({ onToast }) {
     desktopMediaType: 'image',
     bgImage: '',
     desktopVideoUrl: '',
+    desktopSlides: [],
+    desktopSlideIntervalMs: 5000,
     mobileMediaType: 'video',
     mobileImageUrl: '',
+    mobileSlides: [],
+    mobileSlideIntervalMs: 5000,
     button1Text: '',
     button1Link: '',
     button2Text: '',
@@ -345,8 +349,12 @@ export default function Admin({ onToast }) {
         desktopMediaType: 'image',
         bgImage: '',
         desktopVideoUrl: '',
+        desktopSlides: [],
+        desktopSlideIntervalMs: 5000,
         mobileMediaType: 'video',
         mobileImageUrl: '',
+        mobileSlides: [],
+        mobileSlideIntervalMs: 5000,
         button1Text: '',
         button1Link: '',
         button2Text: '',
@@ -377,6 +385,20 @@ export default function Admin({ onToast }) {
       console.error(err);
       onToast('Error saving hero configuration.');
     }
+  };
+
+  const appendHeroSlides = (field, url) => {
+    setHeroConfig(prev => ({
+      ...prev,
+      [field]: [...(Array.isArray(prev[field]) ? prev[field] : []), url]
+    }));
+  };
+
+  const removeHeroSlide = (field, indexToRemove) => {
+    setHeroConfig(prev => ({
+      ...prev,
+      [field]: (Array.isArray(prev[field]) ? prev[field] : []).filter((_, index) => index !== indexToRemove)
+    }));
   };
 
   useEffect(() => {
@@ -1600,6 +1622,42 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-form-group">
+                  <label className="admin-label">PC / Laptop Hero Slideshow Photos</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    onChange={(e) => handleDirectUpload(e, (url) => appendHeroSlides('desktopSlides', url), { allowVideo: false })}
+                    style={{ marginBottom: '8px', display: 'block' }}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    step="0.5"
+                    className="admin-input"
+                    placeholder="Seconds between slides"
+                    value={(Number(heroConfig.desktopSlideIntervalMs || 5000) / 1000).toString()}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopSlideIntervalMs: Math.round(Number(e.target.value || 5) * 1000) }))}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                    {(Array.isArray(heroConfig.desktopSlides) ? heroConfig.desktopSlides : []).map((url, index) => (
+                      <div key={`${url}-${index}`} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '6px', overflow: 'hidden', height: '110px', background: '#f8fafc' }}>
+                        <img src={mediaUrl(url)} alt={`Desktop slide ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button
+                          type="button"
+                          onClick={() => removeHeroSlide('desktopSlides', index)}
+                          aria-label={`Remove desktop slide ${index + 1}`}
+                          style={{ position: 'absolute', top: '5px', right: '5px', border: '0', borderRadius: '999px', background: '#ef4444', color: '#fff', width: '24px', height: '24px', cursor: 'pointer' }}
+                        >
+                          x
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="admin-form-group">
                   <label className="admin-label">PC / Laptop Hero Video File/Link</label>
                   <input
                     type="file"
@@ -1656,6 +1714,42 @@ export default function Admin({ onToast }) {
                     value={heroConfig.mobileImageUrl || ''}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileImageUrl: e.target.value }))}
                   />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Mobile Hero Slideshow Photos</label>
+                  <input
+                    type="file"
+                    multiple
+                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    onChange={(e) => handleDirectUpload(e, (url) => appendHeroSlides('mobileSlides', url), { allowVideo: false })}
+                    style={{ marginBottom: '8px', display: 'block' }}
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    step="0.5"
+                    className="admin-input"
+                    placeholder="Seconds between slides"
+                    value={(Number(heroConfig.mobileSlideIntervalMs || 5000) / 1000).toString()}
+                    onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileSlideIntervalMs: Math.round(Number(e.target.value || 5) * 1000) }))}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '10px', marginTop: '10px' }}>
+                    {(Array.isArray(heroConfig.mobileSlides) ? heroConfig.mobileSlides : []).map((url, index) => (
+                      <div key={`${url}-${index}`} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '6px', overflow: 'hidden', height: '110px', background: '#f8fafc' }}>
+                        <img src={mediaUrl(url)} alt={`Mobile slide ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <button
+                          type="button"
+                          onClick={() => removeHeroSlide('mobileSlides', index)}
+                          aria-label={`Remove mobile slide ${index + 1}`}
+                          style={{ position: 'absolute', top: '5px', right: '5px', border: '0', borderRadius: '999px', background: '#ef4444', color: '#fff', width: '24px', height: '24px', cursor: 'pointer' }}
+                        >
+                          x
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="admin-form-group">
