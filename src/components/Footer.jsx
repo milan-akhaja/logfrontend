@@ -155,22 +155,22 @@ export default function Footer({ onToast }) {
 
           {/* Col 1: Follow the log movements */}
           <div className="footer-accordion-col footer-socials-col">
-            <h4 className="footer-title" style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <h3 className="footer-title" style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Follow the log movments
-            </h4>
+            </h3>
             <ul className="footer-links pc-only">
               <li><a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer">Instagram</a></li>
             </ul>
             <div className="footer-social-icons-row" style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-              <a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer" style={{ color: 'white' }}><Instagram size={20} /></a>
+              <a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer" aria-label="Follow LOG on Instagram" style={{ color: 'white' }}><Instagram size={20} /></a>
             </div>
           </div>
 
           {/* Col 2: We are LOG */}
           <div className="footer-accordion-col footer-we-are-log-col">
-            <h4 className="footer-title" onClick={() => toggleSection('we-are-log')} style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <h3 className="footer-title" onClick={() => toggleSection('we-are-log')} style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               We are LOG <span className="accordion-caret pc-only">▾</span>
-            </h4>
+            </h3>
             <ul className="footer-links always-visible">
               <li><Link to="/new-in">New in</Link></li>
               <li><Link to="/our-mission">Our Mission</Link></li>
@@ -180,9 +180,9 @@ export default function Footer({ onToast }) {
 
           {/* Col 3: Order Support */}
           <div className="footer-accordion-col footer-order-support-col">
-            <h4 className="footer-title" onClick={() => toggleSection('support')} style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <h3 className="footer-title" onClick={() => toggleSection('support')} style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Order Support <span className="accordion-caret pc-only">▾</span>
-            </h4>
+            </h3>
             <ul className="footer-links always-visible">
               <li><Link to="/make-return">Make a return/Exchange</Link></li>
               <li><Link to="/refund-policy">Refund/Exchange policy</Link></li>

@@ -84,8 +84,8 @@ export function ProductGridCard({ product, onAddToCart }) {
         {product.stock === 0 && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
 
         {/* Scroll Buttons */}
-        <button className="card-slide-arrow arrow-left" onClick={prevSlide}>&#10094;</button>
-        <button className="card-slide-arrow arrow-right" onClick={nextSlide}>&#10095;</button>
+        <button className="card-slide-arrow arrow-left" onClick={prevSlide} aria-label={`Previous image for ${product.name}`}>&#10094;</button>
+        <button className="card-slide-arrow arrow-right" onClick={nextSlide} aria-label={`Next image for ${product.name}`}>&#10095;</button>
 
         {/* Carousel Slides */}
         {displayImages.map((imgUrl, idx) => (
@@ -136,6 +136,7 @@ export function ProductGridCard({ product, onAddToCart }) {
           {product.stock > 0 ? (
             <button
               className="add-to-bag-btn"
+              aria-label={`Add ${product.name} to bag`}
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart(product);
@@ -147,6 +148,7 @@ export function ProductGridCard({ product, onAddToCart }) {
           ) : (
             <button
               className="add-to-bag-btn sold-out-btn"
+              aria-label={`${product.name} is sold out`}
               style={{ opacity: 0.5, cursor: 'not-allowed' }}
               onClick={(e) => e.stopPropagation()}
               disabled
@@ -208,7 +210,7 @@ function GalleryScroller() {
                 key={item.id || idx}
                 className={getSlideClass(idx)}
               >
-                <a href={appPath(item.link || '#')} className="gallery-item-link-card">
+                <a href={appPath(item.link || '#')} className="gallery-item-link-card" aria-label={item.title ? `Open ${item.title}` : 'Open gallery item'}>
                   <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} loading="lazy" decoding="async" />
                   {item.title && (
                     <div className="gallery-slide-text-overlay">

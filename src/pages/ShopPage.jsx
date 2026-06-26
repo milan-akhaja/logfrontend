@@ -273,7 +273,7 @@ export default function ShopPage({ onAddToCart }) {
           </aside>
 
           {/* Right Side: Product Catalog Grid */}
-          <main className="shoppage-main">
+          <div className="shoppage-main">
             {filteredProducts.length > 0 ? (
               <div className="product-grid">
                 {filteredProducts.map(product => (
@@ -292,7 +292,7 @@ export default function ShopPage({ onAddToCart }) {
                 </button>
               </div>
             )}
-          </main>
+          </div>
 
         </div>
 

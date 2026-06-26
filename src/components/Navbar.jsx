@@ -104,13 +104,14 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
               className="nav-action-icon-btn search-btn-trigger pc-only"
               onClick={() => setSearchOpen(true)}
               title="Search Products"
+              aria-label="Search products"
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Search size={18} />
             </button>
 
             {/* Bag button */}
-            <button className="bag-btn header-bag-btn pc-only" onClick={onCartOpen}>
+            <button className="bag-btn header-bag-btn pc-only" onClick={onCartOpen} aria-label={`Open bag${cartCount > 0 ? ` with ${cartCount} item${cartCount > 1 ? 's' : ''}` : ''}`}>
               BAG {cartCount > 0 && <span className="bag-count">{cartCount}</span>}
             </button>
 
@@ -119,6 +120,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
               className="nav-action-icon-btn burger-menu-trigger"
               onClick={() => setBurgerOpen(true)}
               title="Browse Categories"
+              aria-label="Open menu"
               style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <Menu size={20} />
@@ -131,13 +133,13 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
       {/* Floating Bottom Nav for Mobile Only */}
       <div className={`mobile-bottom-navbar mobile-only ${showBottomNav ? 'visible' : 'hidden'}`}>
         <div className="mobile-bottom-nav-inner">
-          <Link to="/shop" className="mobile-bottom-nav-btn" title="All Products">
+          <Link to="/shop" className="mobile-bottom-nav-btn" title="All Products" aria-label="All products">
             <Compass size={22} />
           </Link>
-          <button className="mobile-bottom-nav-btn" onClick={() => setSearchOpen(true)} title="Search">
+          <button className="mobile-bottom-nav-btn" onClick={() => setSearchOpen(true)} title="Search" aria-label="Search products">
             <Search size={22} />
           </button>
-          <button className="mobile-bottom-nav-btn" onClick={onCartOpen} title="Cart" style={{ position: 'relative' }}>
+          <button className="mobile-bottom-nav-btn" onClick={onCartOpen} title="Cart" aria-label={`Open cart${cartCount > 0 ? ` with ${cartCount} item${cartCount > 1 ? 's' : ''}` : ''}`} style={{ position: 'relative' }}>
             <ShoppingBag size={22} />
             {cartCount > 0 && <span className="mobile-bag-count">{cartCount}</span>}
           </button>

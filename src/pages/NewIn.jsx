@@ -131,6 +131,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                     {product.stock > 0 ? (
                       <button
                         className="add-to-bag-btn"
+                        aria-label={`Add ${product.name} to bag`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onAddToCart(product);
@@ -142,6 +143,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                     ) : (
                       <button
                         className="add-to-bag-btn sold-out-btn"
+                        aria-label={`${product.name} is sold out`}
                         style={{ opacity: 0.5, cursor: 'not-allowed' }}
                         onClick={(e) => e.stopPropagation()}
                         disabled
