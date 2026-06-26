@@ -167,6 +167,8 @@ export function ProductGridCard({ product, onAddToCart }) {
 function GalleryScroller() {
   const [items, setItems] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef({ startX: 0, currentX: 0, didSwipe: false });
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -176,12 +178,12 @@ function GalleryScroller() {
   }, []);
 
   useEffect(() => {
-    if (items.length <= 1) return;
+    if (items.length <= 1 || isDragging) return;
     const interval = setInterval(() => {
       setActiveIdx(prev => (prev + 1) % items.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [items]);
+  }, [items, isDragging]);
 
   if (items.length === 0) return null;
 
@@ -199,18 +201,64 @@ function GalleryScroller() {
     return 'gallery-slide hidden';
   };
 
+  const goNext = () => setActiveIdx(prev => (prev + 1) % items.length);
+  const goPrev = () => setActiveIdx(prev => (prev - 1 + items.length) % items.length);
+
+  const handlePointerDown = (event) => {
+    if (items.length <= 1) return;
+    dragRef.current = { startX: event.clientX, currentX: event.clientX, didSwipe: false };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!isDragging) return;
+    dragRef.current.currentX = event.clientX;
+    if (Math.abs(dragRef.current.currentX - dragRef.current.startX) > 8) {
+      dragRef.current.didSwipe = true;
+    }
+  };
+
+  const finishSwipe = () => {
+    if (!isDragging) return;
+    const deltaX = dragRef.current.currentX - dragRef.current.startX;
+    if (Math.abs(deltaX) > 45) {
+      if (deltaX < 0) goNext();
+      else goPrev();
+    }
+    window.setTimeout(() => {
+      dragRef.current.didSwipe = false;
+    }, 80);
+    setIsDragging(false);
+  };
+
   return (
     <section className="homepage-gallery-section">
       <div className="container">
         {/* Cover flow stack wrapper */}
         <div className="gallery-coverflow-wrapper">
-          <div className="gallery-slides-container">
+          <div
+            className={`gallery-slides-container ${isDragging ? 'is-dragging' : ''}`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishSwipe}
+            onPointerCancel={finishSwipe}
+            onPointerLeave={finishSwipe}
+          >
             {items.map((item, idx) => (
               <div
                 key={item.id || idx}
                 className={getSlideClass(idx)}
               >
-                <a href={appPath(item.link || '#')} className="gallery-item-link-card" aria-label={item.title ? `Open ${item.title}` : 'Open gallery item'}>
+                <a
+                  href={appPath(item.link || '#')}
+                  className="gallery-item-link-card"
+                  aria-label={item.title ? `Open ${item.title}` : 'Open gallery item'}
+                  draggable="false"
+                  onClick={(event) => {
+                    if (dragRef.current.didSwipe) event.preventDefault();
+                  }}
+                >
                   <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} loading="lazy" decoding="async" />
                   {item.title && (
                     <div className="gallery-slide-text-overlay">

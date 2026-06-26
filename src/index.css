@@ -3914,6 +3914,14 @@ header.scrolled .nav-action-icon-btn {
   align-items: center;
   justify-content: center;
   perspective: 1000px;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gallery-slides-container.is-dragging {
+  cursor: grabbing;
 }
 
 .gallery-slide {
@@ -3976,6 +3984,8 @@ header.scrolled .nav-action-icon-btn {
   object-fit: cover;
   display: block;
   transition: transform 0.5s ease;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .gallery-slide.active:hover img {
