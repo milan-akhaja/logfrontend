@@ -354,6 +354,8 @@ export default function Shop({ onAddToCart }) {
   const mobileHeroImages = Array.isArray(heroConfig.mobileSlides) && heroConfig.mobileSlides.length
     ? heroConfig.mobileSlides
     : [heroConfig.mobileImageUrl || heroConfig.bgImage].filter(Boolean);
+  const desktopSingleImage = heroConfig.bgImage || desktopHeroImages[0] || '';
+  const mobileSingleImage = heroConfig.mobileImageUrl || heroConfig.bgImage || mobileHeroImages[0] || '';
 
   useEffect(() => {
     setDesktopHeroSlideIndex(0);
@@ -364,7 +366,7 @@ export default function Shop({ onAddToCart }) {
   }, [mobileHeroImages.join('|')]);
 
   useEffect(() => {
-    if (heroConfig.desktopMediaType === 'video' || desktopHeroImages.length < 2) return undefined;
+    if (heroConfig.desktopMediaType !== 'slideshow' || desktopHeroImages.length < 2) return undefined;
     const delay = slideIntervalMs(heroConfig.desktopSlideIntervalMs);
     const timer = window.setInterval(() => {
       setDesktopHeroSlideIndex((index) => (index + 1) % desktopHeroImages.length);
@@ -373,7 +375,7 @@ export default function Shop({ onAddToCart }) {
   }, [desktopHeroImages.length, desktopHeroImages.join('|'), heroConfig.desktopMediaType, heroConfig.desktopSlideIntervalMs]);
 
   useEffect(() => {
-    if (heroConfig.mobileMediaType !== 'image' || mobileHeroImages.length < 2) return undefined;
+    if (heroConfig.mobileMediaType !== 'slideshow' || mobileHeroImages.length < 2) return undefined;
     const delay = slideIntervalMs(heroConfig.mobileSlideIntervalMs);
     const timer = window.setInterval(() => {
       setMobileHeroSlideIndex((index) => (index + 1) % mobileHeroImages.length);
@@ -472,8 +474,8 @@ export default function Shop({ onAddToCart }) {
     : filteredProducts;
 
   const heroShopLink = heroConfig.button1Link || '#shop-catalog';
-  const desktopHeroMediaType = heroConfig.desktopMediaType === 'video' ? 'video' : 'image';
-  const mobileHeroMediaType = heroConfig.mobileMediaType === 'image' ? 'image' : 'video';
+  const desktopHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.desktopMediaType) ? heroConfig.desktopMediaType : 'image';
+  const mobileHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.mobileMediaType) ? heroConfig.mobileMediaType : 'video';
   const desktopVideoUrl = heroConfig.desktopVideoUrl || heroConfig.mobileVideoUrl || '';
   const mobileImageUrl = mobileHeroImages[mobileHeroSlideIndex] || heroConfig.mobileImageUrl || heroConfig.bgImage;
   const trackHeroShopNow = (placement) => {
@@ -504,7 +506,7 @@ export default function Shop({ onAddToCart }) {
           >
             <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
           </video>
-        ) : (
+        ) : desktopHeroMediaType === 'slideshow' ? (
           <div className="hero-slideshow" aria-label="LOG streetwear background slideshow">
             {desktopHeroImages.map((image, index) => (
               <img
@@ -518,6 +520,8 @@ export default function Shop({ onAddToCart }) {
               />
             ))}
           </div>
+        ) : (
+          <img src={mediaUrl(desktopSingleImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
         )}
         <div className="hero-overlay"></div>
         <a
@@ -531,7 +535,7 @@ export default function Shop({ onAddToCart }) {
 
       {/* MOBILE HERO SECTION */}
       <section className="mobile-hero-video mobile-only">
-        {mobileHeroMediaType === 'image' ? (
+        {mobileHeroMediaType === 'slideshow' ? (
           <div className="mobile-hero-slideshow" aria-label="LOG streetwear mobile hero slideshow">
             {mobileHeroImages.map((image, index) => (
               <img
@@ -545,6 +549,15 @@ export default function Shop({ onAddToCart }) {
               />
             ))}
           </div>
+        ) : mobileHeroMediaType === 'image' ? (
+          <img
+            src={mediaUrl(mobileSingleImage)}
+            alt="LOG streetwear mobile hero"
+            className="mobile-hero-image"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
         ) : mobileVideoSrc && (
           <video
             ref={mobileHeroVideoRef}

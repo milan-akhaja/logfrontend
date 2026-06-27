@@ -396,8 +396,8 @@ export default function Admin({ onToast }) {
   const appendHeroSlides = (field, url) => {
     setHeroConfig(prev => ({
       ...prev,
-      ...(field === 'desktopSlides' ? { desktopMediaType: 'image' } : {}),
-      ...(field === 'mobileSlides' ? { mobileMediaType: 'image' } : {}),
+      ...(field === 'desktopSlides' ? { desktopMediaType: 'slideshow' } : {}),
+      ...(field === 'mobileSlides' ? { mobileMediaType: 'slideshow' } : {}),
       [field]: [...(Array.isArray(prev[field]) ? prev[field] : []), url]
     }));
   };
@@ -1607,7 +1607,8 @@ export default function Admin({ onToast }) {
                     value={heroConfig.desktopMediaType || 'image'}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopMediaType: e.target.value }))}
                   >
-                    <option value="image">Photo / Slideshow</option>
+                    <option value="image">Photo</option>
+                    <option value="slideshow">Slideshow</option>
                     <option value="video">Video</option>
                   </select>
                 </div>
@@ -1704,7 +1705,8 @@ export default function Admin({ onToast }) {
                     value={heroConfig.mobileMediaType || 'video'}
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileMediaType: e.target.value }))}
                   >
-                    <option value="image">Photo / Slideshow</option>
+                    <option value="image">Photo</option>
+                    <option value="slideshow">Slideshow</option>
                     <option value="video">Video</option>
                   </select>
                 </div>
