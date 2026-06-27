@@ -49,6 +49,32 @@ const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'b
 const VIDEO_UPLOAD_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v'];
 const UNSAFE_IMAGE_TYPES = ['image/svg+xml'];
 const PRODUCT_DRAFT_KEY = 'log_admin_product_draft';
+const HERO_PREVIEW_GUIDES = {
+  desktop: {
+    label: 'PC / Laptop',
+    frameLabel: 'Desktop hero preview',
+    className: 'desktop',
+    imageSize: '1920 x 1080 px',
+    safeSize: '2560 x 1440 px for sharper desktop screens',
+    ratio: '16:9 landscape',
+    videoSize: '1920 x 1080 px MP4/WebM/MOV',
+    note: 'Keep the main product or model near the center because the hero uses cover cropping on wide screens.'
+  },
+  mobile: {
+    label: 'Mobile',
+    frameLabel: 'Mobile hero preview',
+    className: 'mobile',
+    imageSize: '1080 x 1920 px',
+    safeSize: '1440 x 2560 px for sharper phones',
+    ratio: '9:16 portrait',
+    videoSize: '1080 x 1920 px MP4/WebM/MOV',
+    note: 'Use vertical media and keep text or faces away from the top header and bottom Shop now area.'
+  }
+};
+
+function looksLikeVideo(url = '') {
+  return /\.(mp4|mov|webm|m4v)(\?|#|$)/i.test(String(url));
+}
 
 function intervalSeconds(value) {
   const parsed = Number(value);
@@ -407,6 +433,95 @@ export default function Admin({ onToast }) {
       ...prev,
       [field]: (Array.isArray(prev[field]) ? prev[field] : []).filter((_, index) => index !== indexToRemove)
     }));
+  };
+
+  const getHeroPreviewItems = (device) => {
+    const isDesktop = device === 'desktop';
+    const type = isDesktop
+      ? (heroConfig.desktopMediaType || 'image')
+      : (heroConfig.mobileMediaType || 'video');
+    const imageUrl = isDesktop ? heroConfig.bgImage : heroConfig.mobileImageUrl;
+    const videoUrl = isDesktop ? heroConfig.desktopVideoUrl : heroConfig.mobileVideoUrl;
+    const slides = isDesktop ? heroConfig.desktopSlides : heroConfig.mobileSlides;
+
+    if (type === 'video') {
+      return videoUrl ? [{ url: videoUrl, mediaType: 'video' }] : [];
+    }
+
+    if (type === 'slideshow') {
+      return (Array.isArray(slides) ? slides : [])
+        .filter(Boolean)
+        .map(url => ({ url, mediaType: looksLikeVideo(url) ? 'video' : 'image' }));
+    }
+
+    return imageUrl ? [{ url: imageUrl, mediaType: looksLikeVideo(imageUrl) ? 'video' : 'image' }] : [];
+  };
+
+  const renderHeroMediaPreview = (device) => {
+    const guide = HERO_PREVIEW_GUIDES[device];
+    const items = getHeroPreviewItems(device);
+    const firstItem = items[0];
+    const isSlideshow = (device === 'desktop' ? heroConfig.desktopMediaType : heroConfig.mobileMediaType) === 'slideshow';
+
+    return (
+      <div className={`hero-admin-preview hero-admin-preview-${guide.className}`}>
+        <div className="hero-admin-preview-copy">
+          <div>
+            <p className="hero-admin-preview-eyebrow">{guide.frameLabel}</p>
+            <h4>{guide.label} upload guide</h4>
+          </div>
+          <div className="hero-admin-spec-grid">
+            <span><strong>Best image:</strong> {guide.imageSize}</span>
+            <span><strong>Sharp option:</strong> {guide.safeSize}</span>
+            <span><strong>Ratio:</strong> {guide.ratio}</span>
+            <span><strong>Best video:</strong> {guide.videoSize}</span>
+            <span><strong>Images:</strong> JPG, JPEG, PNG, WEBP, GIF, AVIF, BMP</span>
+            <span><strong>Videos:</strong> MP4, MOV, WEBM, M4V</span>
+          </div>
+          <p className="hero-admin-preview-note">{guide.note}</p>
+        </div>
+
+        <div className={`hero-admin-device-frame ${guide.className}`}>
+          {firstItem ? (
+            firstItem.mediaType === 'video' ? (
+              <video
+                src={mediaUrl(firstItem.url)}
+                muted
+                loop
+                playsInline
+                controls
+                preload="metadata"
+              />
+            ) : (
+              <img src={mediaUrl(firstItem.url)} alt={`${guide.label} hero preview`} />
+            )
+          ) : (
+            <div className="hero-admin-preview-empty">
+              <Upload size={24} />
+              <span>No {guide.label.toLowerCase()} media selected</span>
+            </div>
+          )}
+          <div className="hero-admin-frame-label">
+            {guide.label} {firstItem ? 'preview' : 'waiting for upload'}
+          </div>
+        </div>
+
+        {isSlideshow && items.length > 0 && (
+          <div className="hero-admin-slide-strip" aria-label={`${guide.label} slideshow preview thumbnails`}>
+            {items.map((item, index) => (
+              <div className="hero-admin-slide-thumb" key={`${item.url}-${index}`}>
+                {item.mediaType === 'video' ? (
+                  <video src={mediaUrl(item.url)} muted playsInline preload="metadata" />
+                ) : (
+                  <img src={mediaUrl(item.url)} alt={`${guide.label} slide ${index + 1}`} />
+                )}
+                <span>{index + 1}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -1596,7 +1711,7 @@ export default function Admin({ onToast }) {
             </div>
 
             <form onSubmit={handleSaveHeroConfig} style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '700px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '980px' }}>
 
                 <h3 style={{ borderBottom: '1px solid var(--admin-border)', paddingBottom: '8px', fontSize: '15px', fontWeight: '700' }}>Hero Media</h3>
 
@@ -1684,6 +1799,8 @@ export default function Admin({ onToast }) {
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, desktopVideoUrl: e.target.value }))}
                   />
                 </div>
+
+                {renderHeroMediaPreview('desktop')}
 
                 <div className="admin-form-group">
                   <label className="admin-label">Shop Now Link Target</label>
@@ -1782,6 +1899,8 @@ export default function Admin({ onToast }) {
                     onChange={(e) => setHeroConfig(prev => ({ ...prev, mobileVideoUrl: e.target.value }))}
                   />
                 </div>
+
+                {renderHeroMediaPreview('mobile')}
 
                 <button type="submit" className="btn btn-accent" style={{ alignSelf: 'flex-start', padding: '12px 28px', marginTop: '10px' }}>Save Configs</button>
               </div>
