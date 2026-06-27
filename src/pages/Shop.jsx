@@ -181,7 +181,9 @@ function GalleryScroller() {
     startY: 0,
     currentX: 0,
     didSwipe: false,
+    isActive: false,
     source: null,
+    pointerId: null,
     isHorizontal: false
   });
 
@@ -219,14 +221,16 @@ function GalleryScroller() {
   const goNext = () => setActiveIdx(prev => (prev + 1) % items.length);
   const goPrev = () => setActiveIdx(prev => (prev - 1 + items.length) % items.length);
 
-  const startDrag = (clientX, clientY, source) => {
+  const startDrag = (clientX, clientY, source, pointerId = null) => {
     if (items.length <= 1) return;
     dragRef.current = {
       startX: clientX,
       startY: clientY,
       currentX: clientX,
       didSwipe: false,
+      isActive: true,
       source,
+      pointerId,
       isHorizontal: false
     };
     setIsDragging(true);
@@ -234,7 +238,7 @@ function GalleryScroller() {
   };
 
   const moveDrag = (clientX, clientY, event) => {
-    if (!isDragging) return;
+    if (!dragRef.current.isActive) return;
     const deltaX = clientX - dragRef.current.startX;
     const deltaY = clientY - dragRef.current.startY;
     dragRef.current.currentX = clientX;
@@ -244,27 +248,40 @@ function GalleryScroller() {
     if (dragRef.current.isHorizontal) {
       event?.preventDefault?.();
       dragRef.current.didSwipe = Math.abs(deltaX) > 10;
-      setDragOffset(Math.max(-92, Math.min(92, deltaX * 0.42)));
+      setDragOffset(Math.max(-118, Math.min(118, deltaX * 0.5)));
     }
   };
 
   const handlePointerDown = (event) => {
-    startDrag(event.clientX, event.clientY, 'pointer');
+    if (event.button !== undefined && event.button !== 0) return;
+    startDrag(event.clientX, event.clientY, 'pointer', event.pointerId);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const handlePointerMove = (event) => {
     if (dragRef.current.source !== 'pointer') return;
+    if (dragRef.current.pointerId !== null && dragRef.current.pointerId !== event.pointerId) return;
     moveDrag(event.clientX, event.clientY, event);
   };
 
-  const finishSwipe = () => {
-    if (!isDragging) return;
+  const finishSwipe = (event) => {
+    if (!dragRef.current.isActive) return;
+    if (
+      event?.pointerId !== undefined &&
+      dragRef.current.pointerId !== null &&
+      dragRef.current.pointerId !== event.pointerId
+    ) {
+      return;
+    }
     const deltaX = dragRef.current.currentX - dragRef.current.startX;
     if (Math.abs(deltaX) > 45) {
       if (deltaX < 0) goNext();
       else goPrev();
     }
+    dragRef.current.isActive = false;
+    dragRef.current.source = null;
+    dragRef.current.pointerId = null;
+    dragRef.current.isHorizontal = false;
     window.setTimeout(() => {
       dragRef.current.didSwipe = false;
     }, 80);
@@ -273,6 +290,7 @@ function GalleryScroller() {
   };
 
   const handleTouchStart = (event) => {
+    if (dragRef.current.source === 'pointer') return;
     const touch = event.touches?.[0];
     if (!touch) return;
     startDrag(touch.clientX, touch.clientY, 'touch');
