@@ -175,7 +175,15 @@ function GalleryScroller() {
   const [items, setItems] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef({ startX: 0, currentX: 0, didSwipe: false });
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragRef = useRef({
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    didSwipe: false,
+    source: null,
+    isHorizontal: false
+  });
 
   useEffect(() => {
     fetch('/api/gallery')
@@ -211,19 +219,43 @@ function GalleryScroller() {
   const goNext = () => setActiveIdx(prev => (prev + 1) % items.length);
   const goPrev = () => setActiveIdx(prev => (prev - 1 + items.length) % items.length);
 
-  const handlePointerDown = (event) => {
+  const startDrag = (clientX, clientY, source) => {
     if (items.length <= 1) return;
-    dragRef.current = { startX: event.clientX, currentX: event.clientX, didSwipe: false };
+    dragRef.current = {
+      startX: clientX,
+      startY: clientY,
+      currentX: clientX,
+      didSwipe: false,
+      source,
+      isHorizontal: false
+    };
     setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const moveDrag = (clientX, clientY, event) => {
+    if (!isDragging) return;
+    const deltaX = clientX - dragRef.current.startX;
+    const deltaY = clientY - dragRef.current.startY;
+    dragRef.current.currentX = clientX;
+    if (!dragRef.current.isHorizontal && Math.abs(deltaX) > 8) {
+      dragRef.current.isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+    }
+    if (dragRef.current.isHorizontal) {
+      event?.preventDefault?.();
+      dragRef.current.didSwipe = Math.abs(deltaX) > 10;
+      setDragOffset(Math.max(-92, Math.min(92, deltaX * 0.42)));
+    }
+  };
+
+  const handlePointerDown = (event) => {
+    startDrag(event.clientX, event.clientY, 'pointer');
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const handlePointerMove = (event) => {
-    if (!isDragging) return;
-    dragRef.current.currentX = event.clientX;
-    if (Math.abs(dragRef.current.currentX - dragRef.current.startX) > 8) {
-      dragRef.current.didSwipe = true;
-    }
+    if (dragRef.current.source !== 'pointer') return;
+    moveDrag(event.clientX, event.clientY, event);
   };
 
   const finishSwipe = () => {
@@ -236,7 +268,26 @@ function GalleryScroller() {
     window.setTimeout(() => {
       dragRef.current.didSwipe = false;
     }, 80);
+    setDragOffset(0);
     setIsDragging(false);
+  };
+
+  const handleTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    startDrag(touch.clientX, touch.clientY, 'touch');
+  };
+
+  const handleTouchMove = (event) => {
+    if (dragRef.current.source !== 'touch') return;
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    moveDrag(touch.clientX, touch.clientY, event);
+  };
+
+  const handleTouchEnd = () => {
+    if (dragRef.current.source !== 'touch') return;
+    finishSwipe();
   };
 
   return (
@@ -246,11 +297,16 @@ function GalleryScroller() {
         <div className="gallery-coverflow-wrapper">
           <div
             className={`gallery-slides-container ${isDragging ? 'is-dragging' : ''}`}
+            style={{ '--gallery-drag-x': `${dragOffset}px` }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={finishSwipe}
             onPointerCancel={finishSwipe}
             onPointerLeave={finishSwipe}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
           >
             {items.map((item, idx) => (
               <div
