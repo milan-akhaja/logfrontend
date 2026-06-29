@@ -366,6 +366,17 @@ export default function Shop({ onAddToCart }) {
   const [desktopHeroSlideIndex, setDesktopHeroSlideIndex] = useState(0);
   const [mobileHeroSlideIndex, setMobileHeroSlideIndex] = useState(0);
   const mobileHeroVideoRef = useRef(null);
+  const heroSwipeRef = useRef({
+    mode: null,
+    count: 0,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    pointerId: null,
+    source: null,
+    isActive: false,
+    isHorizontal: false
+  });
   const [heroConfig, setHeroConfig] = useState({
     tagline: 'New Season Drop',
     title: 'Wear\nSome\nthing\nReal.',
@@ -552,6 +563,98 @@ export default function Shop({ onAddToCart }) {
   const mobileHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.mobileMediaType) ? heroConfig.mobileMediaType : 'video';
   const desktopVideoUrl = heroConfig.desktopVideoUrl || heroConfig.mobileVideoUrl || '';
   const mobileImageUrl = mobileHeroImages[mobileHeroSlideIndex] || heroConfig.mobileImageUrl || heroConfig.bgImage;
+  const moveHeroSlide = (mode, direction, count) => {
+    if (count <= 1) return;
+    const setIndex = mode === 'desktop' ? setDesktopHeroSlideIndex : setMobileHeroSlideIndex;
+    setIndex((index) => (index + direction + count) % count);
+  };
+
+  const startHeroSwipe = (mode, count, clientX, clientY, source, pointerId = null) => {
+    if (count <= 1) return;
+    heroSwipeRef.current = {
+      mode,
+      count,
+      startX: clientX,
+      startY: clientY,
+      currentX: clientX,
+      pointerId,
+      source,
+      isActive: true,
+      isHorizontal: false
+    };
+  };
+
+  const moveHeroSwipe = (clientX, clientY, event) => {
+    const swipe = heroSwipeRef.current;
+    if (!swipe.isActive) return;
+    const deltaX = clientX - swipe.startX;
+    const deltaY = clientY - swipe.startY;
+    swipe.currentX = clientX;
+    if (!swipe.isHorizontal && Math.abs(deltaX) > 10) {
+      swipe.isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+    }
+    if (swipe.isHorizontal) {
+      event?.preventDefault?.();
+    }
+  };
+
+  const finishHeroSwipe = (event) => {
+    const swipe = heroSwipeRef.current;
+    if (!swipe.isActive) return;
+    if (
+      event?.pointerId !== undefined &&
+      swipe.pointerId !== null &&
+      event.pointerId !== swipe.pointerId
+    ) {
+      return;
+    }
+    const deltaX = swipe.currentX - swipe.startX;
+    const deltaY = Math.abs((event?.clientY || swipe.startY) - swipe.startY);
+    if (Math.abs(deltaX) > 42 && Math.abs(deltaX) > deltaY) {
+      moveHeroSlide(swipe.mode, deltaX < 0 ? 1 : -1, swipe.count);
+    }
+    heroSwipeRef.current = {
+      mode: null,
+      count: 0,
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      pointerId: null,
+      source: null,
+      isActive: false,
+      isHorizontal: false
+    };
+  };
+
+  const heroSwipeHandlers = (mode, count) => ({
+    onPointerDown: (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      startHeroSwipe(mode, count, event.clientX, event.clientY, 'pointer', event.pointerId);
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    },
+    onPointerMove: (event) => {
+      const swipe = heroSwipeRef.current;
+      if (swipe.source !== 'pointer' || swipe.pointerId !== event.pointerId) return;
+      moveHeroSwipe(event.clientX, event.clientY, event);
+    },
+    onPointerUp: finishHeroSwipe,
+    onPointerCancel: finishHeroSwipe,
+    onTouchStart: (event) => {
+      if (heroSwipeRef.current.source === 'pointer') return;
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      startHeroSwipe(mode, count, touch.clientX, touch.clientY, 'touch');
+    },
+    onTouchMove: (event) => {
+      if (heroSwipeRef.current.source !== 'touch') return;
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      moveHeroSwipe(touch.clientX, touch.clientY, event);
+    },
+    onTouchEnd: finishHeroSwipe,
+    onTouchCancel: finishHeroSwipe
+  });
+
   const trackHeroShopNow = (placement) => {
     fetch('/api/track', {
       method: 'POST',
@@ -581,7 +684,11 @@ export default function Shop({ onAddToCart }) {
             <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
           </video>
         ) : desktopHeroMediaType === 'slideshow' ? (
-          <div className="hero-slideshow" aria-label="LOG streetwear background slideshow">
+          <div
+            className="hero-slideshow"
+            aria-label="LOG streetwear background slideshow"
+            {...heroSwipeHandlers('desktop', desktopHeroImages.length)}
+          >
             {desktopHeroImages.map((image, index) => (
               <img
                 key={`${image}-${index}`}
@@ -610,7 +717,11 @@ export default function Shop({ onAddToCart }) {
       {/* MOBILE HERO SECTION */}
       <section className="mobile-hero-video mobile-only">
         {mobileHeroMediaType === 'slideshow' ? (
-          <div className="mobile-hero-slideshow" aria-label="LOG streetwear mobile hero slideshow">
+          <div
+            className="mobile-hero-slideshow"
+            aria-label="LOG streetwear mobile hero slideshow"
+            {...heroSwipeHandlers('mobile', mobileHeroImages.length)}
+          >
             {mobileHeroImages.map((image, index) => (
               <img
                 key={`${image}-${index}`}

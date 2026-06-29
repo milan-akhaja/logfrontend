@@ -382,6 +382,15 @@ header.scrolled .bag-count {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.hero-slideshow:active,
+.mobile-hero-slideshow:active {
+  cursor: grabbing;
 }
 
 .hero-slideshow-image,
@@ -394,6 +403,8 @@ header.scrolled .bag-count {
   opacity: 0;
   transition: opacity 900ms ease, transform 6s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .hero-slideshow-image.active,
