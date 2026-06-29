@@ -180,6 +180,7 @@ function GalleryScroller() {
     startX: 0,
     startY: 0,
     currentX: 0,
+    currentY: 0,
     didSwipe: false,
     isActive: false,
     source: null,
@@ -227,6 +228,7 @@ function GalleryScroller() {
       startX: clientX,
       startY: clientY,
       currentX: clientX,
+      currentY: clientY,
       didSwipe: false,
       isActive: true,
       source,
@@ -242,8 +244,9 @@ function GalleryScroller() {
     const deltaX = clientX - dragRef.current.startX;
     const deltaY = clientY - dragRef.current.startY;
     dragRef.current.currentX = clientX;
+    dragRef.current.currentY = clientY;
     if (!dragRef.current.isHorizontal && Math.abs(deltaX) > 8) {
-      dragRef.current.isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+      dragRef.current.isHorizontal = Math.abs(deltaX) > Math.abs(deltaY) * 1.1;
     }
     if (dragRef.current.isHorizontal) {
       event?.preventDefault?.();
@@ -253,12 +256,14 @@ function GalleryScroller() {
   };
 
   const handlePointerDown = (event) => {
+    if (event.pointerType === 'touch') return;
     if (event.button !== undefined && event.button !== 0) return;
     startDrag(event.clientX, event.clientY, 'pointer', event.pointerId);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const handlePointerMove = (event) => {
+    if (event.pointerType === 'touch') return;
     if (dragRef.current.source !== 'pointer') return;
     if (dragRef.current.pointerId !== null && dragRef.current.pointerId !== event.pointerId) return;
     moveDrag(event.clientX, event.clientY, event);
@@ -274,7 +279,10 @@ function GalleryScroller() {
       return;
     }
     const deltaX = dragRef.current.currentX - dragRef.current.startX;
-    if (Math.abs(deltaX) > 45) {
+    const deltaY = dragRef.current.currentY !== undefined
+      ? dragRef.current.currentY - dragRef.current.startY
+      : 0;
+    if (Math.abs(deltaX) > 34 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
       if (deltaX < 0) goNext();
       else goPrev();
     }
@@ -282,6 +290,7 @@ function GalleryScroller() {
     dragRef.current.source = null;
     dragRef.current.pointerId = null;
     dragRef.current.isHorizontal = false;
+    dragRef.current.currentY = 0;
     window.setTimeout(() => {
       dragRef.current.didSwipe = false;
     }, 80);
@@ -300,6 +309,7 @@ function GalleryScroller() {
     if (dragRef.current.source !== 'touch') return;
     const touch = event.touches?.[0];
     if (!touch) return;
+    dragRef.current.currentY = touch.clientY;
     moveDrag(touch.clientX, touch.clientY, event);
   };
 
