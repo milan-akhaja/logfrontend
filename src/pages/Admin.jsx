@@ -71,9 +71,26 @@ const HERO_PREVIEW_GUIDES = {
     note: 'Use vertical media and keep text or faces away from the top header and bottom Shop now area.'
   }
 };
+const DELIVERY_PARTNERS = [
+  { value: 'Delhivery', label: 'Delhivery', trackingUrl: (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}` },
+  { value: 'Blue Dart', label: 'Blue Dart', trackingUrl: (awb) => `https://www.bluedart.com/tracking?trackFor=0&trackNo=${encodeURIComponent(awb)}` },
+  { value: 'DTDC', label: 'DTDC', trackingUrl: (awb) => `https://www.dtdc.in/tracking/tracking_results.asp?Ttype=awb_no&strCnno=${encodeURIComponent(awb)}` },
+  { value: 'India Post', label: 'India Post', trackingUrl: (awb) => `https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx?${encodeURIComponent(awb)}` },
+  { value: 'Xpressbees', label: 'Xpressbees', trackingUrl: (awb) => `https://www.xpressbees.com/track?isawb=true&trackid=${encodeURIComponent(awb)}` },
+  { value: 'Ecom Express', label: 'Ecom Express', trackingUrl: (awb) => `https://ecomexpress.in/tracking/?awb_field=${encodeURIComponent(awb)}` },
+  { value: 'Shiprocket', label: 'Shiprocket', trackingUrl: (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}` },
+  { value: 'Custom', label: 'Custom / Other', trackingUrl: () => '' }
+];
 
 function looksLikeVideo(url = '') {
   return /\.(mp4|mov|webm|m4v)(\?|#|$)/i.test(String(url));
+}
+
+function trackingUrlForPartner(partner, trackingNumber) {
+  const cleanTracking = String(trackingNumber || '').trim();
+  if (!cleanTracking) return '';
+  const selected = DELIVERY_PARTNERS.find((item) => item.value === partner);
+  return selected?.trackingUrl ? selected.trackingUrl(cleanTracking) : '';
 }
 
 function intervalSeconds(value) {
@@ -265,6 +282,11 @@ export default function Admin({ onToast }) {
 
   // Modals / Editing states
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [shipmentDraft, setShipmentDraft] = useState({
+    shipmentPartner: 'Delhivery',
+    trackingNumber: '',
+    trackingUrl: ''
+  });
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [savingProduct, setSavingProduct] = useState(false);
@@ -434,6 +456,15 @@ export default function Admin({ onToast }) {
       [field]: (Array.isArray(prev[field]) ? prev[field] : []).filter((_, index) => index !== indexToRemove)
     }));
   };
+
+  useEffect(() => {
+    if (!selectedOrder) return;
+    setShipmentDraft({
+      shipmentPartner: selectedOrder.shipmentPartner || 'Delhivery',
+      trackingNumber: selectedOrder.trackingNumber || '',
+      trackingUrl: selectedOrder.trackingUrl || trackingUrlForPartner(selectedOrder.shipmentPartner || 'Delhivery', selectedOrder.trackingNumber || '')
+    });
+  }, [selectedOrder]);
 
   const getHeroPreviewItems = (device) => {
     const isDesktop = device === 'desktop';
@@ -755,6 +786,100 @@ export default function Admin({ onToast }) {
     } catch (err) {
       console.error(err);
       onToast('Order refund request failed.');
+    }
+  };
+
+  const handleOrderShipping = async (orderId) => {
+    const trackingNumber = shipmentDraft.trackingNumber.trim();
+    if (!shipmentDraft.shipmentPartner) {
+      onToast('Select a delivery partner.');
+      return;
+    }
+    if (!trackingNumber) {
+      onToast('Enter tracking or AWB number.');
+      return;
+    }
+    const trackingUrl = shipmentDraft.trackingUrl.trim() || trackingUrlForPartner(shipmentDraft.shipmentPartner, trackingNumber);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/shipping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipmentPartner: shipmentDraft.shipmentPartner,
+          trackingNumber,
+          trackingUrl,
+          status: 'Shipped'
+        })
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data.order) setSelectedOrder(data.order);
+        onToast(data.emailSent ? 'Order shipped and customer email sent.' : 'Order shipped. Email is pending/check SMTP.');
+        fetchData();
+      } else {
+        onToast(await getApiError(res, 'Shipping update failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Shipping update request failed.');
+    }
+  };
+
+  const handleCreateReturnRefundRequest = async (orderId) => {
+    if (!window.confirm('Create a return/refund request for this order?')) return;
+    try {
+      const res = await fetch(`/api/orders/${orderId}/return-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'Return/Refund',
+          reason: 'Admin initiated return/refund request',
+          notes: 'Created from admin order details.'
+        })
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast(data.duplicate ? 'Pending return/refund request already exists.' : 'Return/refund request created.');
+        fetchData();
+      } else {
+        onToast(await getApiError(res, 'Return/refund request failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Return/refund request failed.');
+    }
+  };
+
+  const handleResetOrderRecords = async () => {
+    if (!window.confirm('Reset all order records and return/exchange requests? This will also reset the next order ID to LOG-2301.')) return;
+    try {
+      const res = await fetch('/api/orders', { method: 'DELETE' });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast(`Order records reset. Next order ID: ${data.nextOrderId || 'LOG-2301'}`);
+        fetchData();
+      } else {
+        onToast(await getApiError(res, 'Order records reset failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Order records reset request failed.');
+    }
+  };
+
+  const handleResetReturnRecords = async () => {
+    if (!window.confirm('Reset all return and exchange requests?')) return;
+    try {
+      const res = await fetch('/api/returns', { method: 'DELETE' });
+      if (res.ok) {
+        onToast('Return and exchange requests reset.');
+        fetchData();
+      } else {
+        onToast(await getApiError(res, 'Return records reset failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Return records reset request failed.');
     }
   };
 
@@ -1913,6 +2038,14 @@ export default function Admin({ onToast }) {
           <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Return & Exchange Requests</h2>
+              <button
+                type="button"
+                className="admin-btn admin-btn-danger"
+                onClick={handleResetReturnRecords}
+                disabled={returns.length === 0}
+              >
+                Reset Requests
+              </button>
             </div>
             <div className="admin-table-wrapper">
               <table className="admin-table">
@@ -2025,6 +2158,14 @@ export default function Admin({ onToast }) {
           <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Order Records</h2>
+              <button
+                type="button"
+                className="admin-btn admin-btn-danger"
+                onClick={handleResetOrderRecords}
+                disabled={orders.length === 0 && returns.length === 0}
+              >
+                Reset Orders
+              </button>
             </div>
             <div className="admin-table-wrapper">
               <table className="admin-table">
@@ -2809,7 +2950,7 @@ export default function Admin({ onToast }) {
       {/* Order detail modal */}
       {selectedOrder && (
         <div className="admin-modal-overlay" onClick={() => setSelectedOrder(null)}>
-          <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '760px' }}>
             <div className="admin-modal-header">
               <h2>Order Details: {selectedOrder.id}</h2>
               <button onClick={() => setSelectedOrder(null)}>&times;</button>
@@ -2855,12 +2996,79 @@ export default function Admin({ onToast }) {
                 <span>₹{selectedOrder.donation || (selectedOrder.items?.reduce((sum, item) => sum + item.quantity, 0) * 23) || 23}</span>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                {selectedOrder.status !== 'Shipped' && selectedOrder.status !== 'Refunded' && (
-                  <button className="admin-btn admin-btn-primary" onClick={() => handleOrderStatus(selectedOrder.id, 'Shipped')}>
-                    <Truck size={14} /> Ship Order
-                  </button>
+              <div style={{ border: '1px solid var(--admin-border)', borderRadius: '8px', padding: '14px', background: '#f8fafc' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                  <strong>Shipping / Delivery Partner</strong>
+                  <span className={`admin-badge badge-${selectedOrder.status?.toLowerCase()}`}>{selectedOrder.status}</span>
+                </div>
+                <div className="admin-form-row" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                    <label className="admin-label">Delivery Partner</label>
+                    <select
+                      className="admin-input"
+                      value={shipmentDraft.shipmentPartner}
+                      onChange={(e) => {
+                        const partner = e.target.value;
+                        setShipmentDraft(prev => ({
+                          ...prev,
+                          shipmentPartner: partner,
+                          trackingUrl: trackingUrlForPartner(partner, prev.trackingNumber)
+                        }));
+                      }}
+                    >
+                      {DELIVERY_PARTNERS.map((partner) => (
+                        <option key={partner.value} value={partner.value}>{partner.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                    <label className="admin-label">Tracking / AWB Number</label>
+                    <input
+                      className="admin-input"
+                      value={shipmentDraft.trackingNumber}
+                      onChange={(e) => {
+                        const trackingNumber = e.target.value;
+                        setShipmentDraft(prev => ({
+                          ...prev,
+                          trackingNumber,
+                          trackingUrl: trackingUrlForPartner(prev.shipmentPartner, trackingNumber)
+                        }));
+                      }}
+                      placeholder="Enter tracking number"
+                    />
+                  </div>
+                </div>
+                <div className="admin-form-group" style={{ marginTop: '12px', marginBottom: 0 }}>
+                  <label className="admin-label">Tracking Link</label>
+                  <input
+                    className="admin-input"
+                    value={shipmentDraft.trackingUrl}
+                    onChange={(e) => setShipmentDraft(prev => ({ ...prev, trackingUrl: e.target.value }))}
+                    placeholder="Auto-filled for common delivery partners, or paste custom link"
+                  />
+                </div>
+                {selectedOrder.shippedAt && (
+                  <p style={{ margin: '10px 0 0', fontSize: '12px', color: 'var(--admin-text-muted)' }}>
+                    Last shipped update: {new Date(selectedOrder.shippedAt).toLocaleString()}
+                  </p>
                 )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '15px', flexWrap: 'wrap' }}>
+                <button
+                  className="admin-btn admin-btn-primary"
+                  onClick={() => handleOrderShipping(selectedOrder.id)}
+                  disabled={selectedOrder.status === 'Refunded'}
+                >
+                  <Truck size={14} /> Save & Ship Order
+                </button>
+                <button
+                  className="admin-btn"
+                  onClick={() => handleCreateReturnRefundRequest(selectedOrder.id)}
+                  disabled={selectedOrder.status === 'Refunded'}
+                >
+                  <RotateCcw size={14} /> Return / Refund Request
+                </button>
                 {selectedOrder.status !== 'Refunded' && (
                   <button className="admin-btn admin-btn-danger" onClick={() => handleOrderRefund(selectedOrder.id)}>
                     <RotateCcw size={14} /> Refund Order

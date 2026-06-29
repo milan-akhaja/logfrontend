@@ -101,7 +101,7 @@ export default function MakeReturn() {
               <label style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--grey-muted)' }}>Order ID *</label>
               <input 
                 type="text" 
-                placeholder="e.g. LOG-ORD-1234"
+                placeholder="e.g. LOG-2301"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 required

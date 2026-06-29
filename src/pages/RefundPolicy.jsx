@@ -56,7 +56,7 @@ export default function RefundPolicy() {
             <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a>
           </p>
           <p style={{ marginTop: '10px' }}>
-            Please make sure to include your <strong>Order ID</strong> (e.g. LOG-ORD-XXXX) and the specific <strong>reason for return or exchange</strong> in your message.
+            Please make sure to include your <strong>Order ID</strong> (e.g. LOG-2301) and the specific <strong>reason for return or exchange</strong> in your message.
           </p>
         </section>
 

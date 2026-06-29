@@ -181,6 +181,9 @@ export default function CartDrawer({
         const data = await saveOrder('COD');
         setEmailHtml(data.emailHtml || '');
         setOrderEmailSent(Boolean(data.emailSent));
+        if (!data.emailSent || !data.ownerEmailSent) {
+          onToast('Order saved, but one email notification did not send. Check SMTP settings.');
+        }
         localStorage.removeItem(CHECKOUT_ORDER_KEY);
         localStorage.removeItem(CHECKOUT_DRAFT_KEY);
         onClearCart();
