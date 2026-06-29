@@ -2588,6 +2588,101 @@ footer {
   border-color: var(--admin-primary);
 }
 
+.blog-block-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.blog-editor-block {
+  position: relative;
+  padding: 15px;
+  background: white;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.blog-editor-block:hover {
+  border-color: #cbd5e1;
+}
+
+.blog-editor-block.is-dragging {
+  opacity: 0.58;
+  border-color: var(--admin-primary);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.blog-block-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 32px 10px 0;
+}
+
+.blog-block-title {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--grey-muted);
+}
+
+.blog-block-drag-handle,
+.blog-block-move-actions button,
+.blog-block-delete {
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blog-block-drag-handle {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: grab;
+}
+
+.blog-block-drag-handle:active {
+  cursor: grabbing;
+  background: #f1f5f9;
+}
+
+.blog-block-move-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.blog-block-move-actions button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.blog-block-move-actions button:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.blog-block-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  color: red;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .admin-form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

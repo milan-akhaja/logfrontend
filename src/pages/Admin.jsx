@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Home,
   ShoppingBag,
@@ -20,7 +20,10 @@ import {
   PlaySquare,
   BookOpen,
   FolderPlus,
-  Upload
+  Upload,
+  GripVertical,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { mediaUrl } from '../lib/urls';
 
@@ -323,6 +326,8 @@ export default function Admin({ onToast }) {
 
   const [blogTitleInput, setBlogTitleInput] = useState('');
   const [blogCoverInput, setBlogCoverInput] = useState('');
+  const [draggingBlogBlockIndex, setDraggingBlogBlockIndex] = useState(null);
+  const blogBlockDragIndexRef = useRef(null);
 
   // Gallery Lookbook State
   const [galleryItems, setGalleryItems] = useState([]);
@@ -1093,6 +1098,7 @@ export default function Admin({ onToast }) {
     setNewBlog(prev => ({
       ...prev,
       content: [...prev.content, {
+        id: `blog-block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         type,
         text: type !== 'image' ? '' : undefined,
         url: type === 'image' ? '' : undefined,
@@ -1108,6 +1114,47 @@ export default function Admin({ onToast }) {
       content[index] = { ...content[index], ...fields };
       return { ...prev, content };
     });
+  };
+
+  const reorderBlogBlocks = (fromIndex, toIndex) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return;
+    setNewBlog(prev => {
+      const content = [...prev.content];
+      if (fromIndex >= content.length || toIndex >= content.length) return prev;
+      const [movedBlock] = content.splice(fromIndex, 1);
+      content.splice(toIndex, 0, movedBlock);
+      return { ...prev, content };
+    });
+  };
+
+  const handleMoveBlogBlock = (index, direction) => {
+    const targetIndex = index + direction;
+    reorderBlogBlocks(index, targetIndex);
+  };
+
+  const handleBlogBlockDragStart = (event, index) => {
+    blogBlockDragIndexRef.current = index;
+    setDraggingBlogBlockIndex(index);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleBlogBlockDragOver = (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleBlogBlockDrop = (event, targetIndex) => {
+    event.preventDefault();
+    const sourceIndex = blogBlockDragIndexRef.current ?? Number(event.dataTransfer.getData('text/plain'));
+    reorderBlogBlocks(Number(sourceIndex), targetIndex);
+    blogBlockDragIndexRef.current = null;
+    setDraggingBlogBlockIndex(null);
+  };
+
+  const handleBlogBlockDragEnd = () => {
+    blogBlockDragIndexRef.current = null;
+    setDraggingBlogBlockIndex(null);
   };
 
   const handleRemoveBlogBlock = (index) => {
@@ -2615,18 +2662,55 @@ export default function Admin({ onToast }) {
                 </div>
 
                 {/* Blocks Area */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
+                <div className="blog-block-editor-list">
                   {newBlog.content.map((block, idx) => (
-                    <div key={idx} style={{ padding: '15px', background: 'white', border: '1px solid var(--admin-border)', borderRadius: '4px', position: 'relative' }}>
+                    <div
+                      key={block.id || `${block.type}-${idx}`}
+                      className={`blog-editor-block ${draggingBlogBlockIndex === idx ? 'is-dragging' : ''}`}
+                      onDragOver={handleBlogBlockDragOver}
+                      onDrop={(event) => handleBlogBlockDrop(event, idx)}
+                    >
                       <button
                         type="button"
                         onClick={() => handleRemoveBlogBlock(idx)}
-                        style={{ position: 'absolute', top: '10px', right: '10px', border: 'none', background: 'none', cursor: 'pointer', color: 'red', fontWeight: '800' }}
+                        className="blog-block-delete"
+                        aria-label={`Delete block ${idx + 1}`}
                       >
                         &times;
                       </button>
-                      <div style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--grey-muted)' }}>
-                        Block {idx + 1}: {block.type}
+                      <div className="blog-block-topbar">
+                        <button
+                          type="button"
+                          className="blog-block-drag-handle"
+                          draggable
+                          onDragStart={(event) => handleBlogBlockDragStart(event, idx)}
+                          onDragEnd={handleBlogBlockDragEnd}
+                          aria-label={`Drag block ${idx + 1}`}
+                          title="Drag to reorder"
+                        >
+                          <GripVertical size={16} />
+                        </button>
+                        <div className="blog-block-title">
+                          Block {idx + 1}: {block.type}
+                        </div>
+                        <div className="blog-block-move-actions" aria-label={`Move block ${idx + 1}`}>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBlogBlock(idx, -1)}
+                            disabled={idx === 0}
+                            aria-label={`Move block ${idx + 1} up`}
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveBlogBlock(idx, 1)}
+                            disabled={idx === newBlog.content.length - 1}
+                            aria-label={`Move block ${idx + 1} down`}
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
                       </div>
 
                       {block.type === 'image' ? (
