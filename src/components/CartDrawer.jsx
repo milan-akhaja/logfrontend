@@ -30,6 +30,7 @@ export default function CartDrawer({
   onQtyChange, 
   onRemove, 
   onClearCart,
+  onPurchase,
   onToast 
 }) {
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
@@ -179,6 +180,21 @@ export default function CartDrawer({
       setIsSubmittingOrder(true);
       if (paymentMethod === 'cod') {
         const data = await saveOrder('COD');
+        onPurchase?.({
+          transaction_id: data.order?.id || clientOrderId,
+          value: Number(total || 0),
+          tax: 0,
+          shipping: Number(shipping || 0),
+          currency: 'INR',
+          payment_type: 'COD',
+          items: orderItems.map((item) => ({
+            item_id: item.id,
+            item_name: item.name,
+            item_variant: item.selectedSize,
+            price: Number(item.price || 0),
+            quantity: Number(item.quantity || 1)
+          }))
+        });
         setEmailHtml(data.emailHtml || '');
         setOrderEmailSent(Boolean(data.emailSent));
         if (!data.emailSent || !data.ownerEmailSent) {

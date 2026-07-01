@@ -1602,6 +1602,7 @@ export default function Admin({ onToast }) {
               <div>
                 <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', marginBottom: '15px' }}>
                   Click any card below to view detailed historical breakdown overlays.
+                  {analytics.note ? <span style={{ display: 'block', marginTop: '6px' }}>{analytics.note}</span> : null}
                 </div>
                 <div className="admin-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
 
@@ -1916,6 +1917,37 @@ export default function Admin({ onToast }) {
                     <span style={{ padding: '7px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', background: analyticsConfig.googleSearchConsoleVerification ? '#E8F5E9' : '#F3F4F6', color: analyticsConfig.googleSearchConsoleVerification ? '#137333' : '#6B7280' }}>
                       Search Console {analyticsConfig.googleSearchConsoleVerification ? 'Connected' : 'Not set'}
                     </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px', marginBottom: '22px' }}>
+                  {[
+                    ['Tag Manager', analytics.google?.status?.tagManagerInstalled ? 'Connected' : 'Not connected', analyticsConfig.googleTagManagerId || 'Missing GTM ID'],
+                    ['GA4 Tracking', analytics.google?.status?.analyticsInstalled ? 'Connected' : 'Not connected', analyticsConfig.googleAnalyticsId || 'Missing GA4 ID'],
+                    ['Search Console', analytics.google?.status?.searchConsoleVerificationInstalled ? 'Verified tag added' : 'Not connected', analyticsConfig.googleSearchConsoleVerification ? 'Verification code saved' : 'Missing verification code'],
+                    ['GA4 Report API', analytics.google?.status?.dataApiConnected ? 'Connected' : 'Needs API credentials', analytics.google?.reportMessage || 'Connect GA4 Data API credentials for live Google report numbers.']
+                  ].map(([title, status, detail]) => (
+                    <div key={title} style={{ border: '1px solid var(--admin-border)', borderRadius: '8px', padding: '16px', background: '#fff' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontWeight: '800', marginBottom: '8px' }}>{title}</div>
+                      <div style={{ fontSize: '18px', fontWeight: '900', marginBottom: '6px' }}>{status}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', lineHeight: 1.45 }}>{detail}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ border: '1px solid var(--admin-border)', borderRadius: '8px', padding: '16px', marginBottom: '22px', background: '#FAFAFA' }}>
+                  <div style={{ fontWeight: '900', marginBottom: '10px' }}>Google events currently sent by the website</div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                    {(analytics.google?.eventsSent || []).map((eventName) => (
+                      <span key={eventName} style={{ padding: '7px 10px', borderRadius: '999px', background: '#111', color: '#fff', fontSize: '11px', fontWeight: '800' }}>
+                        {eventName}
+                      </span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <a className="admin-btn" href="https://tagmanager.google.com/" target="_blank" rel="noreferrer">Open Tag Manager</a>
+                    <a className="admin-btn" href="https://analytics.google.com/" target="_blank" rel="noreferrer">Open GA4</a>
+                    <a className="admin-btn" href="https://search.google.com/search-console" target="_blank" rel="noreferrer">Open Search Console</a>
                   </div>
                 </div>
 

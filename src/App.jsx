@@ -31,6 +31,8 @@ function PageTracker() {
   const location = useLocation();
   
   useEffect(() => {
+    if (location.pathname.startsWith('/admin')) return undefined;
+
     let sessionId = localStorage.getItem('log_session_id');
     if (!sessionId) {
       sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
@@ -58,6 +60,15 @@ function PageTracker() {
   }, [location]);
 
   return null;
+}
+
+function sendGoogleEvent(eventName, payload = {}) {
+  if (typeof window === 'undefined') return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ event: eventName, ...payload });
+  if (window.gtag) {
+    window.gtag('event', eventName, payload);
+  }
 }
 
 function AnalyticsTags() {
@@ -198,6 +209,13 @@ function AppContent({
     const params = new URLSearchParams(location.search);
     const payment = params.get('payment');
     if (payment === 'payu-success') {
+      if (params.get('orderId')) {
+        sendGoogleEvent('purchase', {
+          transaction_id: params.get('orderId'),
+          currency: 'INR',
+          payment_type: 'PayU'
+        });
+      }
       onClearCart();
       localStorage.removeItem('log_checkout_client_order_id');
       localStorage.removeItem('log_checkout_customer_draft');
@@ -282,6 +300,7 @@ function AppContent({
         onQtyChange={onQtyChange}
         onRemove={onRemove}
         onClearCart={onClearCart}
+        onPurchase={(order) => sendGoogleEvent('purchase', order)}
         onToast={showToast}
       />
 
@@ -343,6 +362,17 @@ export default function App() {
       updated = [...cart, { ...product, cartItemId, selectedSize: size, quantity: 1 }];
     }
     saveCartState(updated);
+    sendGoogleEvent('add_to_cart', {
+      currency: 'INR',
+      value: Number(product.price || 0),
+      items: [{
+        item_id: product.id,
+        item_name: product.name,
+        item_variant: size,
+        price: Number(product.price || 0),
+        quantity: 1
+      }]
+    });
     showToast(`${product.name} (${size}) added to Bag`);
   };
 
