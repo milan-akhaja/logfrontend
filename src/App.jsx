@@ -60,6 +60,109 @@ function PageTracker() {
   return null;
 }
 
+function AnalyticsTags() {
+  const location = useLocation();
+  const [config, setConfig] = useState(null);
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/analytics-config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled) {
+          setConfig(data || {});
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setConfig({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!config || isAdmin) return undefined;
+
+    const removeElement = (id) => {
+      document.getElementById(id)?.remove();
+    };
+    const hasScriptWithSrc = (needle) => {
+      return Array.from(document.scripts).some((script) => script.src.includes(needle));
+    };
+    const hasSearchConsoleMeta = (code) => {
+      return Array.from(document.querySelectorAll('meta[name="google-site-verification"]'))
+        .some((meta) => meta.content === code);
+    };
+
+    removeElement('log-ga4-script');
+    removeElement('log-gtm-script');
+    removeElement('log-search-console-verification');
+
+    const searchCode = String(config.googleSearchConsoleVerification || '').trim();
+    if (searchCode && !hasSearchConsoleMeta(searchCode)) {
+      const meta = document.createElement('meta');
+      meta.id = 'log-search-console-verification';
+      meta.name = 'google-site-verification';
+      meta.content = searchCode;
+      document.head.appendChild(meta);
+    }
+
+    const ga4Id = String(config.googleAnalyticsId || '').trim();
+    if (ga4Id) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function gtag() {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('js', new Date());
+      window.gtag('config', ga4Id, { send_page_view: false });
+
+      const ga4Script = document.createElement('script');
+      ga4Script.id = 'log-ga4-script';
+      ga4Script.async = true;
+      ga4Script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`;
+      document.head.appendChild(ga4Script);
+    }
+
+    const gtmId = String(config.googleTagManagerId || '').trim();
+    if (gtmId) {
+      window.dataLayer = window.dataLayer || [];
+      if (!hasScriptWithSrc(`googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`)) {
+        window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+        const gtmScript = document.createElement('script');
+        gtmScript.id = 'log-gtm-script';
+        gtmScript.async = true;
+        gtmScript.src = `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`;
+        document.head.appendChild(gtmScript);
+      }
+    }
+
+    return undefined;
+  }, [config, isAdmin]);
+
+  useEffect(() => {
+    if (!config || isAdmin) return;
+    const pagePath = `${location.pathname}${location.search}${location.hash}`;
+    const ga4Id = String(config.googleAnalyticsId || '').trim();
+    if (ga4Id && window.gtag) {
+      window.gtag('config', ga4Id, {
+        page_path: pagePath,
+        page_location: window.location.href
+      });
+    }
+    if (String(config.googleTagManagerId || '').trim() && window.dataLayer) {
+      window.dataLayer.push({
+        event: 'log_page_view',
+        page_path: pagePath,
+        page_location: window.location.href
+      });
+    }
+  }, [config, isAdmin, location]);
+
+  return null;
+}
+
 // Scroll to Top on Page navigation
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -156,6 +259,7 @@ function AppContent({
   return (
     <>
       <PageTracker />
+      <AnalyticsTags />
       
       {!isAdmin && (
         <Navbar 

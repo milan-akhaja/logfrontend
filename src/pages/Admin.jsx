@@ -74,6 +74,11 @@ const HERO_PREVIEW_GUIDES = {
     note: 'Use vertical media and keep text or faces away from the top header and bottom Shop now area.'
   }
 };
+const DEFAULT_ANALYTICS_CONFIG = {
+  googleTagManagerId: '',
+  googleAnalyticsId: '',
+  googleSearchConsoleVerification: ''
+};
 const DELIVERY_PARTNERS = [
   { value: 'Delhivery', label: 'Delhivery', trackingUrl: (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}` },
   { value: 'Blue Dart', label: 'Blue Dart', trackingUrl: (awb) => `https://www.bluedart.com/tracking?trackFor=0&trackNo=${encodeURIComponent(awb)}` },
@@ -100,6 +105,12 @@ function intervalSeconds(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 5;
   return parsed <= 60 ? parsed : parsed / 1000;
+}
+
+function extractSearchConsoleCode(value) {
+  const text = String(value || '').trim();
+  const match = text.match(/content=["']([^"']+)["']/i);
+  return (match ? match[1] : text).trim();
 }
 
 const emptyProductDraft = {
@@ -275,6 +286,7 @@ export default function Admin({ onToast }) {
 
   // Data states
   const [analytics, setAnalytics] = useState(null);
+  const [analyticsConfig, setAnalyticsConfig] = useState(DEFAULT_ANALYTICS_CONFIG);
   const [orders, setOrders] = useState([]);
   const [returns, setReturns] = useState([]);
   const [products, setProducts] = useState([]);
@@ -364,8 +376,9 @@ export default function Admin({ onToast }) {
   // Fetch all data
   const fetchData = async () => {
     try {
-      const [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes] = await Promise.all([
+      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes] = await Promise.all([
         fetch('/api/analytics'),
+        fetch('/api/analytics-config'),
         fetch('/api/orders'),
         fetch('/api/products'),
         fetch('/api/subscribers'),
@@ -379,7 +392,7 @@ export default function Admin({ onToast }) {
       ]);
 
       const results = await Promise.all(
-        [analyticsRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes].map(async (res) => {
+        [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes].map(async (res) => {
           if (!res.ok) return null;
           try {
             return await res.json();
@@ -389,9 +402,10 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData] = results;
+      const [analyticsData, analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData] = results;
 
       if (analyticsData) setAnalytics(analyticsData);
+      setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(analyticsConfigData || {}) });
       if (ordersData) setOrders(ordersData);
       if (productsData) setProducts(productsData);
       if (subscribersData) setSubscribers(subscribersData);
@@ -443,6 +457,27 @@ export default function Admin({ onToast }) {
     } catch (err) {
       console.error(err);
       onToast('Error saving hero configuration.');
+    }
+  };
+
+  const handleSaveAnalyticsConfig = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/analytics-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(analyticsConfig)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(data.analyticsConfig || analyticsConfig) });
+        onToast('Google analytics settings saved!');
+      } else {
+        onToast(await getApiError(res, 'Error saving Google analytics settings.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Error saving Google analytics settings.');
     }
   };
 
@@ -1545,6 +1580,21 @@ export default function Admin({ onToast }) {
               >
                 Benchmarks
               </button>
+              <button
+                onClick={() => setDashboardTab('google')}
+                style={{
+                  background: dashboardTab === 'google' ? 'var(--ink)' : 'none',
+                  color: dashboardTab === 'google' ? 'white' : 'var(--admin-text-main)',
+                  border: dashboardTab === 'google' ? '2px solid var(--ink)' : '2px solid transparent',
+                  padding: '10px 18px',
+                  fontWeight: '700',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Google Setup
+              </button>
             </div>
 
             {/* highlights dashboard */}
@@ -1845,6 +1895,81 @@ export default function Admin({ onToast }) {
                   </table>
                 </div>
               </div>
+            )}
+
+            {dashboardTab === 'google' && (
+              <form onSubmit={handleSaveAnalyticsConfig} className="admin-card" style={{ border: '1px solid var(--admin-border)', padding: '24px', borderRadius: '8px', maxWidth: '920px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', alignItems: 'flex-start', marginBottom: '22px' }}>
+                  <div>
+                    <h3 style={{ marginBottom: '8px', fontWeight: '800' }}>Google Analytics & Search Setup</h3>
+                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+                      Save your Google IDs here once, and the live website will automatically install the tags on every public page.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <span style={{ padding: '7px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', background: analyticsConfig.googleTagManagerId ? '#E8F5E9' : '#F3F4F6', color: analyticsConfig.googleTagManagerId ? '#137333' : '#6B7280' }}>
+                      GTM {analyticsConfig.googleTagManagerId ? 'Connected' : 'Not set'}
+                    </span>
+                    <span style={{ padding: '7px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', background: analyticsConfig.googleAnalyticsId ? '#E8F5E9' : '#F3F4F6', color: analyticsConfig.googleAnalyticsId ? '#137333' : '#6B7280' }}>
+                      GA4 {analyticsConfig.googleAnalyticsId ? 'Connected' : 'Not set'}
+                    </span>
+                    <span style={{ padding: '7px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800', background: analyticsConfig.googleSearchConsoleVerification ? '#E8F5E9' : '#F3F4F6', color: analyticsConfig.googleSearchConsoleVerification ? '#137333' : '#6B7280' }}>
+                      Search Console {analyticsConfig.googleSearchConsoleVerification ? 'Connected' : 'Not set'}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '18px' }}>
+                  <div className="admin-form-group">
+                    <label className="admin-label">Google Tag Manager Container ID</label>
+                    <input
+                      className="admin-input"
+                      value={analyticsConfig.googleTagManagerId}
+                      onChange={(e) => setAnalyticsConfig(prev => ({ ...prev, googleTagManagerId: e.target.value.toUpperCase().trim() }))}
+                      placeholder="GTM-XXXXXXX"
+                    />
+                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '12px', marginTop: '6px' }}>Find this inside Google Tag Manager beside your container name.</p>
+                  </div>
+
+                  <div className="admin-form-group">
+                    <label className="admin-label">Google Analytics 4 Measurement ID</label>
+                    <input
+                      className="admin-input"
+                      value={analyticsConfig.googleAnalyticsId}
+                      onChange={(e) => setAnalyticsConfig(prev => ({ ...prev, googleAnalyticsId: e.target.value.toUpperCase().trim() }))}
+                      placeholder="G-XXXXXXXXXX"
+                    />
+                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '12px', marginTop: '6px' }}>Find this in GA4 Admin, Data streams, Web stream details.</p>
+                  </div>
+
+                  <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="admin-label">Google Search Console Verification Code</label>
+                    <input
+                      className="admin-input"
+                      value={analyticsConfig.googleSearchConsoleVerification}
+                      onChange={(e) => setAnalyticsConfig(prev => ({ ...prev, googleSearchConsoleVerification: extractSearchConsoleCode(e.target.value) }))}
+                      placeholder="Paste only the content value from google-site-verification"
+                    />
+                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '12px', marginTop: '6px' }}>
+                      If Google gives a meta tag, paste only the value inside content=&quot;...&quot;.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid var(--admin-border)', paddingTop: '18px', marginTop: '10px' }}>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    onClick={() => setAnalyticsConfig(DEFAULT_ANALYTICS_CONFIG)}
+                  >
+                    Clear
+                  </button>
+                  <button type="submit" className="admin-btn admin-btn-primary">
+                    <CheckCircle size={16} />
+                    <span>Save Google Setup</span>
+                  </button>
+                </div>
+              </form>
             )}
 
             {/* Click Card Detailed Explanation Modal Overlay */}
