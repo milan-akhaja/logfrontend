@@ -126,14 +126,16 @@ function AnalyticsTags() {
       window.gtag = window.gtag || function gtag() {
         window.dataLayer.push(arguments);
       };
-      window.gtag('js', new Date());
-      window.gtag('config', ga4Id, { send_page_view: false });
+      if (!hasScriptWithSrc(`googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`)) {
+        window.gtag('js', new Date());
+        window.gtag('config', ga4Id, { send_page_view: false });
 
-      const ga4Script = document.createElement('script');
-      ga4Script.id = 'log-ga4-script';
-      ga4Script.async = true;
-      ga4Script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`;
-      document.head.appendChild(ga4Script);
+        const ga4Script = document.createElement('script');
+        ga4Script.id = 'log-ga4-script';
+        ga4Script.async = true;
+        ga4Script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`;
+        document.head.appendChild(ga4Script);
+      }
     }
 
     const gtmId = String(config.googleTagManagerId || '').trim();

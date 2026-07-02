@@ -892,8 +892,16 @@ header.scrolled .bag-count {
 
 .product-prices {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.product-price-line {
+  display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .price-current {
@@ -902,10 +910,28 @@ header.scrolled .bag-count {
   color: var(--ink);
 }
 
+.price-discounted {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
 .price-original {
   font-size: 12px;
   color: var(--grey-muted);
   text-decoration: line-through;
+}
+
+.price-discount-percent {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.price-discount-percent.compact {
+  font-size: 9px;
 }
 
 .add-to-bag-btn {
@@ -2588,6 +2614,154 @@ footer {
   border-color: var(--admin-primary);
 }
 
+.admin-price-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.admin-price-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-price-option input {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-help-text {
+  margin: 8px 0 0;
+  color: var(--admin-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.content-block-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.content-block-editor-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 18px;
+}
+
+.content-block-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.content-block-editor-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--admin-text);
+}
+
+.content-block-editor-head p {
+  margin: 0;
+  color: var(--admin-text-muted);
+  font-size: 13px;
+}
+
+.content-block-editor-head span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.content-block-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 150px 150px;
+  gap: 14px;
+}
+
+.admin-color-input {
+  min-height: 42px;
+  padding: 5px;
+}
+
+.content-line-editor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.content-line-editor {
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.content-line-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: #4b5563;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.content-line-controls {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 90px 90px minmax(150px, 1fr) 90px 90px;
+  gap: 10px;
+  align-items: end;
+  margin-top: 10px;
+}
+
+.content-line-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.content-line-controls .content-toggle {
+  min-height: 42px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+@media (max-width: 900px) {
+  .content-block-meta-grid,
+  .content-line-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
 .blog-block-editor-list {
   display: flex;
   flex-direction: column;
@@ -3496,6 +3670,14 @@ footer {
 .size-popup-price {
   font-size: 18px;
   font-weight: 800;
+  margin-bottom: 0;
+}
+
+.size-popup-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
   margin-bottom: 12px;
 }
 
@@ -5073,6 +5255,17 @@ header.scrolled .nav-action-icon-btn {
   font-size: 20px;
   font-weight: 800;
   color: var(--ink);
+}
+
+.detail-product-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.detail-price-original {
+  font-size: 16px;
 }
 
 @media (max-width: 767px) {

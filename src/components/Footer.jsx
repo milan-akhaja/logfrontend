@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, MessageSquare, Mail, Clock, Instagram } from 'lucide-react';
+import ContentBlockLines from './ContentBlockLines';
+import useContentBlocks from '../hooks/useContentBlocks';
 
 export default function Footer({ onToast }) {
   const [openSection, setOpenSection] = useState(null);
   const [subCategories, setSubCategories] = useState([]);
   const [colors, setColors] = useState([]);
   const [activeTab, setActiveTab] = useState('category'); // category, color, popular
+  const contentBlocks = useContentBlocks();
+  const footerLuxury = contentBlocks.footer_luxury;
 
   const [newArrivalSubcategories, setNewArrivalSubcategories] = useState([]);
 
@@ -55,11 +59,13 @@ export default function Footer({ onToast }) {
   return (
     <>
       {/* Luxury categories and brand statement widget above the footer */}
-      <div className="footer-luxury-widget-wrapper">
+      <div className="footer-luxury-widget-wrapper" style={{ background: footerLuxury.background || undefined }}>
         <div className="container">
           <div className="footer-luxury-widget">
             <div className="luxury-widget-left luxury-widget-heading">
-              <h3>Feel the Luxury of Premium Streetwear with LOG - Best Unisex Clothing Brand in India</h3>
+              <h3>
+                <ContentBlockLines block={footerLuxury} lineBreak={false} />
+              </h3>
             </div>
             <div className="luxury-widget-right">
               <div className="widget-tabs">

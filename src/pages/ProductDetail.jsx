@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
+import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
 import { mediaUrl } from '../lib/urls';
 
@@ -199,19 +200,12 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
           <div className="product-detail-config">
             <div className="detail-header-meta">
               <h1 className="detail-product-title">{product.name}</h1>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                <span className="detail-product-price">₹{product.price.toLocaleString()}</span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="price-original" style={{ textDecoration: 'line-through', fontSize: '16px', color: 'var(--grey-muted)' }}>
-                    ₹{product.originalPrice.toLocaleString()}
-                  </span>
-                )}
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    ({Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF)
-                  </span>
-                )}
-              </div>
+              <ProductPrice
+                product={product}
+                className="detail-product-prices"
+                currentClassName="detail-product-price"
+                originalClassName="price-original detail-price-original"
+              />
             </div>
 
             {/* Size Selector (S, M, L, XL only) */}

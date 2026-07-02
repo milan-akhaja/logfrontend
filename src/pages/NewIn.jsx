@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, MessageSquare, Mail, Clock, ShoppingCart } from 'lucide-react';
+import ProductPrice from '../components/ProductPrice';
 import { appPath, mediaUrl } from '../lib/urls';
 
 export default function NewIn({ onAddToCart, onToast }) {
@@ -87,10 +88,6 @@ export default function NewIn({ onAddToCart, onToast }) {
 
         <div className="product-grid">
           {products.map(product => {
-            const discountPercent = product.originalPrice && product.originalPrice > product.price
-              ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-              : 0;
-
             return (
               <div
                 className="product-card reveal"
@@ -115,19 +112,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                   <h3 className="product-name">{product.name}</h3>
                   <p className="product-desc">{product.desc}</p>
                   <div className="product-price-row">
-                    <div className="product-prices" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                        <span className="price-current">₹{product.price}</span>
-                        {product.originalPrice && product.originalPrice > product.price && (
-                          <span className="price-original" style={{ textDecoration: 'line-through', fontSize: '12px', color: 'var(--grey-muted)' }}>₹{product.originalPrice}</span>
-                        )}
-                      </div>
-                      {discountPercent > 0 && (
-                        <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {discountPercent}% OFF
-                        </span>
-                      )}
-                    </div>
+                    <ProductPrice product={product} compact />
                     {product.stock > 0 ? (
                       <button
                         className="add-to-bag-btn"

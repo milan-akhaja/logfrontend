@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Package, Gift, ArrowRight } from 'lucide-react';
+import ContentBlockLines from '../components/ContentBlockLines';
+import ProductPrice from '../components/ProductPrice';
+import useContentBlocks from '../hooks/useContentBlocks';
 import { appPath, mediaUrl } from '../lib/urls';
 
 const VIDEO_URLS = [
@@ -70,10 +73,6 @@ export function ProductGridCard({ product, onAddToCart }) {
 
   const navigate = useNavigate();
 
-  const discountPercent = product.originalPrice && product.originalPrice > product.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : 0;
-
   return (
     <div
       className="product-card reveal"
@@ -127,19 +126,7 @@ export function ProductGridCard({ product, onAddToCart }) {
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
         <div className="product-price-row">
-          <div className="product-prices" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <span className="price-current">RS. {product.price}</span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="price-original" style={{ textDecoration: 'line-through', fontSize: '12px', color: 'var(--grey-muted)' }}>RS. {product.originalPrice}</span>
-              )}
-            </div>
-            {discountPercent > 0 && (
-              <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {discountPercent}% OFF
-              </span>
-            )}
-          </div>
+          <ProductPrice product={product} prefix="RS. " compact />
           {product.stock > 0 ? (
             <button
               className="add-to-bag-btn"
@@ -372,6 +359,8 @@ export default function Shop({ onAddToCart }) {
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const contentBlocks = useContentBlocks();
+  const homeManifesto = contentBlocks.home_manifesto;
   const [mobileVideoSrc, setMobileVideoSrc] = useState('');
   const [desktopHeroSlideIndex, setDesktopHeroSlideIndex] = useState(0);
   const [mobileHeroSlideIndex, setMobileHeroSlideIndex] = useState(0);
@@ -835,16 +824,12 @@ export default function Shop({ onAddToCart }) {
       </section>
 
       {/* MANIFESTO SECTION */}
-      <section className="manifesto-section">
+      <section className="manifesto-section" style={{ background: homeManifesto.background || 'var(--paper)' }}>
         <div className="container">
-          <div className="manifesto-layout">
-            <div className="manifesto-label reveal">What We Believe</div>
+          <div className="manifesto-layout" style={{ textAlign: homeManifesto.align || 'left' }}>
+            <div className="manifesto-label reveal">{homeManifesto.label}</div>
             <div className="manifesto-quote reveal">
-              Good clothes <br />
-              <span className="italic-muted">don't need a</span> <br />
-              corporate story. <br />
-              <span className="accent-text">They need a</span> <br />
-              conscience.
+              <ContentBlockLines block={homeManifesto} />
             </div>
           </div>
         </div>

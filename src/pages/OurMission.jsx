@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import ContentBlockLines from '../components/ContentBlockLines';
+import useContentBlocks from '../hooks/useContentBlocks';
 import { appPath } from '../lib/urls';
 
 export default function OurMission() {
   const [donationCount, setDonationCount] = useState(0);
+  const contentBlocks = useContentBlocks();
+  const missionHero = contentBlocks.mission_hero;
+  const missionConscience = contentBlocks.mission_conscience;
+  const missionStatement = contentBlocks.mission_statement;
 
   useEffect(() => {
     // 1. Track page view
@@ -60,10 +66,12 @@ export default function OurMission() {
     <>
       <section className="mission-showcase">
         <div className="container">
-          <h1 className="mission-title-big reveal">Wear. Give. <br /><span>Repeat.</span></h1>
+          <h1 className="mission-title-big reveal">
+            <ContentBlockLines block={missionHero} />
+          </h1>
           
           <p className="mission-intro reveal">
-            We set out to create premium streetwear that serves a double purpose. We didn't want to write a corporate storytelling pamphlet. Instead, we committed to a straightforward action.
+            {missionHero.body}
           </p>
 
           <div className="counter-container reveal">
@@ -106,26 +114,27 @@ export default function OurMission() {
       </section>
 
       {/* MANIFESTO SECTION */}
-      <section className="manifesto-section">
+      <section className="manifesto-section" style={{ background: missionConscience.background || 'var(--paper)' }}>
         <div className="container">
-          <div className="manifesto-layout">
-            <div className="manifesto-label reveal">Our Conscience</div>
+          <div className="manifesto-layout" style={{ textAlign: missionConscience.align || 'left' }}>
+            <div className="manifesto-label reveal">{missionConscience.label}</div>
             <div className="manifesto-quote reveal">
-              Every order funds <br />
-              <span className="italic-muted">something that matters.</span> <br />
-              <span className="accent-text" style={{ color: 'var(--ink)' }}>No corporate spin.</span> <br />
-              Just a real impact.
+              <ContentBlockLines block={missionConscience} />
             </div>
           </div>
         </div>
       </section>
 
       {/* STATEMENT CTA */}
-      <section className="statement-section" style={{ background: 'var(--ink)' }}>
-        <div className="container">
-          <h2 className="statement-title reveal" style={{ color: 'white' }}>Join The <span className="outline" style={{ WebkitTextStroke: '1px white' }}>Movement.</span></h2>
-          <p className="statement-sub reveal" style={{ color: 'rgba(255,255,255,0.7)' }}>Minimal styles. Heavyweight fabrics. Direct social support.</p>
-          <a href={appPath('/')} className="btn btn-accent reveal">Shop Collections</a>
+      <section className="statement-section" style={{ background: missionStatement.background || 'var(--ink)' }}>
+        <div className="container" style={{ textAlign: missionStatement.align || 'center' }}>
+          <h2 className="statement-title reveal">
+            <ContentBlockLines block={missionStatement} lineBreak={false} />
+          </h2>
+          <p className="statement-sub reveal" style={{ color: 'rgba(255,255,255,0.7)' }}>{missionStatement.body}</p>
+          <a href={appPath(missionStatement.buttonLink || '/')} className="btn btn-accent reveal">
+            {missionStatement.buttonText || 'Shop Collections'}
+          </a>
         </div>
       </section>
     </>

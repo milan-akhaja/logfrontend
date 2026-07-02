@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import SizeChartModal from './SizeChartModal';
+import ProductPrice from './ProductPrice';
 
 export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyNow }) {
   const [selectedSize, setSelectedSize] = useState('');
@@ -56,7 +57,11 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
           
           <div className="size-popup-content">
             <h2 className="size-popup-title">{product.name}</h2>
-            <p className="size-popup-price">₹{product.price}</p>
+            <ProductPrice
+              product={product}
+              className="size-popup-prices"
+              currentClassName="size-popup-price"
+            />
             <p className="size-popup-desc">{product.desc}</p>
             
 

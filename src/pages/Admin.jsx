@@ -26,6 +26,8 @@ import {
   ArrowDown
 } from 'lucide-react';
 import { mediaUrl } from '../lib/urls';
+import { DEFAULT_PRICE_DISPLAY_OPTIONS } from '../lib/pricing';
+import { DEFAULT_CONTENT_BLOCKS, FONT_OPTIONS, mergeContentBlocks } from '../lib/contentBlocks';
 
 const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washed\nDesign: DTF printing\nStyle: Oversize and Half sleeve\n* Designed for a relaxed drop-shoulder streetwear fit. Order your usual size.";
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
@@ -41,6 +43,7 @@ const ADMIN_TABS = [
   ['stories', 'Stories'],
   ['blogs', 'Blogs'],
   ['gallery', 'Gallery'],
+  ['contentblocks', 'Banners & Quotes'],
   ['newinconfig', 'New In'],
   ['heroconfig', 'Hero']
 ];
@@ -78,6 +81,12 @@ const DEFAULT_ANALYTICS_CONFIG = {
   googleTagManagerId: '',
   googleAnalyticsId: '',
   googleSearchConsoleVerification: ''
+};
+const PRICE_DISPLAY_LABELS = {
+  sellingPrice: 'Selling Price',
+  originalPrice: 'Original Price',
+  discountedPrice: 'Discounted Price',
+  discountPercentage: 'Discount %'
 };
 const DELIVERY_PARTNERS = [
   { value: 'Delhivery', label: 'Delhivery', trackingUrl: (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}` },
@@ -117,6 +126,9 @@ const emptyProductDraft = {
   name: '',
   price: 0,
   originalPrice: 0,
+  discountedPrice: '',
+  discountPercentage: '',
+  priceDisplayOptions: DEFAULT_PRICE_DISPLAY_OPTIONS,
   desc: '',
   category: 'top',
   subCategories: [],
@@ -133,10 +145,26 @@ function loadProductDraft() {
   if (typeof window === 'undefined') return emptyProductDraft;
   try {
     const saved = JSON.parse(localStorage.getItem(PRODUCT_DRAFT_KEY) || 'null');
-    return saved && typeof saved === 'object' ? { ...emptyProductDraft, ...saved } : emptyProductDraft;
+    return saved && typeof saved === 'object'
+      ? {
+          ...emptyProductDraft,
+          ...saved,
+          priceDisplayOptions: {
+            ...DEFAULT_PRICE_DISPLAY_OPTIONS,
+            ...(saved.priceDisplayOptions || {})
+          }
+        }
+      : emptyProductDraft;
   } catch {
     return emptyProductDraft;
   }
+}
+
+function normalizedPriceDisplayOptions(product = {}) {
+  return {
+    ...DEFAULT_PRICE_DISPLAY_OPTIONS,
+    ...(product.priceDisplayOptions || {})
+  };
 }
 
 function compressImageFile(file) {
@@ -344,6 +372,7 @@ export default function Admin({ onToast }) {
   // Gallery Lookbook State
   const [galleryItems, setGalleryItems] = useState([]);
   const [newGalleryItem, setNewGalleryItem] = useState({ imageUrl: '', title: '', link: '' });
+  const [contentBlocks, setContentBlocks] = useState(() => mergeContentBlocks(DEFAULT_CONTENT_BLOCKS));
   const [newInConfig, setNewInConfig] = useState({ tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
 
   // Autocomplete Suggestions State
@@ -376,7 +405,7 @@ export default function Admin({ onToast }) {
   // Fetch all data
   const fetchData = async () => {
     try {
-      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes] = await Promise.all([
+      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes] = await Promise.all([
         fetch('/api/analytics'),
         fetch('/api/analytics-config'),
         fetch('/api/orders'),
@@ -388,11 +417,12 @@ export default function Admin({ onToast }) {
         fetch('/api/gallery'),
         fetch('/api/hero-config'),
         fetch('/api/returns'),
-        fetch('/api/new-in-config')
+        fetch('/api/new-in-config'),
+        fetch('/api/content-blocks-config')
       ]);
 
       const results = await Promise.all(
-        [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes].map(async (res) => {
+        [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes].map(async (res) => {
           if (!res.ok) return null;
           try {
             return await res.json();
@@ -402,7 +432,7 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsData, analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData] = results;
+      const [analyticsData, analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData, contentBlocksData] = results;
 
       if (analyticsData) setAnalytics(analyticsData);
       setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(analyticsConfigData || {}) });
@@ -414,6 +444,7 @@ export default function Admin({ onToast }) {
       if (blogsData) setBlogs(blogsData);
       if (returnsData) setReturns(returnsData);
       setGalleryItems(galleryData || []);
+      setContentBlocks(mergeContentBlocks(contentBlocksData || DEFAULT_CONTENT_BLOCKS));
       setNewInConfig(newInData || { tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
       setHeroConfig(heroData || {
         tagline: '',
@@ -479,6 +510,52 @@ export default function Admin({ onToast }) {
       console.error(err);
       onToast('Error saving Google analytics settings.');
     }
+  };
+
+  const handleSaveContentBlocks = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/content-blocks-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contentBlocks)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContentBlocks(mergeContentBlocks(data.contentBlocks || contentBlocks));
+        onToast('Banners and quotes saved!');
+      } else {
+        onToast(await getApiError(res, 'Error saving banners and quotes.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Error saving banners and quotes.');
+    }
+  };
+
+  const updateContentBlock = (blockKey, patch) => {
+    setContentBlocks(prev => mergeContentBlocks({
+      ...prev,
+      [blockKey]: {
+        ...(prev[blockKey] || {}),
+        ...patch
+      }
+    }));
+  };
+
+  const updateContentLine = (blockKey, lineIndex, patch) => {
+    setContentBlocks(prev => {
+      const block = prev[blockKey] || {};
+      const lines = Array.isArray(block.lines) ? [...block.lines] : [];
+      lines[lineIndex] = { ...(lines[lineIndex] || {}), ...patch };
+      return mergeContentBlocks({
+        ...prev,
+        [blockKey]: {
+          ...block,
+          lines
+        }
+      });
+    });
   };
 
   const appendHeroSlides = (field, url) => {
@@ -938,6 +1015,14 @@ export default function Admin({ onToast }) {
     }
     if (Number(productData.price || 0) <= 0) {
       onToast('Product price must be greater than zero.');
+      return;
+    }
+    productData.originalPrice = productData.originalPrice === '' ? null : Number(productData.originalPrice || 0);
+    productData.discountedPrice = productData.discountedPrice === '' ? null : Number(productData.discountedPrice || 0);
+    productData.discountPercentage = productData.discountPercentage === '' ? null : Number(productData.discountPercentage || 0);
+    productData.priceDisplayOptions = normalizedPriceDisplayOptions(productData);
+    if (productData.discountPercentage !== null && (productData.discountPercentage < 0 || productData.discountPercentage > 100)) {
+      onToast('Discount percentage must be between 0 and 100.');
       return;
     }
 
@@ -1440,6 +1525,14 @@ export default function Admin({ onToast }) {
                 </li>
                 <li>
                   <div
+                    className={`admin-submenu-link ${activeTab === 'contentblocks' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('contentblocks')}
+                  >
+                    Banners & Quotes
+                  </div>
+                </li>
+                <li>
+                  <div
                     className={`admin-submenu-link ${activeTab === 'newinconfig' ? 'active' : ''}`}
                     onClick={() => setActiveTab('newinconfig')}
                   >
@@ -1475,6 +1568,7 @@ export default function Admin({ onToast }) {
               {activeTab === 'stories' && 'Stories Publisher'}
               {activeTab === 'blogs' && 'Log Book Blogs Manager'}
               {activeTab === 'gallery' && 'Homepage Gallery Lookbook'}
+              {activeTab === 'contentblocks' && 'Banners & Quotes'}
               {activeTab === 'newinconfig' && 'New In Page Settings'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
             </h1>
@@ -2032,6 +2126,179 @@ export default function Admin({ onToast }) {
           </div>
         )}
 
+        {activeTab === 'contentblocks' && (
+          <div className="admin-card">
+            <div className="admin-card-header">
+              <div>
+                <h2 className="admin-card-title">Editable Banners & Quotes</h2>
+                <p className="admin-help-text">Each card shows the page and exact location where the text appears.</p>
+              </div>
+              <button className="admin-btn admin-btn-primary" onClick={handleSaveContentBlocks}>
+                Save Banners & Quotes
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveContentBlocks} className="content-block-editor-list">
+              {Object.entries(contentBlocks).map(([blockKey, block]) => (
+                <div className="content-block-editor-card" key={blockKey}>
+                  <div className="content-block-editor-head">
+                    <div>
+                      <h3>{block.page}</h3>
+                      <p>{block.location}</p>
+                    </div>
+                    <span>{blockKey}</span>
+                  </div>
+
+                  <div className="content-block-meta-grid">
+                    <div className="admin-form-group">
+                      <label className="admin-label">Small Label / Eyebrow</label>
+                      <input
+                        className="admin-input"
+                        value={block.label || ''}
+                        onChange={(e) => updateContentBlock(blockKey, { label: e.target.value })}
+                        placeholder="Optional"
+                      />
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-label">Background Color</label>
+                      <input
+                        type="color"
+                        className="admin-input admin-color-input"
+                        value={block.background || '#FAF9F6'}
+                        onChange={(e) => updateContentBlock(blockKey, { background: e.target.value })}
+                      />
+                    </div>
+                    <div className="admin-form-group">
+                      <label className="admin-label">Text Alignment</label>
+                      <select
+                        className="admin-select"
+                        value={block.align || 'left'}
+                        onChange={(e) => updateContentBlock(blockKey, { align: e.target.value })}
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {block.body !== undefined && (
+                    <div className="admin-form-group">
+                      <label className="admin-label">Supporting Line / Paragraph</label>
+                      <textarea
+                        className="admin-textarea"
+                        rows="3"
+                        value={block.body || ''}
+                        onChange={(e) => updateContentBlock(blockKey, { body: e.target.value })}
+                      />
+                    </div>
+                  )}
+
+                  {block.buttonText !== undefined && (
+                    <div className="content-block-meta-grid">
+                      <div className="admin-form-group">
+                        <label className="admin-label">Button Text</label>
+                        <input
+                          className="admin-input"
+                          value={block.buttonText || ''}
+                          onChange={(e) => updateContentBlock(blockKey, { buttonText: e.target.value })}
+                        />
+                      </div>
+                      <div className="admin-form-group">
+                        <label className="admin-label">Button Link</label>
+                        <input
+                          className="admin-input"
+                          value={block.buttonLink || ''}
+                          onChange={(e) => updateContentBlock(blockKey, { buttonLink: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="content-line-editor-list">
+                    {(block.lines || []).map((line, lineIndex) => (
+                      <div className="content-line-editor" key={`${blockKey}-${lineIndex}`}>
+                        <div className="content-line-top">
+                          <strong>Line {lineIndex + 1}</strong>
+                          <span>{line.fill === 'outline' ? 'Outline' : 'Solid'}</span>
+                        </div>
+                        <textarea
+                          className="admin-textarea"
+                          rows="2"
+                          value={line.text || ''}
+                          onChange={(e) => updateContentLine(blockKey, lineIndex, { text: e.target.value })}
+                        />
+                        <div className="content-line-controls">
+                          <label>
+                            Font
+                            <select
+                              className="admin-select"
+                              value={line.fontFamily || 'Montserrat'}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { fontFamily: e.target.value })}
+                            >
+                              {FONT_OPTIONS.map(font => (
+                                <option key={font.value} value={font.value}>{font.label}</option>
+                              ))}
+                            </select>
+                          </label>
+                          <label>
+                            Size px
+                            <input
+                              type="number"
+                              min="8"
+                              max="180"
+                              className="admin-input"
+                              value={line.fontSize || ''}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { fontSize: e.target.value })}
+                              placeholder="Auto"
+                            />
+                          </label>
+                          <label>
+                            Color
+                            <input
+                              type="color"
+                              className="admin-input admin-color-input"
+                              value={line.color || '#111113'}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { color: e.target.value })}
+                            />
+                          </label>
+                          <label>
+                            Fill
+                            <select
+                              className="admin-select"
+                              value={line.fill || 'solid'}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { fill: e.target.value })}
+                            >
+                              <option value="solid">Fill with color</option>
+                              <option value="outline">Without fill / outline</option>
+                            </select>
+                          </label>
+                          <label className="content-toggle">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(line.bold)}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { bold: e.target.checked })}
+                            />
+                            Bold
+                          </label>
+                          <label className="content-toggle">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(line.italic)}
+                              onChange={(e) => updateContentLine(blockKey, lineIndex, { italic: e.target.checked })}
+                            />
+                            Italic
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </form>
+          </div>
+        )}
+
         {/* Hero banners config */}
         {activeTab === 'heroconfig' && (
           <div className="admin-card">
@@ -2423,6 +2690,9 @@ export default function Admin({ onToast }) {
                     <th>Name</th>
                     <th>Selling Price</th>
                     <th>Original Price</th>
+                    <th>Discount Price</th>
+                    <th>Discount %</th>
+                    <th>Visible Price Fields</th>
                     <th>Category</th>
                     <th>Sub-Categories</th>
                     <th>Colors</th>
@@ -2437,6 +2707,14 @@ export default function Admin({ onToast }) {
                       <td>{product.name}</td>
                       <td>₹{product.price}</td>
                       <td>₹{product.originalPrice || product.price}</td>
+                      <td>{product.discountedPrice ? `₹${product.discountedPrice}` : '-'}</td>
+                      <td>{product.discountPercentage ? `${product.discountPercentage}%` : '-'}</td>
+                      <td>
+                        {Object.entries(normalizedPriceDisplayOptions(product))
+                          .filter(([, enabled]) => enabled)
+                          .map(([key]) => PRICE_DISPLAY_LABELS[key] || key)
+                          .join(', ')}
+                      </td>
                       <td>{product.category}</td>
                       <td>{(product.subCategories || []).join(', ')}</td>
                       <td>{(product.colors || []).join(', ')}</td>
@@ -2451,6 +2729,9 @@ export default function Admin({ onToast }) {
                                 imageUrls: product.imageUrls && product.imageUrls.length > 0
                                   ? product.imageUrls
                                   : (product.imageUrl ? [product.imageUrl] : []),
+                                discountedPrice: product.discountedPrice || '',
+                                discountPercentage: product.discountPercentage || '',
+                                priceDisplayOptions: normalizedPriceDisplayOptions(product),
                                 details: product.details !== undefined ? product.details : DEFAULT_DETAILS,
                                 washcare: product.washcare !== undefined ? product.washcare : DEFAULT_WASHCARE,
                                 shipping: product.shipping !== undefined ? product.shipping : DEFAULT_SHIPPING
@@ -3374,6 +3655,75 @@ export default function Admin({ onToast }) {
                     }}
                   />
                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="admin-form-group">
+                  <label className="admin-label">Discounted Price (₹)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="admin-input"
+                    value={editingProduct ? (editingProduct.discountedPrice ?? '') : (newProduct.discountedPrice ?? '')}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseInt(e.target.value || 0);
+                      if (editingProduct) setEditingProduct(prev => ({ ...prev, discountedPrice: val }));
+                      else setNewProduct(prev => ({ ...prev, discountedPrice: val }));
+                    }}
+                    placeholder="Optional"
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Discount Percentage (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    className="admin-input"
+                    value={editingProduct ? (editingProduct.discountPercentage ?? '') : (newProduct.discountPercentage ?? '')}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseInt(e.target.value || 0);
+                      if (editingProduct) setEditingProduct(prev => ({ ...prev, discountPercentage: val }));
+                      else setNewProduct(prev => ({ ...prev, discountPercentage: val }));
+                    }}
+                    placeholder="Auto if blank"
+                  />
+                </div>
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-label">Show Price Fields on Frontend</label>
+                <div className="admin-price-options">
+                  {Object.entries(PRICE_DISPLAY_LABELS).map(([key, label]) => {
+                    const currentProduct = editingProduct || newProduct;
+                    const options = normalizedPriceDisplayOptions(currentProduct);
+                    return (
+                      <label key={key} className="admin-price-option">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(options[key])}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            const updater = (prev) => ({
+                              ...prev,
+                              priceDisplayOptions: {
+                                ...normalizedPriceDisplayOptions(prev),
+                                [key]: checked
+                              }
+                            });
+                            if (editingProduct) setEditingProduct(updater);
+                            else setNewProduct(updater);
+                          }}
+                        />
+                        <span>{label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="admin-help-text">
+                  Selling Price is the checkout amount. The other fields are optional display fields for homepage, shop, search, and product pages.
+                </p>
               </div>
 
               <div className="admin-form-group">

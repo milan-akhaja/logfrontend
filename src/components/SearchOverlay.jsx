@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Folder } from 'lucide-react';
+import { formatPrice, getPriceDisplay } from '../lib/pricing';
 
 export default function SearchOverlay({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -76,7 +77,9 @@ export default function SearchOverlay({ isOpen, onClose }) {
                 {filtered.map(p => (
                   <li key={p.id} onClick={() => handleProductClick(p.name)}>
                     <span className="search-res-name">{p.name}</span>
-                    <span className="search-res-price">₹{p.price}</span>
+                    <span className="search-res-price">
+                      {formatPrice(getPriceDisplay(p).showDiscountedPrice ? p.discountedPrice : p.price)}
+                    </span>
                   </li>
                 ))}
                 {filtered.length === 0 && (
