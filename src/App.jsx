@@ -71,10 +71,37 @@ function sendGoogleEvent(eventName, payload = {}) {
   }
 }
 
+const FALLBACK_IMAGE_SRC = `data:image/svg+xml,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200">
+  <rect width="900" height="1200" fill="#f4f4f1"/>
+  <text x="450" y="560" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="96" font-weight="800" fill="#111">LOG</text>
+  <text x="450" y="635" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-size="28" font-weight="600" fill="#777">IMAGE COMING SOON</text>
+</svg>
+`)}`;
+
+function ImageFallbacks() {
+  useEffect(() => {
+    const handleImageError = (event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement) || image.dataset.fallbackApplied === 'true') return;
+      image.dataset.fallbackApplied = 'true';
+      image.src = FALLBACK_IMAGE_SRC;
+      if (!image.alt) image.alt = 'LOG image coming soon';
+    };
+
+    window.addEventListener('error', handleImageError, true);
+    return () => window.removeEventListener('error', handleImageError, true);
+  }, []);
+
+  return null;
+}
+
 function AnalyticsTags() {
   const location = useLocation();
   const [config, setConfig] = useState(null);
   const isAdmin = location.pathname.startsWith('/admin');
+  const isAnalyticsHost = typeof window !== 'undefined'
+    && /(^|\.)logcloth\.com$/i.test(window.location.hostname);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +121,7 @@ function AnalyticsTags() {
   }, []);
 
   useEffect(() => {
-    if (!config || isAdmin) return undefined;
+    if (!config || isAdmin || !isAnalyticsHost) return undefined;
 
     const removeElement = (id) => {
       document.getElementById(id)?.remove();
@@ -152,10 +179,10 @@ function AnalyticsTags() {
     }
 
     return undefined;
-  }, [config, isAdmin]);
+  }, [config, isAdmin, isAnalyticsHost]);
 
   useEffect(() => {
-    if (!config || isAdmin) return;
+    if (!config || isAdmin || !isAnalyticsHost) return;
     const pagePath = `${location.pathname}${location.search}${location.hash}`;
     const ga4Id = String(config.googleAnalyticsId || '').trim();
     if (ga4Id && window.gtag) {
@@ -171,7 +198,7 @@ function AnalyticsTags() {
         page_location: window.location.href
       });
     }
-  }, [config, isAdmin, location]);
+  }, [config, isAdmin, isAnalyticsHost, location]);
 
   return null;
 }
@@ -280,6 +307,7 @@ function AppContent({
     <>
       <PageTracker />
       <AnalyticsTags />
+      <ImageFallbacks />
       
       {!isAdmin && (
         <Navbar 

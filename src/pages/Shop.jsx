@@ -6,15 +6,6 @@ import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
 import { appPath, mediaUrl } from '../lib/urls';
 
-const VIDEO_URLS = [
-  "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba276ebdc230c7ec44da58ad9029&profile_id=139&oauth2_token_id=57447761",
-  "https://player.vimeo.com/external/435674703.sd.mp4?s=6f4af4f691684c9fb647146522c0e86b240ff11c&profile_id=165&oauth2_token_id=57447761",
-  "https://player.vimeo.com/external/517643534.sd.mp4?s=7b9260d2b638977a4128f1b6264d1f2e1a3d0f01&profile_id=165&oauth2_token_id=57447761",
-  "https://player.vimeo.com/external/403848737.sd.mp4?s=d0092ad81b53e8fb85567b453e028b18f8e0251c&profile_id=165&oauth2_token_id=57447761",
-  "https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba276ebdc230c7ec44da58ad9029&profile_id=139&oauth2_token_id=57447761",
-  "https://player.vimeo.com/external/435674703.sd.mp4?s=6f4af4f691684c9fb647146522c0e86b240ff11c&profile_id=165&oauth2_token_id=57447761"
-];
-
 const slideIntervalMs = (value) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 5000;
@@ -385,7 +376,7 @@ export default function Shop({ onAddToCart }) {
     desktopVideoUrl: '',
     desktopSlides: [],
     desktopSlideIntervalMs: 5000,
-    mobileMediaType: 'video',
+    mobileMediaType: 'image',
     mobileImageUrl: '',
     mobileSlides: [],
     mobileSlideIntervalMs: 5000,
@@ -393,7 +384,7 @@ export default function Shop({ onAddToCart }) {
     button1Link: '#shop-catalog',
     button2Text: 'Our Mission',
     button2Link: '/our-mission',
-    mobileVideoUrl: 'https://player.vimeo.com/external/371433846.sd.mp4?s=236da2f3c054ba276ebdc230c7ec44da58ad9029&profile_id=139&oauth2_token_id=57447761'
+    mobileVideoUrl: ''
   });
 
   // Filtering states from URL query
@@ -429,7 +420,7 @@ export default function Shop({ onAddToCart }) {
   }, []);
 
   useEffect(() => {
-    setMobileVideoSrc(heroConfig.mobileVideoUrl || VIDEO_URLS[0]);
+    setMobileVideoSrc(heroConfig.mobileVideoUrl || '');
   }, [heroConfig.mobileVideoUrl]);
 
   const desktopHeroImages = Array.isArray(heroConfig.desktopSlides) && heroConfig.desktopSlides.length
@@ -753,9 +744,7 @@ export default function Shop({ onAddToCart }) {
             controls={false}
             poster={mediaUrl(heroConfig.bgImage)}
             onError={() => {
-              if (mobileVideoSrc !== VIDEO_URLS[0]) {
-                setMobileVideoSrc(VIDEO_URLS[0]);
-              }
+              setMobileVideoSrc('');
             }}
           >
             <source src={mediaUrl(mobileVideoSrc)} type="video/mp4" />

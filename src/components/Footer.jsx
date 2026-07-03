@@ -126,6 +126,7 @@ export default function Footer({ onToast }) {
             <div style={{ display: 'flex', gap: '15px', marginTop: '20px', marginBottom: '10px' }}>
               <a 
                 href="tel:+917878623123" 
+                aria-label="Call LOG support"
                 title="Call Support"
                 onClick={handleContactClick}
                 style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
@@ -136,6 +137,7 @@ export default function Footer({ onToast }) {
                 href="http://wa.me/917878623123" 
                 target="_blank" 
                 rel="noreferrer"
+                aria-label="Message LOG support on WhatsApp"
                 title="WhatsApp Support"
                 onClick={handleContactClick}
                 style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
@@ -144,6 +146,7 @@ export default function Footer({ onToast }) {
               </a>
               <a 
                 href="mailto:contact@logcloth.com" 
+                aria-label="Email LOG support"
                 title="Email Support"
                 onClick={handleContactClick}
                 style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}

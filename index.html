@@ -17,26 +17,42 @@
       'analytics_storage': 'denied'
     });
   </script>
-  <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/5cfe4f28d3b2e213a2c75d46/script.js"></script>
+  <script>
+    window.__LOG_ANALYTICS_HOST__ = /(^|\.)logcloth\.com$/i.test(window.location.hostname);
+    if (window.__LOG_ANALYTICS_HOST__) {
+      var cookieyesScript = document.createElement('script');
+      cookieyesScript.id = 'cookieyes';
+      cookieyesScript.type = 'text/javascript';
+      cookieyesScript.src = 'https://cdn-cookieyes.com/client_data/5cfe4f28d3b2e213a2c75d46/script.js';
+      document.head.appendChild(cookieyesScript);
+    }
+  </script>
 
   <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-R3R2YRXWJS"></script>
   <script>
     window.__LOG_STATIC_GA4_ID = 'G-R3R2YRXWJS';
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-R3R2YRXWJS', { send_page_view: false });
+    if (window.__LOG_ANALYTICS_HOST__) {
+      var ga4Script = document.createElement('script');
+      ga4Script.async = true;
+      ga4Script.src = 'https://www.googletagmanager.com/gtag/js?id=G-R3R2YRXWJS';
+      document.head.appendChild(ga4Script);
+      gtag('js', new Date());
+      gtag('config', 'G-R3R2YRXWJS', { send_page_view: false });
+    }
   </script>
 
   <!-- Google Tag Manager -->
   <script>
     window.__LOG_STATIC_GTM_ID = 'GTM-N2W9V3HK';
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-N2W9V3HK');
+    if (window.__LOG_ANALYTICS_HOST__) {
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-N2W9V3HK');
+    }
   </script>
   <!-- End Google Tag Manager -->
   
