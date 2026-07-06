@@ -5196,6 +5196,12 @@ header.scrolled .nav-action-icon-btn {
   justify-content: center;
 }
 
+@media (max-width: 991px) {
+  .main-display-image-frame.mobile-swipe-frame {
+    aspect-ratio: 3 / 4;
+  }
+}
+
 .main-detail-img {
   width: 100%;
   height: 100%;
