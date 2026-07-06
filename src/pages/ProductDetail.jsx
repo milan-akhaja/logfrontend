@@ -41,9 +41,8 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               }
             }
           }
-          // Get 3 related products of the same main category (excluding current)
-          const related = data.filter(p => p.category === found.category && p.id !== found.id);
-          setRelatedProducts(related.slice(0, 3));
+          const related = data.filter(p => String(p.id) !== String(found.id));
+          setRelatedProducts(related);
         }
       })
       .catch(err => console.error(err));
