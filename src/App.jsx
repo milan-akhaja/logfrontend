@@ -96,6 +96,58 @@ function ImageFallbacks() {
   return null;
 }
 
+function RevealOnScroll() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.reveal').forEach((element) => {
+        element.classList.add('is-visible');
+      });
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      root: null,
+      rootMargin: '0px 0px -8% 0px',
+      threshold: 0.08
+    });
+
+    let watchFrame = null;
+    const watch = () => {
+      document.querySelectorAll('.reveal:not(.is-visible)').forEach((element) => {
+        observer.observe(element);
+      });
+    };
+    const scheduleWatch = () => {
+      if (watchFrame) return;
+      watchFrame = window.requestAnimationFrame(() => {
+        watchFrame = null;
+        watch();
+      });
+    };
+
+    watch();
+    const mutationObserver = new MutationObserver(scheduleWatch);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      if (watchFrame) window.cancelAnimationFrame(watchFrame);
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [location.pathname, location.search]);
+
+  return null;
+}
+
 function AnalyticsTags() {
   const location = useLocation();
   const [config, setConfig] = useState(null);
@@ -285,22 +337,27 @@ function AppContent({
   };
 
   const routeContent = (
-    <Routes>
-      <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
-      <Route path="/shop" element={<><SEO title="Shop Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
-      <Route path="/new-in" element={<><SEO title="New In - Latest LOG Streetwear Drops" description="Explore the newest LOG streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases." canonicalPath="/new-in" /><NewIn onAddToCart={onAddToCart} onToast={showToast} /></>} />
-      <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience" description="Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product." canonicalPath="/our-mission" /><OurMission /></>} />
-      <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories, Lookbook & Impact" description="Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG." canonicalPath="/log-book" type="blog" /><LogBook /></>} />
-      <Route path="/blog/:id" element={<BlogDetail />} />
-      <Route path="/product/:id" element={<ProductDetail onAddToCart={onAddToCart} onBuyNow={onBuyNow} />} />
-      <Route path="/admin" element={<><SEO title="Admin" description="LOG admin panel." noindex canonicalPath="/admin" /><Admin onToast={showToast} /></>} />
-      <Route path="/refund-policy" element={<><SEO title="Refund & Exchange Policy" description="Read LOG's return, refund, exchange, and charity donation policy for orders across India." canonicalPath="/refund-policy" /><RefundPolicy /></>} />
-      <Route path="/make-return" element={<><SEO title="Make a Return or Exchange" description="Request a LOG return, refund, or size exchange for eligible orders within the return window." canonicalPath="/make-return" /><MakeReturn /></>} />
-      <Route path="/shipping-policy" element={<><SEO title="Shipping Policy" description="Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders." canonicalPath="/shipping-policy" /><ShippingPolicy /></>} />
-      <Route path="/faqs" element={<><SEO title="FAQs - LOG Clothing" description="Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations." canonicalPath="/faqs" /><FAQs /></>} />
-      <Route path="/terms" element={<><SEO title="Terms & Conditions" description="Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com." canonicalPath="/terms" /><Terms /></>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <div
+      key={`${location.pathname}${location.search}`}
+      className={isAdmin ? undefined : 'page-transition-shell'}
+    >
+      <Routes>
+        <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
+        <Route path="/shop" element={<><SEO title="Shop Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
+        <Route path="/new-in" element={<><SEO title="New In - Latest LOG Streetwear Drops" description="Explore the newest LOG streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases." canonicalPath="/new-in" /><NewIn onAddToCart={onAddToCart} onToast={showToast} /></>} />
+        <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience" description="Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product." canonicalPath="/our-mission" /><OurMission /></>} />
+        <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories, Lookbook & Impact" description="Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG." canonicalPath="/log-book" type="blog" /><LogBook /></>} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
+        <Route path="/product/:id" element={<ProductDetail onAddToCart={onAddToCart} onBuyNow={onBuyNow} />} />
+        <Route path="/admin" element={<><SEO title="Admin" description="LOG admin panel." noindex canonicalPath="/admin" /><Admin onToast={showToast} /></>} />
+        <Route path="/refund-policy" element={<><SEO title="Refund & Exchange Policy" description="Read LOG's return, refund, exchange, and charity donation policy for orders across India." canonicalPath="/refund-policy" /><RefundPolicy /></>} />
+        <Route path="/make-return" element={<><SEO title="Make a Return or Exchange" description="Request a LOG return, refund, or size exchange for eligible orders within the return window." canonicalPath="/make-return" /><MakeReturn /></>} />
+        <Route path="/shipping-policy" element={<><SEO title="Shipping Policy" description="Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders." canonicalPath="/shipping-policy" /><ShippingPolicy /></>} />
+        <Route path="/faqs" element={<><SEO title="FAQs - LOG Clothing" description="Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations." canonicalPath="/faqs" /><FAQs /></>} />
+        <Route path="/terms" element={<><SEO title="Terms & Conditions" description="Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com." canonicalPath="/terms" /><Terms /></>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
   );
 
   return (
@@ -308,6 +365,7 @@ function AppContent({
       <PageTracker />
       <AnalyticsTags />
       <ImageFallbacks />
+      {!isAdmin && <RevealOnScroll />}
       
       {!isAdmin && (
         <Navbar 
