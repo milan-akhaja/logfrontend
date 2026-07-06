@@ -5470,6 +5470,44 @@ header.scrolled .nav-action-icon-btn {
   margin-bottom: 4px;
 }
 
+.related-products-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0 12px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.related-products-row::-webkit-scrollbar {
+  display: none;
+}
+
+.related-products-row .product-card {
+  flex: 0 0 clamp(240px, 24vw, 360px);
+  scroll-snap-align: start;
+}
+
+@media (max-width: 767px) {
+  .related-products-section {
+    margin-left: -14px;
+    margin-right: -14px;
+  }
+
+  .related-products-row {
+    gap: 10px;
+    padding: 0 14px 14px;
+  }
+
+  .related-products-row .product-card {
+    flex-basis: 46vw;
+    min-width: 158px;
+    max-width: 190px;
+  }
+}
+
 /* Product Detail Gallery Carousel styling */
 .detail-gallery-carousel-wrapper {
   display: flex;

@@ -334,7 +334,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
         {relatedProducts.length > 0 && (
           <div className="related-products-section" style={{ marginTop: '80px', borderTop: '1px solid var(--grey-light)', paddingTop: '40px' }}>
             <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '30px', textAlign: 'center', letterSpacing: '0.05em' }}>You May Also Like</h2>
-            <div className="product-grid">
+            <div className="related-products-row">
               {relatedProducts.map(p => (
                 <ProductGridCard 
                   key={p.id}
