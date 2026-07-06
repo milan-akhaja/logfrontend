@@ -49,12 +49,21 @@ export default function BlogDetail() {
     .filter(Boolean)
     .join(' ')
     .slice(0, 155) || 'Read the latest LOG streetwear story, lookbook entry, and impact update.';
+  const seoDescription = blog.metaDescription || blogDescription;
+  const seoTitle = blog.metaTitle || `${blog.title} - LOG Book`;
+  const seoKeywords = Array.isArray(blog.metaKeywords)
+    ? blog.metaKeywords
+    : String(blog.metaKeywords || '')
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(Boolean);
   const blogImage = blog.coverImage || blog.image || `${SITE_URL}/assets/lookbook_polaroid_1.png`;
   const blogJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: blog.title,
-    description: blogDescription,
+    description: seoDescription,
+    keywords: seoKeywords,
     image: blogImage,
     datePublished: blog.date,
     dateModified: blog.date,
@@ -121,8 +130,9 @@ export default function BlogDetail() {
   return (
     <>
       <SEO
-        title={`${blog.title} - LOG Book`}
-        description={blogDescription}
+        title={seoTitle}
+        description={seoDescription}
+        keywords={seoKeywords}
         image={blogImage}
         type="article"
         canonicalPath={`/blog/${blog.id}`}

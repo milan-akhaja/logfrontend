@@ -5070,7 +5070,7 @@ header.scrolled .nav-action-icon-btn {
   .mobile-swipe-frame {
     position: relative;
     max-width: 100%;
-    aspect-ratio: 9 / 11.5;
+    aspect-ratio: 3 / 4;
     overflow: hidden;
     touch-action: pan-y pan-x;
     border-radius: 14px;
@@ -5080,6 +5080,8 @@ header.scrolled .nav-action-icon-btn {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
+    display: block;
   }
 
   .mobile-gallery-count {
@@ -5124,7 +5126,7 @@ header.scrolled .nav-action-icon-btn {
   .mobile-swipe-frame {
     position: relative;
     max-width: 100%;
-    aspect-ratio: 9 / 11.5;
+    aspect-ratio: 3 / 4;
     overflow: hidden;
     touch-action: pan-y pan-x;
     border-radius: 14px;
@@ -5134,6 +5136,8 @@ header.scrolled .nav-action-icon-btn {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
+    display: block;
   }
 
   .mobile-gallery-count {

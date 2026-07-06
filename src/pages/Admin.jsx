@@ -366,6 +366,10 @@ export default function Admin({ onToast }) {
 
   const [blogTitleInput, setBlogTitleInput] = useState('');
   const [blogCoverInput, setBlogCoverInput] = useState('');
+  const [blogMetaTitleInput, setBlogMetaTitleInput] = useState('');
+  const [blogMetaDescriptionInput, setBlogMetaDescriptionInput] = useState('');
+  const [blogMetaKeywordsInput, setBlogMetaKeywordsInput] = useState('');
+  const [editingBlogId, setEditingBlogId] = useState(null);
   const [draggingBlogBlockIndex, setDraggingBlogBlockIndex] = useState(null);
   const blogBlockDragIndexRef = useRef(null);
 
@@ -1287,10 +1291,18 @@ export default function Admin({ onToast }) {
   const handleSaveBlog = async (e) => {
     e.preventDefault();
     if (!blogTitleInput.trim()) return;
+    const metaKeywords = blogMetaKeywordsInput
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(Boolean);
 
     const payload = {
+      id: editingBlogId || undefined,
       title: blogTitleInput,
       coverImage: blogCoverInput,
+      metaTitle: blogMetaTitleInput,
+      metaDescription: blogMetaDescriptionInput,
+      metaKeywords,
       content: newBlog.content,
       date: new Date().toISOString()
     };
@@ -1305,6 +1317,10 @@ export default function Admin({ onToast }) {
         onToast('Blog entry published successfully!');
         setBlogTitleInput('');
         setBlogCoverInput('');
+        setBlogMetaTitleInput('');
+        setBlogMetaDescriptionInput('');
+        setBlogMetaKeywordsInput('');
+        setEditingBlogId(null);
         setNewBlog({ title: '', coverImage: '', content: [] });
         fetchData();
       } else {
@@ -1314,6 +1330,34 @@ export default function Admin({ onToast }) {
       console.error(err);
       onToast('Blog save request failed.');
     }
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlogId(blog.id);
+    setBlogTitleInput(blog.title || '');
+    setBlogCoverInput(blog.coverImage || blog.image || '');
+    setBlogMetaTitleInput(blog.metaTitle || '');
+    setBlogMetaDescriptionInput(blog.metaDescription || '');
+    setBlogMetaKeywordsInput(Array.isArray(blog.metaKeywords) ? blog.metaKeywords.join(', ') : String(blog.metaKeywords || ''));
+    setNewBlog({
+      title: blog.title || '',
+      coverImage: blog.coverImage || blog.image || '',
+      content: (Array.isArray(blog.content) ? blog.content : []).map((block, index) => ({
+        ...block,
+        id: block.id || `blog-block-${Date.now()}-${index}`
+      }))
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelBlogEdit = () => {
+    setEditingBlogId(null);
+    setBlogTitleInput('');
+    setBlogCoverInput('');
+    setBlogMetaTitleInput('');
+    setBlogMetaDescriptionInput('');
+    setBlogMetaKeywordsInput('');
+    setNewBlog({ title: '', coverImage: '', content: [] });
   };
 
   const handleDeleteBlog = async (id) => {
@@ -3052,7 +3096,7 @@ export default function Admin({ onToast }) {
           <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '30px' }}>
             <div className="admin-card">
               <div className="admin-card-header">
-                <h2 className="admin-card-title">Compose Blog Entry (Google Docs block editor)</h2>
+                <h2 className="admin-card-title">{editingBlogId ? 'Edit Blog Entry SEO & Content' : 'Compose Blog Entry (Google Docs block editor)'}</h2>
               </div>
               <form onSubmit={handleSaveBlog}>
                 <div className="admin-form-group">
@@ -3082,6 +3126,44 @@ export default function Admin({ onToast }) {
                     value={blogCoverInput}
                     onChange={(e) => setBlogCoverInput(e.target.value)}
                     placeholder="/uploads/my-blog-cover.jpg"
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">SEO Title</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={blogMetaTitleInput}
+                    onChange={(e) => setBlogMetaTitleInput(e.target.value)}
+                    placeholder="Custom Google title. Leave blank to use blog title."
+                    maxLength={255}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Meta Description</label>
+                  <textarea
+                    className="admin-textarea"
+                    value={blogMetaDescriptionInput}
+                    onChange={(e) => setBlogMetaDescriptionInput(e.target.value)}
+                    placeholder="Short search description. Best length: 140-160 characters."
+                    rows="3"
+                    maxLength={320}
+                  />
+                  <div style={{ fontSize: '11px', color: '#6B7280', marginTop: '6px' }}>
+                    {blogMetaDescriptionInput.length}/320 characters
+                  </div>
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Meta Tags / Keywords</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={blogMetaKeywordsInput}
+                    onChange={(e) => setBlogMetaKeywordsInput(e.target.value)}
+                    placeholder="oversized t-shirt, streetwear, LOG, cotton tee"
                   />
                 </div>
 
@@ -3201,9 +3283,16 @@ export default function Admin({ onToast }) {
                   ))}
                 </div>
 
-                <button type="submit" className="btn btn-accent" style={{ width: '100%', padding: '12px' }}>
-                  Publish Blog Post
-                </button>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <button type="submit" className="btn btn-accent" style={{ flex: '1 1 220px', padding: '12px' }}>
+                    {editingBlogId ? 'Update Blog Post' : 'Publish Blog Post'}
+                  </button>
+                  {editingBlogId && (
+                    <button type="button" className="btn" style={{ flex: '0 1 160px', padding: '12px' }} onClick={handleCancelBlogEdit}>
+                      Cancel Edit
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
 
@@ -3217,6 +3306,7 @@ export default function Admin({ onToast }) {
                     <tr>
                       <th>Cover</th>
                       <th>Title</th>
+                      <th>Meta Description</th>
                       <th>Date</th>
                       <th>Actions</th>
                     </tr>
@@ -3228,8 +3318,12 @@ export default function Admin({ onToast }) {
                           <img src={mediaUrl(b.coverImage)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Cover" />
                         </td>
                         <td><strong>{b.title}</strong></td>
+                        <td>{b.metaDescription || 'Auto from blog content'}</td>
                         <td>{new Date(b.date).toLocaleDateString()}</td>
                         <td>
+                          <button className="admin-icon-btn" onClick={() => handleEditBlog(b)} aria-label={`Edit ${b.title}`}>
+                            <Edit size={14} />
+                          </button>
                           <button className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteBlog(b.id)}>
                             <Trash2 size={14} />
                           </button>

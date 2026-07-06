@@ -42,6 +42,7 @@ function upsertJsonLd(id, data) {
 export default function SEO({
   title = DEFAULT_TITLE,
   description = DEFAULT_DESCRIPTION,
+  keywords = [],
   image = DEFAULT_IMAGE,
   type = 'website',
   noindex = false,
@@ -58,6 +59,10 @@ export default function SEO({
 
     upsertMeta('meta[name="title"]', { name: 'title', content: fullTitle });
     upsertMeta('meta[name="description"]', { name: 'description', content: description });
+    upsertMeta('meta[name="keywords"]', {
+      name: 'keywords',
+      content: Array.isArray(keywords) ? keywords.filter(Boolean).join(', ') : String(keywords || '')
+    });
     upsertMeta('meta[name="robots"]', { name: 'robots', content: noindex ? 'noindex, nofollow' : 'index, follow' });
 
     upsertLink('canonical', canonicalUrl);
@@ -77,7 +82,7 @@ export default function SEO({
     if (jsonLd) {
       upsertJsonLd('page-jsonld', jsonLd);
     }
-  }, [canonicalUrl, description, fullTitle, image, jsonLd, noindex, type]);
+  }, [canonicalUrl, description, fullTitle, image, jsonLd, keywords, noindex, type]);
 
   return null;
 }

@@ -38,7 +38,7 @@ export default function LogBook() {
     const content = Array.isArray(blog.content)
       ? blog.content.map(block => block.text).filter(Boolean).join(' ')
       : String(blog.content || '');
-    const text = content || blog.excerpt || blog.description || '';
+    const text = blog.metaDescription || content || blog.excerpt || blog.description || '';
     return text.length > 155 ? `${text.slice(0, 155).trim()}...` : text;
   };
 
