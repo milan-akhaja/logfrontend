@@ -1217,6 +1217,57 @@ export default function Admin({ onToast }) {
     });
   };
 
+  const moveArrayItem = (items, fromIndex, toIndex) => {
+    if (!Array.isArray(items) || fromIndex < 0 || toIndex < 0 || fromIndex >= items.length || toIndex >= items.length) {
+      return items;
+    }
+    const next = [...items];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
+  };
+
+  const handleMoveResourceItem = async (resource, items, setter, index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+
+    const reordered = moveArrayItem(items, index, targetIndex).map((item, sortIndex) => ({
+      ...item,
+      sortOrder: sortIndex
+    }));
+
+    setter(reordered);
+    try {
+      const res = await fetch(`/api/reorder/${resource}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: reordered.map(item => item.id) })
+      });
+
+      if (res.ok) {
+        onToast('Order saved.');
+      } else {
+        setter(items);
+        onToast(await getApiError(res, 'Order save failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      setter(items);
+      onToast('Order save request failed.');
+    }
+  };
+
+  const handleMoveProductImage = (index, direction) => {
+    const source = editingProduct || newProduct;
+    const imageUrls = source.imageUrls || [];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= imageUrls.length) return;
+    const updated = moveArrayItem(imageUrls, index, targetIndex);
+    const updater = prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' });
+    if (editingProduct) setEditingProduct(updater);
+    else setNewProduct(updater);
+  };
+
   // Log Book (Blogs) Block Editor
   const handleAddBlogBlock = (type) => {
     setNewBlog(prev => ({
@@ -2730,6 +2781,7 @@ export default function Admin({ onToast }) {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>Order</th>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Selling Price</th>
@@ -2745,8 +2797,18 @@ export default function Admin({ onToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map(product => (
+                  {products.map((product, idx) => (
                     <tr key={product.id}>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('products', products, setProducts, idx, -1)} disabled={idx === 0} aria-label={`Move ${product.name} up`}>
+                            <ArrowUp size={14} />
+                          </button>
+                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('products', products, setProducts, idx, 1)} disabled={idx === products.length - 1} aria-label={`Move ${product.name} down`}>
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
+                      </td>
                       <td><strong>{product.id}</strong></td>
                       <td>{product.name}</td>
                       <td>₹{product.price}</td>
@@ -2922,14 +2984,25 @@ export default function Admin({ onToast }) {
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th>Order</th>
                       <th>Collection Name</th>
                       <th>Product Count</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {collections.map(col => (
+                    {collections.map((col, idx) => (
                       <tr key={col.id}>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('collections', collections, setCollections, idx, -1)} disabled={idx === 0} aria-label={`Move ${col.name} up`}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('collections', collections, setCollections, idx, 1)} disabled={idx === collections.length - 1} aria-label={`Move ${col.name} down`}>
+                              <ArrowDown size={14} />
+                            </button>
+                          </div>
+                        </td>
                         <td><strong>{col.name}</strong></td>
                         <td>{col.productIds?.length || 0} items</td>
                         <td>
@@ -3059,6 +3132,7 @@ export default function Admin({ onToast }) {
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th>Order</th>
                       <th>Preview</th>
                       <th>Type</th>
                       <th>Caption</th>
@@ -3066,8 +3140,18 @@ export default function Admin({ onToast }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {stories.map(s => (
+                    {stories.map((s, idx) => (
                       <tr key={s.id}>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('stories', stories, setStories, idx, -1)} disabled={idx === 0} aria-label={`Move story ${idx + 1} up`}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('stories', stories, setStories, idx, 1)} disabled={idx === stories.length - 1} aria-label={`Move story ${idx + 1} down`}>
+                              <ArrowDown size={14} />
+                            </button>
+                          </div>
+                        </td>
                         <td>
                           {s.mediaType === 'video' ? (
                             <video src={mediaUrl(s.mediaUrl)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} muted />
@@ -3304,6 +3388,7 @@ export default function Admin({ onToast }) {
                 <table className="admin-table">
                   <thead>
                     <tr>
+                      <th>Order</th>
                       <th>Cover</th>
                       <th>Title</th>
                       <th>Meta Description</th>
@@ -3312,8 +3397,18 @@ export default function Admin({ onToast }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {blogs.map(b => (
+                    {blogs.map((b, idx) => (
                       <tr key={b.id}>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('blogs', blogs, setBlogs, idx, -1)} disabled={idx === 0} aria-label={`Move ${b.title} up`}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('blogs', blogs, setBlogs, idx, 1)} disabled={idx === blogs.length - 1} aria-label={`Move ${b.title} down`}>
+                              <ArrowDown size={14} />
+                            </button>
+                          </div>
+                        </td>
                         <td>
                           <img src={mediaUrl(b.coverImage)} style={{ width: '50px', height: '50px', objectFit: 'cover' }} alt="Cover" />
                         </td>
@@ -3419,6 +3514,7 @@ export default function Admin({ onToast }) {
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>Order</th>
                     <th>Preview</th>
                     <th>Title</th>
                     <th>Link</th>
@@ -3426,8 +3522,18 @@ export default function Admin({ onToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {galleryItems.map(item => (
+                  {galleryItems.map((item, idx) => (
                     <tr key={item.id}>
+                      <td>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, -1)} disabled={idx === 0} aria-label={`Move ${item.title || 'gallery item'} up`}>
+                            <ArrowUp size={14} />
+                          </button>
+                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, 1)} disabled={idx === galleryItems.length - 1} aria-label={`Move ${item.title || 'gallery item'} down`}>
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
+                      </td>
                       <td>
                         <img src={mediaUrl(item.imageUrl)} alt={item.title} style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
                       </td>
@@ -4056,6 +4162,26 @@ export default function Admin({ onToast }) {
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
                     <div key={idx} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '4px', overflow: 'hidden', height: '100px' }}>
                       <img src={mediaUrl(url)} alt={`Product image ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div style={{ position: 'absolute', left: '5px', top: '5px', display: 'flex', gap: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveProductImage(idx, -1)}
+                          disabled={idx === 0}
+                          aria-label={`Move product image ${idx + 1} left`}
+                          style={{ background: 'rgba(255, 255, 255, 0.92)', color: '#111', border: 'none', borderRadius: '50%', width: '22px', height: '22px', cursor: idx === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: idx === 0 ? 0.5 : 1 }}
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveProductImage(idx, 1)}
+                          disabled={idx === (editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length - 1}
+                          aria-label={`Move product image ${idx + 1} right`}
+                          style={{ background: 'rgba(255, 255, 255, 0.92)', color: '#111', border: 'none', borderRadius: '50%', width: '22px', height: '22px', cursor: idx === (editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: idx === (editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).length - 1 ? 0.5 : 1 }}
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => {
