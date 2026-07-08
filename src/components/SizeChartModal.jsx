@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function SizeChartModal({ isOpen, onClose }) {
   const [unit, setUnit] = useState('INCH'); // INCH or CM
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      lockBodyScroll();
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen]);
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Folder } from 'lucide-react';
 import { formatPrice, getPriceDisplay } from '../lib/pricing';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function SearchOverlay({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -11,7 +12,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockBodyScroll();
       Promise.all([
         fetch('/api/products').then(res => res.json()),
         fetch('/api/collections').then(res => res.json())
@@ -21,11 +22,9 @@ export default function SearchOverlay({ isOpen, onClose }) {
           setCollections(collectionsData || []);
         })
         .catch(err => console.error(err));
-    } else {
-      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen]);
 

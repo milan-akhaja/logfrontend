@@ -51,6 +51,7 @@ export default function BlogDetail() {
     .slice(0, 155) || 'Read the latest LOG streetwear story, lookbook entry, and impact update.';
   const seoDescription = blog.metaDescription || blogDescription;
   const seoTitle = blog.metaTitle || `${blog.title} - LOG Book`;
+  const geoTitle = blog.geoTitle || seoTitle;
   const seoKeywords = Array.isArray(blog.metaKeywords)
     ? blog.metaKeywords
     : String(blog.metaKeywords || '')
@@ -62,6 +63,7 @@ export default function BlogDetail() {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: blog.title,
+    ...(geoTitle && geoTitle !== blog.title ? { alternativeHeadline: geoTitle } : {}),
     description: seoDescription,
     keywords: seoKeywords,
     image: blogImage,
@@ -76,7 +78,7 @@ export default function BlogDetail() {
       name: 'LOG',
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/assets/hero_streetwear.png`
+        url: `${SITE_URL}/logo-512.png`
       }
     },
     mainEntityOfPage: `${SITE_URL}/blog/${blog.id}`
@@ -136,6 +138,7 @@ export default function BlogDetail() {
         image={blogImage}
         type="article"
         canonicalPath={`/blog/${blog.id}`}
+        geoTitle={geoTitle}
         jsonLd={blogJsonLd}
       />
       <article className="blog-detail-container" style={{ marginTop: '100px', paddingBottom: '80px' }}>

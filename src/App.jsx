@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
+import { apiJson } from './lib/apiClient';
 
 // Layout Components
 import Navbar from './components/Navbar';
@@ -69,6 +70,104 @@ function sendGoogleEvent(eventName, payload = {}) {
   if (window.gtag) {
     window.gtag('event', eventName, payload);
   }
+}
+
+function formatCurrency(value) {
+  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
+}
+
+function OrderReceiptModal({ order, onClose }) {
+  if (!order) return null;
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 100000,
+        background: 'rgba(15, 15, 17, 0.8)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}
+    >
+      <div
+        style={{
+          background: '#FAF9F6',
+          color: '#0F0F11',
+          width: '100%',
+          maxWidth: '720px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          borderRadius: '8px',
+          padding: '28px',
+          boxShadow: '0 30px 60px rgba(0,0,0,0.3)'
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+          <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, textTransform: 'uppercase' }}>Order placed successfully</h2>
+          <p style={{ margin: 0, color: '#388e3c', fontWeight: 700 }}>Your payment and order details are confirmed.</p>
+        </div>
+
+        <div className="order-success-summary">
+          <div className="order-success-summary-head">
+            <div>
+              <span>Order ID</span>
+              <strong>{order.id}</strong>
+            </div>
+            <div>
+              <span>Status</span>
+              <strong>{order.status}</strong>
+            </div>
+          </div>
+
+          <div className="order-success-section">
+            <h3>Customer</h3>
+            <p>{order.customerInfo?.name || `${order.customerInfo?.firstName || ''} ${order.customerInfo?.lastName || ''}`.trim()}</p>
+            <p>{order.customerInfo?.phone}</p>
+            <p>{order.customerInfo?.address}</p>
+          </div>
+
+          <div className="order-success-section">
+            <h3>Items</h3>
+            {order.items?.map((item, index) => (
+              <div className="order-success-item" key={`${item.id || item.name}-${index}`}>
+                <span>{item.name} {item.selectedSize ? `(${item.selectedSize})` : ''} x {item.quantity}</span>
+                <strong>{formatCurrency(Number(item.price || 0) * Number(item.quantity || 1))}</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="order-success-section">
+            <h3>Payment & Delivery</h3>
+            <div className="order-success-line">
+              <span>Payment</span>
+              <strong>{order.paymentMethod || 'Online payment'}</strong>
+            </div>
+            <div className="order-success-line">
+              <span>Delivery</span>
+              <strong>{order.deliveryMethod || order.customerInfo?.deliveryMethod || 'Standard shipping'}</strong>
+            </div>
+          </div>
+
+          <div className="order-success-totals">
+            <div className="order-success-line"><span>Subtotal</span><strong>{formatCurrency(order.subtotal)}</strong></div>
+            {Number(order.discount || 0) > 0 && (
+              <div className="order-success-line"><span>Discount</span><strong>-{formatCurrency(order.discount)}</strong></div>
+            )}
+            <div className="order-success-line"><span>Shipping</span><strong>{formatCurrency(order.shipping)}</strong></div>
+            <div className="order-success-line"><span>Donation</span><strong>{formatCurrency(order.donation)}</strong></div>
+            <div className="order-success-line order-success-grand"><span>Grand Total</span><strong>{formatCurrency(order.total)}</strong></div>
+          </div>
+        </div>
+
+        <button className="btn btn-accent" style={{ width: '100%', padding: '14px' }} onClick={onClose}>
+          Return to Shop
+        </button>
+      </div>
+    </div>
+  );
 }
 
 const FALLBACK_IMAGE_SRC = `data:image/svg+xml,${encodeURIComponent(`
@@ -285,22 +384,34 @@ function AppContent({
 
   const isAdmin = location.pathname.startsWith('/admin');
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const [completedOrder, setCompletedOrder] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const payment = params.get('payment');
     if (payment === 'payu-success') {
-      if (params.get('orderId')) {
+      const orderId = params.get('orderId');
+      const clientOrderId = localStorage.getItem('log_checkout_client_order_id');
+      if (orderId) {
         sendGoogleEvent('purchase', {
-          transaction_id: params.get('orderId'),
+          transaction_id: orderId,
           currency: 'INR',
           payment_type: 'PayU'
         });
       }
+      if (orderId && clientOrderId) {
+        apiJson(`/api/orders/receipt?orderId=${encodeURIComponent(orderId)}&clientOrderId=${encodeURIComponent(clientOrderId)}`)
+          .then((data) => {
+            if (data.order) setCompletedOrder(data.order);
+          })
+          .catch(() => {
+            showToast(`PayU payment successful: ${orderId}`);
+          });
+      }
       onClearCart();
       localStorage.removeItem('log_checkout_client_order_id');
       localStorage.removeItem('log_checkout_customer_draft');
-      showToast(`PayU payment successful${params.get('orderId') ? `: ${params.get('orderId')}` : ''}`);
+      showToast(`PayU payment successful${orderId ? `: ${orderId}` : ''}`);
       navigate(location.pathname || '/', { replace: true });
     } else if (payment === 'payu-failed') {
       showToast('PayU payment failed or was cancelled. Your cart is still saved.');
@@ -399,6 +510,8 @@ function AppContent({
         onAddToBag={onAddToCart}
         onBuyNow={onBuyNow}
       />
+
+      <OrderReceiptModal order={completedOrder} onClose={() => setCompletedOrder(null)} />
 
       {/* Global Toast */}
       <div id="toastNotification" className={`toast-notification ${toast ? 'show' : ''}`}>

@@ -96,6 +96,7 @@ const DELIVERY_PARTNERS = [
   { value: 'Xpressbees', label: 'Xpressbees', trackingUrl: (awb) => `https://www.xpressbees.com/track?isawb=true&trackid=${encodeURIComponent(awb)}` },
   { value: 'Ecom Express', label: 'Ecom Express', trackingUrl: (awb) => `https://ecomexpress.in/tracking/?awb_field=${encodeURIComponent(awb)}` },
   { value: 'Shiprocket', label: 'Shiprocket', trackingUrl: (awb) => `https://shiprocket.co/tracking/${encodeURIComponent(awb)}` },
+  { value: 'Founder Delivery', label: 'Founder Delivery', trackingUrl: () => '' },
   { value: 'Custom', label: 'Custom / Other', trackingUrl: () => '' }
 ];
 
@@ -367,6 +368,7 @@ export default function Admin({ onToast }) {
   const [blogTitleInput, setBlogTitleInput] = useState('');
   const [blogCoverInput, setBlogCoverInput] = useState('');
   const [blogMetaTitleInput, setBlogMetaTitleInput] = useState('');
+  const [blogGeoTitleInput, setBlogGeoTitleInput] = useState('');
   const [blogMetaDescriptionInput, setBlogMetaDescriptionInput] = useState('');
   const [blogMetaKeywordsInput, setBlogMetaKeywordsInput] = useState('');
   const [editingBlogId, setEditingBlogId] = useState(null);
@@ -580,10 +582,13 @@ export default function Admin({ onToast }) {
 
   useEffect(() => {
     if (!selectedOrder) return;
+    const isFounderDelivery = selectedOrder.paymentId === 'FOUNDER_DELIVERY' || selectedOrder.customerInfo?.deliveryOption === 'founder_delivery';
+    const fallbackPartner = isFounderDelivery ? 'Founder Delivery' : 'Delhivery';
+    const fallbackTracking = isFounderDelivery ? 'Founder hand delivery' : '';
     setShipmentDraft({
-      shipmentPartner: selectedOrder.shipmentPartner || 'Delhivery',
-      trackingNumber: selectedOrder.trackingNumber || '',
-      trackingUrl: selectedOrder.trackingUrl || trackingUrlForPartner(selectedOrder.shipmentPartner || 'Delhivery', selectedOrder.trackingNumber || '')
+      shipmentPartner: selectedOrder.shipmentPartner || fallbackPartner,
+      trackingNumber: selectedOrder.trackingNumber || fallbackTracking,
+      trackingUrl: selectedOrder.trackingUrl || trackingUrlForPartner(selectedOrder.shipmentPartner || fallbackPartner, selectedOrder.trackingNumber || fallbackTracking)
     });
   }, [selectedOrder]);
 
@@ -1352,6 +1357,7 @@ export default function Admin({ onToast }) {
       title: blogTitleInput,
       coverImage: blogCoverInput,
       metaTitle: blogMetaTitleInput,
+      geoTitle: blogGeoTitleInput,
       metaDescription: blogMetaDescriptionInput,
       metaKeywords,
       content: newBlog.content,
@@ -1369,6 +1375,7 @@ export default function Admin({ onToast }) {
         setBlogTitleInput('');
         setBlogCoverInput('');
         setBlogMetaTitleInput('');
+        setBlogGeoTitleInput('');
         setBlogMetaDescriptionInput('');
         setBlogMetaKeywordsInput('');
         setEditingBlogId(null);
@@ -1388,6 +1395,7 @@ export default function Admin({ onToast }) {
     setBlogTitleInput(blog.title || '');
     setBlogCoverInput(blog.coverImage || blog.image || '');
     setBlogMetaTitleInput(blog.metaTitle || '');
+    setBlogGeoTitleInput(blog.geoTitle || '');
     setBlogMetaDescriptionInput(blog.metaDescription || '');
     setBlogMetaKeywordsInput(Array.isArray(blog.metaKeywords) ? blog.metaKeywords.join(', ') : String(blog.metaKeywords || ''));
     setNewBlog({
@@ -1406,6 +1414,7 @@ export default function Admin({ onToast }) {
     setBlogTitleInput('');
     setBlogCoverInput('');
     setBlogMetaTitleInput('');
+    setBlogGeoTitleInput('');
     setBlogMetaDescriptionInput('');
     setBlogMetaKeywordsInput('');
     setNewBlog({ title: '', coverImage: '', content: [] });
@@ -3226,6 +3235,18 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-form-group">
+                  <label className="admin-label">GEO Title</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    value={blogGeoTitleInput}
+                    onChange={(e) => setBlogGeoTitleInput(e.target.value)}
+                    placeholder="Generative search title. Leave blank to use SEO title."
+                    maxLength={255}
+                  />
+                </div>
+
+                <div className="admin-form-group">
                   <label className="admin-label">Meta Description</label>
                   <textarea
                     className="admin-textarea"
@@ -3684,6 +3705,8 @@ export default function Admin({ onToast }) {
                 <div>Email: {selectedOrder.customerInfo?.email}</div>
                 <div>Phone: {selectedOrder.customerInfo?.phone}</div>
                 <div>Address: {selectedOrder.customerInfo?.address}</div>
+                <div>Payment: {selectedOrder.paymentMethod || (selectedOrder.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : selectedOrder.paymentId === 'COD' ? 'Cash on Delivery' : selectedOrder.paymentId || 'Pending')}</div>
+                <div>Delivery: {selectedOrder.deliveryMethod || selectedOrder.customerInfo?.deliveryMethod || 'Standard shipping'}</div>
               </div>
 
               <div>
@@ -3709,6 +3732,12 @@ export default function Admin({ onToast }) {
                 <span>Shipping:</span>
                 <span>₹{selectedOrder.shipping}</span>
               </div>
+              {Number(selectedOrder.customerInfo?.founderDeliveryFee || 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#b45309', fontWeight: '700' }}>
+                  <span>Founder delivery charge:</span>
+                  <span>₹{selectedOrder.customerInfo.founderDeliveryFee}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800' }}>
                 <span>Grand Total:</span>
                 <span>₹{selectedOrder.total}</span>

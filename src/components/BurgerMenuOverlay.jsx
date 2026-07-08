@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, BookOpen } from 'lucide-react';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
   // Fetch collections, products, and stories
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockBodyScroll();
       
       Promise.all([
         fetch('/api/collections').then(res => res.json()),
@@ -39,12 +40,10 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
           setUniqueColors(Array.from(colorsSet));
         })
         .catch(err => console.error('Error fetching burger overlay data:', err));
-    } else {
-      document.body.style.overflow = '';
     }
 
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen]);
 

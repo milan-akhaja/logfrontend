@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SizeChartModal from './SizeChartModal';
 import ProductPrice from './ProductPrice';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyNow }) {
   const [selectedSize, setSelectedSize] = useState('');
@@ -8,13 +9,11 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockBodyScroll();
       setSelectedSize(''); // Reset size selection on open
-    } else {
-      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen, product]);
 

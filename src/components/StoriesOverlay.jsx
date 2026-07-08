@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { mediaUrl } from '../lib/urls';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -11,17 +12,16 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      lockBodyScroll();
       setActiveIndex(0);
       setProgress(0);
       setIsPaused(false);
       setFailedMedia({});
     } else {
-      document.body.style.overflow = '';
       if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen]);
 

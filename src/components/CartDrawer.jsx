@@ -1,17 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { mediaUrl } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
+import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 const CHECKOUT_DRAFT_KEY = 'log_checkout_customer_draft';
 const CHECKOUT_ORDER_KEY = 'log_checkout_client_order_id';
+const FOUNDER_DELIVERY_FEE = 3000;
+const PHONE_COUNTRY_CODES = [
+  { value: '+91', label: 'India +91', country: 'India', digits: 10 },
+  { value: '+1', label: 'USA/Canada +1', country: 'United States', digits: 10 },
+  { value: '+44', label: 'UK +44', country: 'United Kingdom' },
+  { value: '+971', label: 'UAE +971', country: 'United Arab Emirates' },
+  { value: '+61', label: 'Australia +61', country: 'Australia' },
+  { value: '+65', label: 'Singapore +65', country: 'Singapore' },
+  { value: '+49', label: 'Germany +49', country: 'Germany' },
+  { value: '+33', label: 'France +33', country: 'France' }
+];
 
 function getSavedCustomerInfo(defaultInfo) {
   try {
     const saved = JSON.parse(localStorage.getItem(CHECKOUT_DRAFT_KEY) || 'null');
-    return saved && typeof saved === 'object' ? { ...defaultInfo, ...saved } : defaultInfo;
+    if (!saved || typeof saved !== 'object') return defaultInfo;
+    const merged = { ...defaultInfo, ...saved };
+    const rawPhone = String(merged.phone || '').trim();
+    const matchedCode = PHONE_COUNTRY_CODES.find((code) => rawPhone.startsWith(code.value));
+    if (matchedCode) {
+      merged.phoneCountryCode = matchedCode.value;
+      merged.phone = rawPhone.slice(matchedCode.value.length).replace(/\D/g, '');
+    } else {
+      merged.phone = rawPhone.replace(/\D/g, '');
+    }
+    return merged;
   } catch {
     return defaultInfo;
   }
+}
+
+function normalizeLocalPhone(value, countryCode = '+91') {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (countryCode === '+91' && digits.length === 11 && digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
+function isAhmedabadCity(value) {
+  return ['ahmedabad', 'amdavad'].includes(String(value || '').trim().toLowerCase());
+}
+
+function formatCurrency(value) {
+  return `₹${Number(value || 0).toLocaleString('en-IN')}`;
 }
 
 function getClientOrderId() {
@@ -21,6 +59,26 @@ function getClientOrderId() {
     localStorage.setItem(CHECKOUT_ORDER_KEY, value);
   }
   return value;
+}
+
+function loadRazorpayCheckout() {
+  if (window.Razorpay) return Promise.resolve(true);
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-razorpay-checkout="true"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Unable to load Razorpay checkout. Check your internet connection.')), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.dataset.razorpayCheckout = 'true';
+    script.onload = () => resolve(true);
+    script.onerror = () => reject(new Error('Unable to load Razorpay checkout. Check your internet connection.'));
+    document.body.appendChild(script);
+  });
 }
 
 export default function CartDrawer({ 
@@ -39,6 +97,7 @@ export default function CartDrawer({
     firstName: '',
     lastName: '',
     email: '',
+    phoneCountryCode: '+91',
     phone: '',
     country: 'India',
     address: '',
@@ -50,22 +109,21 @@ export default function CartDrawer({
     saveInfo: false
   };
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
-  const [paymentMethod, setPaymentMethod] = useState('payu');
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const [lastDonation, setLastDonation] = useState(0);
+  const [lastOrderSummary, setLastOrderSummary] = useState(null);
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
 
   // Scroll locking
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+      lockBodyScroll();
     }
     return () => {
-      document.body.style.overflow = '';
+      if (isOpen) unlockBodyScroll();
     };
   }, [isOpen]);
 
@@ -77,12 +135,22 @@ export default function CartDrawer({
   
   const discountAmount = 0;
   const netSubtotal = subtotal;
-  const shipping = netSubtotal > 799 ? 0 : (cart.length > 0 ? 80 : 0);
+  const baseShipping = netSubtotal > 799 ? 0 : (cart.length > 0 ? 80 : 0);
+  const founderDeliveryAvailable = isAhmedabadCity(customerInfo.city);
+  const isFounderDelivery = paymentMethod === 'founder_delivery';
+  const founderDeliveryFee = isFounderDelivery ? FOUNDER_DELIVERY_FEE : 0;
+  const shipping = baseShipping + founderDeliveryFee;
   const total = netSubtotal + shipping;
 
   // Donation calculation (₹23 per product quantity)
   const totalItemsQty = cart.reduce((sum, item) => sum + item.quantity, 0);
   const donation = totalItemsQty * 23;
+
+  useEffect(() => {
+    if (paymentMethod === 'founder_delivery' && !founderDeliveryAvailable) {
+      setPaymentMethod('razorpay');
+    }
+  }, [founderDeliveryAvailable, paymentMethod]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -100,12 +168,22 @@ export default function CartDrawer({
       customerInfo.country
     ].filter(Boolean).join(', ');
 
+    const phoneCountryCode = customerInfo.phoneCountryCode || '+91';
+    const phoneDigits = normalizeLocalPhone(customerInfo.phone, phoneCountryCode);
+
     return {
       ...customerInfo,
+      phone: phoneDigits ? `${phoneCountryCode}${phoneDigits}` : '',
+      localPhone: phoneDigits,
+      phoneCountryCode,
       name: fullName,
       address: fullAddress,
       shippingAddressLine1: customerInfo.address,
-      shippingAddressLine2: customerInfo.apartment
+      shippingAddressLine2: customerInfo.apartment,
+      deliveryOption: isFounderDelivery ? 'founder_delivery' : 'standard',
+      deliveryMethod: isFounderDelivery ? 'Delivery by Founder - Ahmedabad only' : 'Standard shipping',
+      baseShipping,
+      founderDeliveryFee
     };
   };
 
@@ -120,12 +198,22 @@ export default function CartDrawer({
       onToast('Enter a valid email address.');
       return;
     }
-    if (!/^[6-9]\d{9}$/.test(String(orderCustomerInfo.phone || '').replace(/\D/g, ''))) {
+    const selectedPhoneCode = PHONE_COUNTRY_CODES.find((code) => code.value === orderCustomerInfo.phoneCountryCode) || PHONE_COUNTRY_CODES[0];
+    const localPhoneDigits = normalizeLocalPhone(orderCustomerInfo.localPhone, orderCustomerInfo.phoneCountryCode);
+    if (selectedPhoneCode.value === '+91' && !/^[6-9]\d{9}$/.test(localPhoneDigits)) {
       onToast('Enter a valid 10 digit Indian phone number.');
+      return;
+    }
+    if (selectedPhoneCode.value !== '+91' && localPhoneDigits.length < 6) {
+      onToast('Enter a valid phone number.');
       return;
     }
     if (!/^\d{6}$/.test(String(orderCustomerInfo.pinCode || '').trim())) {
       onToast('Enter a valid 6 digit PIN code.');
+      return;
+    }
+    if (isFounderDelivery && !founderDeliveryAvailable) {
+      onToast('Delivery by founder is available only in Ahmedabad.');
       return;
     }
 
@@ -146,7 +234,8 @@ export default function CartDrawer({
         paymentId,
         clientOrderId,
         couponCode: null,
-        discountAmount
+        discountAmount,
+        deliveryOption: orderCustomerInfo.deliveryOption
       })
     });
     const redirectToPayu = async () => {
@@ -158,7 +247,8 @@ export default function CartDrawer({
           customerInfo: orderCustomerInfo,
           clientOrderId,
           couponCode: null,
-          discountAmount
+          discountAmount,
+          deliveryOption: orderCustomerInfo.deliveryOption
         })
       });
       const form = document.createElement('form');
@@ -175,18 +265,120 @@ export default function CartDrawer({
       document.body.appendChild(form);
       form.submit();
     };
+    const payWithRazorpay = async () => {
+      const data = await apiJson('/api/payments/razorpay/create-order', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount: total,
+          items: orderItems,
+          customerInfo: orderCustomerInfo,
+          clientOrderId,
+          couponCode: null,
+          discountAmount,
+          deliveryOption: orderCustomerInfo.deliveryOption
+        })
+      });
+
+      if (data.alreadyOrdered && data.order) {
+        setLastOrderSummary(data.order);
+        localStorage.removeItem(CHECKOUT_ORDER_KEY);
+        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        onClearCart();
+        setShowCheckoutForm(false);
+        setShowSuccessModal(true);
+        setIsSubmittingOrder(false);
+        return;
+      }
+
+      await loadRazorpayCheckout();
+      await new Promise((resolve, reject) => {
+        const options = {
+          key: data.keyId,
+          amount: data.order?.amount,
+          currency: data.order?.currency || 'INR',
+          name: 'LOG',
+          description: 'LOG order payment',
+          order_id: data.order?.id,
+          prefill: {
+            name: orderCustomerInfo.name,
+            email: orderCustomerInfo.email,
+            contact: orderCustomerInfo.phone
+          },
+          notes: {
+            clientOrderId
+          },
+          theme: {
+            color: '#111111'
+          },
+          handler: async (response) => {
+            try {
+              const verified = await apiJson('/api/payments/razorpay/verify', {
+                method: 'POST',
+                body: JSON.stringify(response)
+              });
+              const order = verified.order;
+              onPurchase?.({
+                transaction_id: order?.id || clientOrderId,
+                value: Number(order?.total || total || 0),
+                tax: 0,
+                shipping: Number(order?.shipping || shipping || 0),
+                currency: 'INR',
+                payment_type: 'Razorpay',
+                items: orderItems.map((item) => ({
+                  item_id: item.id,
+                  item_name: item.name,
+                  item_variant: item.selectedSize,
+                  price: Number(item.price || 0),
+                  quantity: Number(item.quantity || 1)
+                }))
+              });
+              setLastOrderSummary(order || null);
+              setEmailHtml(verified.emailHtml || '');
+              setOrderEmailSent(Boolean(verified.emailSent));
+              if (!verified.emailSent || !verified.ownerEmailSent) {
+                onToast('Payment completed, but one email notification did not send. Check SMTP settings.');
+              }
+              localStorage.removeItem(CHECKOUT_ORDER_KEY);
+              localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+              onClearCart();
+              setShowCheckoutForm(false);
+              setShowSuccessModal(true);
+              setIsSubmittingOrder(false);
+              resolve(true);
+            } catch (error) {
+              setIsSubmittingOrder(false);
+              reject(error);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setIsSubmittingOrder(false);
+              onToast('Razorpay payment cancelled. Your cart is still saved.');
+              resolve(false);
+            }
+          }
+        };
+        const razorpay = new window.Razorpay(options);
+        razorpay.on('payment.failed', (response) => {
+          const message = response?.error?.description || 'Razorpay payment failed. Please try again.';
+          setIsSubmittingOrder(false);
+          reject(new Error(message));
+        });
+        razorpay.open();
+      });
+    };
 
     try {
       setIsSubmittingOrder(true);
-      if (paymentMethod === 'cod') {
-        const data = await saveOrder('COD');
+      if (paymentMethod === 'cod' || paymentMethod === 'founder_delivery') {
+        const data = await saveOrder(paymentMethod === 'founder_delivery' ? 'FOUNDER_DELIVERY' : 'COD');
         onPurchase?.({
           transaction_id: data.order?.id || clientOrderId,
           value: Number(total || 0),
           tax: 0,
           shipping: Number(shipping || 0),
           currency: 'INR',
-          payment_type: 'COD',
+          payment_type: paymentMethod === 'founder_delivery' ? 'Founder Delivery' : 'COD',
           items: orderItems.map((item) => ({
             item_id: item.id,
             item_name: item.name,
@@ -195,6 +387,7 @@ export default function CartDrawer({
             quantity: Number(item.quantity || 1)
           }))
         });
+        setLastOrderSummary(data.order || null);
         setEmailHtml(data.emailHtml || '');
         setOrderEmailSent(Boolean(data.emailSent));
         if (!data.emailSent || !data.ownerEmailSent) {
@@ -211,6 +404,11 @@ export default function CartDrawer({
 
       if (paymentMethod === 'payu') {
         await redirectToPayu();
+        return;
+      }
+
+      if (paymentMethod === 'razorpay') {
+        await payWithRazorpay();
         return;
       }
       onToast('Select a valid payment option.');
@@ -300,7 +498,42 @@ export default function CartDrawer({
                 <input type="text" name="pinCode" value={customerInfo.pinCode} onChange={handleInputChange} required inputMode="numeric" placeholder="PIN code" />
               </div>
 
-              <input type="tel" name="phone" value={customerInfo.phone} onChange={handleInputChange} required className="checkout-input" placeholder="Phone" />
+              <div className="checkout-phone-row">
+                <select
+                  name="phoneCountryCode"
+                  value={customerInfo.phoneCountryCode || '+91'}
+                  onChange={handleInputChange}
+                  required
+                  aria-label="Phone country code"
+                >
+                  {PHONE_COUNTRY_CODES.map((code) => (
+                    <option key={code.value} value={code.value}>{code.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={customerInfo.phone}
+                  onChange={(e) => {
+                    const raw = e.target.value.trim();
+                    const matchedCode = PHONE_COUNTRY_CODES.find((code) => raw.startsWith(code.value));
+                    if (matchedCode) {
+                      setCustomerInfo(prev => ({
+                        ...prev,
+                        phoneCountryCode: matchedCode.value,
+                        phone: normalizeLocalPhone(raw.slice(matchedCode.value.length), matchedCode.value).slice(0, 15)
+                      }));
+                      return;
+                    }
+                    const digits = normalizeLocalPhone(raw, customerInfo.phoneCountryCode || '+91').slice(0, 15);
+                    setCustomerInfo(prev => ({ ...prev, phone: digits }));
+                  }}
+                  required
+                  className="checkout-input"
+                  inputMode="tel"
+                  placeholder="Phone"
+                />
+              </div>
 
               <div className="checkout-field">
                 <label>Date of Birth</label>
@@ -322,12 +555,64 @@ export default function CartDrawer({
                 <div className="checkout-payment-options">
                   <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                    Cash on Delivery (COD)
+                    <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
+                  </label>
+                  <label className={`checkout-payment-card ${paymentMethod === 'razorpay' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={() => setPaymentMethod('razorpay')} />
+                    <span className="checkout-payment-card-main">Pay by Razorpay</span>
                   </label>
                   <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
-                    Pay by PayU
+                    <span className="checkout-payment-card-main">Pay by PayU</span>
                   </label>
+                  <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="founder_delivery"
+                      checked={paymentMethod === 'founder_delivery'}
+                      disabled={!founderDeliveryAvailable}
+                      onChange={() => {
+                        if (!founderDeliveryAvailable) {
+                          onToast('Delivery by founder is available only in Ahmedabad.');
+                          return;
+                        }
+                        setPaymentMethod('founder_delivery');
+                      }}
+                    />
+                    <span>
+                      <span className="checkout-payment-card-main">Delivery by Founder</span>
+                      <span className="checkout-payment-card-note">Ahmedabad only. Founder delivery charge +₹3,000.</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="checkout-order-summary">
+                <div className="cart-totals-row">
+                  <span className="cart-totals-label">Subtotal</span>
+                  <span className="cart-totals-val">{formatCurrency(subtotal)}</span>
+                </div>
+                {baseShipping > 0 ? (
+                  <div className="cart-totals-row">
+                    <span className="cart-totals-label">Shipping</span>
+                    <span className="cart-totals-val">{formatCurrency(baseShipping)}</span>
+                  </div>
+                ) : (
+                  <div className="cart-totals-row">
+                    <span className="cart-totals-label">Shipping</span>
+                    <span className="cart-totals-val" style={{ color: 'var(--accent)', fontWeight: '800' }}>FREE</span>
+                  </div>
+                )}
+                {founderDeliveryFee > 0 && (
+                  <div className="cart-totals-row">
+                    <span className="cart-totals-label">Founder delivery</span>
+                    <span className="cart-totals-val">{formatCurrency(founderDeliveryFee)}</span>
+                  </div>
+                )}
+                <div className="cart-totals-row grand-total">
+                  <span className="cart-totals-label">Grand Total</span>
+                  <span className="cart-totals-val">{formatCurrency(total)}</span>
                 </div>
               </div>
 
@@ -492,11 +777,81 @@ export default function CartDrawer({
               </p>
             </div>
 
+            {lastOrderSummary && (
+              <div className="order-success-summary">
+                <div className="order-success-summary-head">
+                  <div>
+                    <span>Order ID</span>
+                    <strong>{lastOrderSummary.id}</strong>
+                  </div>
+                  <div>
+                    <span>Status</span>
+                    <strong>{lastOrderSummary.status}</strong>
+                  </div>
+                </div>
+
+                <div className="order-success-section">
+                  <h3>Customer</h3>
+                  <p>{lastOrderSummary.customerInfo?.name || `${lastOrderSummary.customerInfo?.firstName || ''} ${lastOrderSummary.customerInfo?.lastName || ''}`.trim()}</p>
+                  <p>{lastOrderSummary.customerInfo?.phone}</p>
+                  <p>{lastOrderSummary.customerInfo?.address}</p>
+                </div>
+
+                <div className="order-success-section">
+                  <h3>Items</h3>
+                  {lastOrderSummary.items?.map((item, index) => (
+                    <div className="order-success-item" key={`${item.id || item.name}-${index}`}>
+                      <span>{item.name} {item.selectedSize ? `(${item.selectedSize})` : ''} x {item.quantity}</span>
+                      <strong>{formatCurrency(Number(item.price || 0) * Number(item.quantity || 1))}</strong>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="order-success-section">
+                  <h3>Payment & Delivery</h3>
+                  <div className="order-success-line">
+                    <span>Payment</span>
+                    <strong>{lastOrderSummary.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : lastOrderSummary.paymentId === 'COD' ? 'Cash on Delivery' : String(lastOrderSummary.paymentId || '').startsWith('RAZORPAY:') ? 'Razorpay online payment' : 'Online payment'}</strong>
+                  </div>
+                  <div className="order-success-line">
+                    <span>Delivery</span>
+                    <strong>{lastOrderSummary.customerInfo?.deliveryMethod || 'Standard shipping'}</strong>
+                  </div>
+                </div>
+
+                <div className="order-success-totals">
+                  <div className="order-success-line">
+                    <span>Subtotal</span>
+                    <strong>{formatCurrency(lastOrderSummary.subtotal)}</strong>
+                  </div>
+                  {Number(lastOrderSummary.discount || 0) > 0 && (
+                    <div className="order-success-line">
+                      <span>Discount</span>
+                      <strong>-{formatCurrency(lastOrderSummary.discount)}</strong>
+                    </div>
+                  )}
+                  <div className="order-success-line">
+                    <span>Shipping</span>
+                    <strong>{formatCurrency(lastOrderSummary.shipping)}</strong>
+                  </div>
+                  <div className="order-success-line">
+                    <span>Donation</span>
+                    <strong>{formatCurrency(lastOrderSummary.donation || lastDonation)}</strong>
+                  </div>
+                  <div className="order-success-line order-success-grand">
+                    <span>Grand Total</span>
+                    <strong>{formatCurrency(lastOrderSummary.total)}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button 
               className="btn btn-accent" 
               style={{ width: '100%', border: 'none', background: 'var(--ink)', color: 'white', padding: '14px', cursor: 'pointer', fontWeight: '800', textTransform: 'uppercase' }}
               onClick={() => {
                 setShowSuccessModal(false);
+                setLastOrderSummary(null);
                 setEmailHtml('');
                 setOrderEmailSent(false);
                 onClose();

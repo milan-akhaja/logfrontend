@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const SITE_URL = 'https://logcloth.com';
-const DEFAULT_TITLE = 'LOG - Premium Indian Streetwear & Oversized T-Shirts';
-const DEFAULT_DESCRIPTION = 'Shop LOG premium Indian streetwear: oversized graphic T-shirts, heavyweight cotton fits, and socially responsible fashion with Rs. 23 donated from every product.';
-const DEFAULT_IMAGE = `${SITE_URL}/assets/hero_streetwear.png`;
+const DEFAULT_TITLE = 'LOG Clothing (logcloth) - Premium Indian Streetwear & Oversized T-Shirts';
+const DEFAULT_DESCRIPTION = 'Shop LOG Clothing at logcloth.com: premium Indian streetwear, oversized graphic T-shirts, heavyweight cotton fits, and socially responsible fashion with Rs. 23 donated from every product.';
+const DEFAULT_IMAGE = `${SITE_URL}/logo-512.png`;
 
 function upsertMeta(selector, attributes) {
   let element = document.head.querySelector(selector);
@@ -16,6 +16,13 @@ function upsertMeta(selector, attributes) {
   Object.entries(attributes).forEach(([key, value]) => {
     element.setAttribute(key, value);
   });
+}
+
+function removeMeta(selector) {
+  const element = document.head.querySelector(selector);
+  if (element) {
+    element.remove();
+  }
 }
 
 function upsertLink(rel, href) {
@@ -47,6 +54,7 @@ export default function SEO({
   type = 'website',
   noindex = false,
   canonicalPath,
+  geoTitle,
   jsonLd
 }) {
   const location = useLocation();
@@ -63,11 +71,17 @@ export default function SEO({
       name: 'keywords',
       content: Array.isArray(keywords) ? keywords.filter(Boolean).join(', ') : String(keywords || '')
     });
+    if (geoTitle) {
+      upsertMeta('meta[name="geo.title"]', { name: 'geo.title', content: geoTitle });
+    } else {
+      removeMeta('meta[name="geo.title"]');
+    }
     upsertMeta('meta[name="robots"]', { name: 'robots', content: noindex ? 'noindex, nofollow' : 'index, follow' });
 
     upsertLink('canonical', canonicalUrl);
 
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: type });
+    upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'LOG Clothing' });
     upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
     upsertMeta('meta[property="og:title"]', { property: 'og:title', content: fullTitle });
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
@@ -82,7 +96,7 @@ export default function SEO({
     if (jsonLd) {
       upsertJsonLd('page-jsonld', jsonLd);
     }
-  }, [canonicalUrl, description, fullTitle, image, jsonLd, keywords, noindex, type]);
+  }, [canonicalUrl, description, fullTitle, geoTitle, image, jsonLd, keywords, noindex, type]);
 
   return null;
 }
