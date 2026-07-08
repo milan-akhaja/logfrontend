@@ -84,22 +84,54 @@
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "OnlineStore",
-      "name": "LOG Clothing",
-      "url": "https://logcloth.com",
-      "alternateName": "logcloth",
-      "logo": "https://logcloth.com/logo-512.png",
-      "image": "https://logcloth.com/logo-512.png",
-      "description": "Premium minimal streetwear brand in India specializing in 240 GSM French Terry oversized t-shirts, graphic hoodies, and accessories.",
-      "telephone": "+917878623123",
-      "priceRange": "INR",
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "IN"
-      },
-      "sameAs": [
-        "https://www.instagram.com/log.cloth",
-        "https://www.youtube.com/@Logcloth"
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://logcloth.com/#organization",
+          "name": "LOG Clothing",
+          "alternateName": ["LOG", "logcloth"],
+          "url": "https://logcloth.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://logcloth.com/logo-512.png",
+            "width": 512,
+            "height": 512
+          },
+          "image": "https://logcloth.com/logo-512.png",
+          "sameAs": [
+            "https://www.instagram.com/log.cloth",
+            "https://www.youtube.com/@Logcloth"
+          ]
+        },
+        {
+          "@type": "OnlineStore",
+          "@id": "https://logcloth.com/#store",
+          "name": "LOG Clothing",
+          "url": "https://logcloth.com/",
+          "alternateName": "logcloth",
+          "logo": "https://logcloth.com/logo-512.png",
+          "image": "https://logcloth.com/logo-512.png",
+          "description": "Premium minimal streetwear brand in India specializing in 240 GSM French Terry oversized t-shirts, graphic hoodies, and accessories.",
+          "telephone": "+917878623123",
+          "priceRange": "INR",
+          "parentOrganization": {
+            "@id": "https://logcloth.com/#organization"
+          },
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "IN"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://logcloth.com/#website",
+          "name": "LOG Clothing",
+          "alternateName": "logcloth",
+          "url": "https://logcloth.com/",
+          "publisher": {
+            "@id": "https://logcloth.com/#organization"
+          }
+        }
       ]
     }
   </script>
@@ -107,7 +139,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico">
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/logo-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/logo-512.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/logo-192.png">
   <link rel="manifest" href="/site.webmanifest">

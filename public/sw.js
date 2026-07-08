@@ -1,9 +1,13 @@
-const CACHE_VERSION = 'log-cache-v20260624';
+const CACHE_VERSION = 'log-cache-v20260709';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const STATIC_ASSETS = [
   '/',
+  '/favicon.ico',
+  '/favicon-48x48.png',
   '/favicon.svg',
+  '/logo-192.png',
+  '/logo-512.png',
   '/robots.txt',
   '/sitemap.xml'
 ];
@@ -32,7 +36,7 @@ function isAssetRequest(request) {
   return request.method === 'GET' && (
     url.pathname.startsWith('/assets/') ||
     url.pathname.startsWith('/uploads/') ||
-    /\.(?:js|css|svg|png|jpe?g|webp|gif|woff2?)$/i.test(url.pathname)
+    /\.(?:js|css|ico|svg|png|jpe?g|webp|gif|woff2?)$/i.test(url.pathname)
   );
 }
 
