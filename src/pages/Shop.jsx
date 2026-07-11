@@ -77,6 +77,11 @@ export function ProductGridCard({ product, onAddToCart }) {
         onTouchEnd={onTouchEnd}
       >
         {/* Sizing badges & out-of-stock tags */}
+        {product.bogoOffer?.enabled && (
+          <span className="product-offer-badge card-offer-badge">
+            {product.bogoOffer.label || 'BOGO OFFER'}
+          </span>
+        )}
         {product.stock <= 5 && product.stock > 0 && <span className="product-tag tag-limited">Low Stock</span>}
         {product.stock === 0 && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
 

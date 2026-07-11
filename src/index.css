@@ -783,6 +783,35 @@ header.scrolled .bag-count {
   backface-visibility: hidden;
 }
 
+.product-offer-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  padding: 5px 10px;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card-offer-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 8;
+}
+
+.detail-offer-badge,
+.size-popup-offer-badge {
+  margin: 8px 0 10px;
+}
+
 .product-placeholder-text {
   font-size: 40px;
   font-weight: 900;
@@ -2854,6 +2883,24 @@ footer {
   line-height: 1.45;
 }
 
+.admin-offer-panel,
+.admin-size-chart-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-size-chart-row {
+  display: grid;
+  grid-template-columns: 0.8fr repeat(4, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-size-chart-row .admin-input {
+  min-width: 0;
+}
+
 .content-block-editor-list {
   display: flex;
   flex-direction: column;
@@ -3278,6 +3325,23 @@ footer {
 @media (max-width: 1200px) {
   .admin-metrics-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-size-chart-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-size-chart-row .admin-icon-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-size-chart-row {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -386,39 +386,6 @@ function AppContent({
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [completedOrder, setCompletedOrder] = useState(null);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const payment = params.get('payment');
-    if (payment === 'payu-success') {
-      const orderId = params.get('orderId');
-      const clientOrderId = localStorage.getItem('log_checkout_client_order_id');
-      if (orderId) {
-        sendGoogleEvent('purchase', {
-          transaction_id: orderId,
-          currency: 'INR',
-          payment_type: 'PayU'
-        });
-      }
-      if (orderId && clientOrderId) {
-        apiJson(`/api/orders/receipt?orderId=${encodeURIComponent(orderId)}&clientOrderId=${encodeURIComponent(clientOrderId)}`)
-          .then((data) => {
-            if (data.order) setCompletedOrder(data.order);
-          })
-          .catch(() => {
-            showToast(`PayU payment successful: ${orderId}`);
-          });
-      }
-      onClearCart();
-      localStorage.removeItem('log_checkout_client_order_id');
-      localStorage.removeItem('log_checkout_customer_draft');
-      showToast(`PayU payment successful${orderId ? `: ${orderId}` : ''}`);
-      navigate(location.pathname || '/', { replace: true });
-    } else if (payment === 'payu-failed') {
-      showToast('PayU payment failed or was cancelled. Your cart is still saved.');
-      navigate(location.pathname || '/', { replace: true });
-    }
-  }, [location.search]);
-
   // Helper for quick actions
   const handleShopNowTrigger = async (productId) => {
     try {

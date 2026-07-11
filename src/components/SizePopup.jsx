@@ -56,6 +56,11 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
           
           <div className="size-popup-content">
             <h2 className="size-popup-title">{product.name}</h2>
+            {product.bogoOffer?.enabled && (
+              <div className="product-offer-badge size-popup-offer-badge">
+                {product.bogoOffer.label || 'BOGO OFFER'}
+              </div>
+            )}
             <ProductPrice
               product={product}
               className="size-popup-prices"
@@ -114,6 +119,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
       <SizeChartModal 
         isOpen={showChart} 
         onClose={() => setShowChart(false)} 
+        sizeChart={product?.sizeChart}
       />
     </>
   );

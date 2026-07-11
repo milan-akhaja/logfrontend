@@ -194,10 +194,10 @@ export default function Footer({ onToast }) {
             </h3>
             <ul className="footer-links always-visible">
               <li><Link to="/make-return">Make a return/Exchange</Link></li>
-              <li><Link to="/refund-policy">Refund/Exchange policy</Link></li>
+              <li><Link to="/refund-policy">Return & Refund Policy</Link></li>
               <li><Link to="/shipping-policy">Shipping policy</Link></li>
               <li><Link to="/faqs">FAQ's</Link></li>
-              <li><Link to="/terms">Terms</Link></li>
+              <li><Link to="/terms">Terms & Conditions / Privacy Policy</Link></li>
             </ul>
           </div>
 

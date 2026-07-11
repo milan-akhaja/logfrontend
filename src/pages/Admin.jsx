@@ -88,6 +88,23 @@ const PRICE_DISPLAY_LABELS = {
   discountedPrice: 'Discounted Price',
   discountPercentage: 'Discount %'
 };
+const DEFAULT_BOGO_OFFER = {
+  enabled: false,
+  label: 'BOGO OFFER',
+  description: ''
+};
+const DEFAULT_SIZE_CHART = [
+  { size: 'S', chest: '42', length: '28', sleeve: '8.5', shoulder: '' },
+  { size: 'M', chest: '44', length: '28.5', sleeve: '9', shoulder: '' },
+  { size: 'L', chest: '46', length: '29', sleeve: '9', shoulder: '' },
+  { size: 'XL', chest: '48', length: '30', sleeve: '9.5', shoulder: '' }
+];
+const SIZE_CHART_FIELDS = [
+  { key: 'chest', label: 'Chest' },
+  { key: 'length', label: 'Length' },
+  { key: 'sleeve', label: 'Sleeve' },
+  { key: 'shoulder', label: 'Shoulder' }
+];
 const DELIVERY_PARTNERS = [
   { value: 'Delhivery', label: 'Delhivery', trackingUrl: (awb) => `https://www.delhivery.com/track/package/${encodeURIComponent(awb)}` },
   { value: 'Blue Dart', label: 'Blue Dart', trackingUrl: (awb) => `https://www.bluedart.com/tracking?trackFor=0&trackNo=${encodeURIComponent(awb)}` },
@@ -130,6 +147,8 @@ const emptyProductDraft = {
   discountedPrice: '',
   discountPercentage: '',
   priceDisplayOptions: DEFAULT_PRICE_DISPLAY_OPTIONS,
+  bogoOffer: DEFAULT_BOGO_OFFER,
+  sizeChart: DEFAULT_SIZE_CHART,
   desc: '',
   category: 'top',
   subCategories: [],
@@ -153,7 +172,9 @@ function loadProductDraft() {
           priceDisplayOptions: {
             ...DEFAULT_PRICE_DISPLAY_OPTIONS,
             ...(saved.priceDisplayOptions || {})
-          }
+          },
+          bogoOffer: normalizeAdminBogoOffer(saved.bogoOffer),
+          sizeChart: normalizeAdminSizeChart(saved.sizeChart)
         }
       : emptyProductDraft;
   } catch {
@@ -166,6 +187,32 @@ function normalizedPriceDisplayOptions(product = {}) {
     ...DEFAULT_PRICE_DISPLAY_OPTIONS,
     ...(product.priceDisplayOptions || {})
   };
+}
+
+function normalizeAdminBogoOffer(value = {}) {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    enabled: Boolean(source.enabled),
+    label: String(source.label || DEFAULT_BOGO_OFFER.label).slice(0, 80),
+    description: String(source.description || '').slice(0, 180)
+  };
+}
+
+function normalizeAdminSizeChart(value) {
+  const rows = Array.isArray(value) && value.length ? value : DEFAULT_SIZE_CHART;
+  const normalized = rows
+    .map((row) => {
+      const source = row && typeof row === 'object' ? row : {};
+      return {
+        size: String(source.size || '').toUpperCase().slice(0, 12),
+        chest: source.chest === undefined || source.chest === null ? '' : String(source.chest),
+        length: source.length === undefined || source.length === null ? '' : String(source.length),
+        sleeve: source.sleeve === undefined || source.sleeve === null ? '' : String(source.sleeve),
+        shoulder: source.shoulder === undefined || source.shoulder === null ? '' : String(source.shoulder)
+      };
+    })
+    .slice(0, 20);
+  return normalized.length ? normalized : DEFAULT_SIZE_CHART;
 }
 
 function compressImageFile(file) {
@@ -1030,6 +1077,8 @@ export default function Admin({ onToast }) {
     productData.discountedPrice = productData.discountedPrice === '' ? null : Number(productData.discountedPrice || 0);
     productData.discountPercentage = productData.discountPercentage === '' ? null : Number(productData.discountPercentage || 0);
     productData.priceDisplayOptions = normalizedPriceDisplayOptions(productData);
+    productData.bogoOffer = normalizeAdminBogoOffer(productData.bogoOffer);
+    productData.sizeChart = normalizeAdminSizeChart(productData.sizeChart);
     if (productData.discountPercentage !== null && (productData.discountPercentage < 0 || productData.discountPercentage > 100)) {
       onToast('Discount percentage must be between 0 and 100.');
       return;
@@ -2847,6 +2896,8 @@ export default function Admin({ onToast }) {
                                 discountedPrice: product.discountedPrice || '',
                                 discountPercentage: product.discountPercentage || '',
                                 priceDisplayOptions: normalizedPriceDisplayOptions(product),
+                                bogoOffer: normalizeAdminBogoOffer(product.bogoOffer),
+                                sizeChart: normalizeAdminSizeChart(product.sizeChart),
                                 details: product.details !== undefined ? product.details : DEFAULT_DETAILS,
                                 washcare: product.washcare !== undefined ? product.washcare : DEFAULT_WASHCARE,
                                 shipping: product.shipping !== undefined ? product.shipping : DEFAULT_SHIPPING
@@ -3953,6 +4004,119 @@ export default function Admin({ onToast }) {
                 <p className="admin-help-text">
                   Selling Price is the checkout amount. The other fields are optional display fields for homepage, shop, search, and product pages.
                 </p>
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-label">Product Offer Badge</label>
+                {(() => {
+                  const currentProduct = editingProduct || newProduct;
+                  const offer = normalizeAdminBogoOffer(currentProduct.bogoOffer);
+                  const updateOffer = (patch) => {
+                    const updater = (prev) => ({
+                      ...prev,
+                      bogoOffer: normalizeAdminBogoOffer({
+                        ...normalizeAdminBogoOffer(prev.bogoOffer),
+                        ...patch
+                      })
+                    });
+                    if (editingProduct) setEditingProduct(updater);
+                    else setNewProduct(updater);
+                  };
+                  return (
+                    <div className="admin-offer-panel">
+                      <label className="admin-price-option">
+                        <input
+                          type="checkbox"
+                          checked={offer.enabled}
+                          onChange={(e) => updateOffer({ enabled: e.target.checked })}
+                        />
+                        <span>Show BOGO offer on this product</span>
+                      </label>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
+                        <input
+                          type="text"
+                          className="admin-input"
+                          value={offer.label}
+                          onChange={(e) => updateOffer({ label: e.target.value })}
+                          placeholder="BOGO OFFER"
+                        />
+                        <input
+                          type="text"
+                          className="admin-input"
+                          value={offer.description}
+                          onChange={(e) => updateOffer({ description: e.target.value })}
+                          placeholder="Optional short note, e.g. Buy one, get one on selected sizes"
+                        />
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="admin-form-group">
+                <label className="admin-label">Manual Size Chart (inches)</label>
+                <p className="admin-help-text">These numbers show in the product Size Guide. Customers can switch to centimeters in the popup.</p>
+                {(() => {
+                  const currentProduct = editingProduct || newProduct;
+                  const rows = normalizeAdminSizeChart(currentProduct.sizeChart);
+                  const updateRows = (nextRows) => {
+                    const updater = (prev) => ({
+                      ...prev,
+                      sizeChart: normalizeAdminSizeChart(nextRows)
+                    });
+                    if (editingProduct) setEditingProduct(updater);
+                    else setNewProduct(updater);
+                  };
+                  const updateCell = (index, key, value) => {
+                    const nextRows = rows.map((row, rowIndex) => (
+                      rowIndex === index ? { ...row, [key]: value } : row
+                    ));
+                    updateRows(nextRows);
+                  };
+                  return (
+                    <div className="admin-size-chart-editor">
+                      {rows.map((row, index) => (
+                        <div className="admin-size-chart-row" key={`${row.size}-${index}`}>
+                          <input
+                            type="text"
+                            className="admin-input"
+                            value={row.size}
+                            onChange={(e) => updateCell(index, 'size', e.target.value)}
+                            placeholder="Size"
+                          />
+                          {SIZE_CHART_FIELDS.map((field) => (
+                            <input
+                              key={field.key}
+                              type="number"
+                              min="0"
+                              step="0.1"
+                              className="admin-input"
+                              value={row[field.key]}
+                              onChange={(e) => updateCell(index, field.key, e.target.value)}
+                              placeholder={field.label}
+                            />
+                          ))}
+                          <button
+                            type="button"
+                            className="admin-icon-btn admin-icon-btn-danger"
+                            onClick={() => updateRows(rows.filter((_, rowIndex) => rowIndex !== index))}
+                            aria-label={`Remove size ${row.size}`}
+                            disabled={rows.length <= 1}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-secondary"
+                        onClick={() => updateRows([...rows, { size: '', chest: '', length: '', sleeve: '', shoulder: '' }])}
+                      >
+                        <Plus size={14} /> Add Size Row
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="admin-form-group">

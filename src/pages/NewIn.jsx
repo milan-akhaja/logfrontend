@@ -97,6 +97,11 @@ export default function NewIn({ onAddToCart, onToast }) {
               >
                 <div className="product-img-wrapper">
                   <span className="product-tag tag-new" style={{ background: 'var(--ink)' }}>New In</span>
+                  {product.bogoOffer?.enabled && (
+                    <span className="product-offer-badge card-offer-badge">
+                      {product.bogoOffer.label || 'BOGO OFFER'}
+                    </span>
+                  )}
                   {product.imageUrl ? (
                     <img src={mediaUrl(product.imageUrl)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (

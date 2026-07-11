@@ -199,6 +199,11 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
           <div className="product-detail-config">
             <div className="detail-header-meta">
               <h1 className="detail-product-title">{product.name}</h1>
+              {product.bogoOffer?.enabled && (
+                <div className="product-offer-badge detail-offer-badge">
+                  {product.bogoOffer.label || 'BOGO OFFER'}
+                </div>
+              )}
               <ProductPrice
                 product={product}
                 className="detail-product-prices"
@@ -350,6 +355,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
       <SizeChartModal 
         isOpen={showSizeChart} 
         onClose={() => setShowSizeChart(false)} 
+        sizeChart={product?.sizeChart}
       />
     </div>
   );
