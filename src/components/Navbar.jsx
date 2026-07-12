@@ -8,10 +8,11 @@ import BurgerMenuOverlay from './BurgerMenuOverlay';
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const cleanPath = location.pathname.toLowerCase().replace(/\/+$/, '');
   const isDarkPage = isHome || 
-                     location.pathname === '/our-mission' || 
-                     location.pathname === '/new-in' || 
-                     location.pathname.startsWith('/blog/');
+                     cleanPath === '/our-mission' || 
+                     cleanPath === '/new-in' || 
+                     cleanPath.startsWith('/blog');
   const [scrolled, setScrolled] = useState(false);
   const [stories, setStories] = useState([]);
   const [storiesOpen, setStoriesOpen] = useState(false);
