@@ -40,7 +40,6 @@ html {
   scroll-behavior: smooth;
   background-color: var(--paper);
   text-rendering: optimizeLegibility;
-  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -60,8 +59,7 @@ body {
   color: var(--ink);
   font-size: 14px;
   line-height: 1.6;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow-x: clip;
   overscroll-behavior-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
@@ -102,12 +100,10 @@ a {
 @keyframes page-soft-enter {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
   }
 
   to {
     opacity: 1;
-    transform: none;
   }
 }
 
