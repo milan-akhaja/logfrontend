@@ -328,7 +328,7 @@ header.scrolled .nav-logo span {
 }
 
 header.scrolled .nav-link {
-  color: var(--grey-muted);
+  color: rgba(15, 15, 17, 0.75) !important;
 }
 
 header.scrolled .nav-link::after {
@@ -337,7 +337,7 @@ header.scrolled .nav-link::after {
 
 header.scrolled .nav-link:hover,
 header.scrolled .nav-link.active {
-  color: var(--ink);
+  color: var(--ink) !important;
 }
 
 .nav-right {
