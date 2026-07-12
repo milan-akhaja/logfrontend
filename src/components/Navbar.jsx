@@ -8,6 +8,10 @@ import BurgerMenuOverlay from './BurgerMenuOverlay';
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isDarkPage = isHome || 
+                     location.pathname === '/our-mission' || 
+                     location.pathname === '/new-in' || 
+                     location.pathname.startsWith('/blog/');
   const [scrolled, setScrolled] = useState(false);
   const [stories, setStories] = useState([]);
   const [storiesOpen, setStoriesOpen] = useState(false);
@@ -51,7 +55,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
 
   return (
     <>
-      <header className={`${scrolled ? 'scrolled' : ''} ${!isHome ? 'transparent-inner-menu' : ''}`}>
+      <header className={`${scrolled ? 'scrolled' : ''} ${!isDarkPage ? 'transparent-inner-menu' : ''}`}>
         <div className="nav-container nav-bluorng-style">
 
           {/* Left: uppercase links */}
