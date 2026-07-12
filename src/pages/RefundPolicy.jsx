@@ -2,64 +2,58 @@ import React from 'react';
 
 export default function RefundPolicy() {
   return (
-    <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '800px', margin: '0 auto', color: 'var(--ink)' }}>
-      <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Refund & Exchange Policy</h1>
-      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: June 2026</p>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '25px', lineHeight: '1.7', fontSize: '15px' }}>
-        
+    <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '850px', margin: '0 auto', color: 'var(--ink)' }}>
+      <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Return, Refund & Cancellation Policy</h1>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: July 2026</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', lineHeight: '1.7', fontSize: '15px' }}>
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>The Basics</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Cancellation Policy</h2>
           <p>
-            Our return and exchange policy lasts for <strong>7 days</strong> after your purchase or delivery date. Any return or exchange requests submitted after this 7-day timeframe will not be accepted.
+            Cancellation requests are considered only if they are raised within 7 days of placing the order. A cancellation may not be accepted if the order has already been processed for shipping, handed over to a courier partner, or is out for delivery. In such cases, you may reject the shipment at the doorstep where applicable.
+          </p>
+        </section>
+
+        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Return & Exchange Window</h2>
+          <p>
+            We offer return or exchange requests within the first 7 days from the date of purchase or delivery. If 7 days have passed, the order will not be eligible for return, exchange, or refund.
+          </p>
+        </section>
+
+        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Eligibility Conditions</h2>
+          <ul style={{ paddingLeft: '20px', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <li>The product must be unused, unworn, unwashed, and in the same condition as received.</li>
+            <li>The product must be returned with original packaging, tags, labels, and invoice where applicable.</li>
+            <li>Products purchased during sale or clearance may not be eligible for return or exchange unless defective or damaged.</li>
+            <li>Damaged, defective, or incorrect items must be reported to customer support within 7 days of receipt.</li>
+          </ul>
+        </section>
+
+        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Inspection & Approval</h2>
+          <p>
+            Once the returned product is received, it will be inspected by our team. If the return, exchange, or refund request is approved after quality check, we will process it in accordance with this policy.
+          </p>
+        </section>
+
+        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Refund Timeline</h2>
+          <p>
+            Approved refunds are processed within 10 business days. Refunds are credited to the original payment method where applicable. Shipping charges, if any, are non-refundable.
           </p>
           <div style={{ background: '#FAF9F6', borderLeft: '4px solid var(--ink)', padding: '15px', marginTop: '15px', fontSize: '14px' }}>
-            <strong>Charity Contribution Notice:</strong> We do not refund the <strong>₹23 donation</strong> portion of your order because this amount is directly donated to charity on your behalf immediately upon purchase.
+            <strong>Charity Contribution Notice:</strong> The Rs. 23 donation amount from each product is non-refundable because it is committed toward charity/social contribution from the order.
           </div>
         </section>
 
-        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Return Conditions</h2>
-          <p>To be eligible for a return or exchange, your product must satisfy the following criteria:</p>
-          <ul style={{ paddingLeft: '20px', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <li><strong>Unworn:</strong> Items must not have been worn, used, or showing any signs of wear.</li>
-            <li><strong>Unwashed:</strong> Fabric must be in its original post-manufactured state.</li>
-            <li><strong>Original Packaging:</strong> Must be in original tags and polybag packaging intact.</li>
-          </ul>
-        </section>
-
-        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Non-Returnable Items</h2>
-          <p>The following items are strictly non-returnable and non-exchangeable:</p>
-          <ul style={{ paddingLeft: '20px', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <li>Discounted or clearance sale items.</li>
-            <li>Used, washed, or damaged products.</li>
-          </ul>
-        </section>
-
-        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Processing & Crediting</h2>
-          <p>
-            Once your return product is received and inspected at our warehouse, and subsequently approved:
-          </p>
-          <ul style={{ paddingLeft: '20px', margin: '10px 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <li>Exchanges are processed and dispatched within <strong>5 days</strong>.</li>
-            <li>Refund amounts will be credited back to your original payment method (minus the ₹23 charity donation).</li>
-          </ul>
-        </section>
-
         <section>
-          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>How to Request a Return</h2>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>How to Raise a Request</h2>
           <p>
-            You can request a return directly via our online portal or email us at:
-            <br />
-            <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a>
-          </p>
-          <p style={{ marginTop: '10px' }}>
-            Please make sure to include your <strong>Order ID</strong> (e.g. LOG-2301) and the specific <strong>reason for return or exchange</strong> in your message.
+            You can raise a return, refund, or exchange request from our return page or by emailing <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a> with your order ID, product details, and reason for the request.
           </p>
         </section>
-
       </div>
     </div>
   );
