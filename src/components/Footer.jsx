@@ -196,9 +196,9 @@ export default function Footer({ onToast }) {
               <li><Link to="/make-return">Make a return/Exchange</Link></li>
               <li><Link to="/refund-policy">Return & Refund Policy</Link></li>
               <li><Link to="/shipping-policy">Shipping policy</Link></li>
-              <li><Link to="/faqs">FAQ's</Link></li>
-              <li><Link to="/terms">Terms & Conditions</Link></li>
               <li><Link to="/privacy-policy">Privacy Policy</Link></li>
+              <li><Link to="/terms">Terms & Conditions</Link></li>
+              <li><Link to="/faqs">FAQ's</Link></li>
             </ul>
           </div>
 
