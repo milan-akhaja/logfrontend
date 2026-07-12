@@ -5343,8 +5343,6 @@ header.scrolled .nav-action-icon-btn {
 
   .product-detail-config {
     position: static;
-    max-height: none;
-    overflow-y: visible;
   }
 
   .product-detail-gallery-desktop {
@@ -5540,12 +5538,6 @@ header.scrolled .nav-action-icon-btn {
   position: sticky;
   top: 110px;
   align-self: start;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-  scrollbar-width: none; /* Hide scrollbar for Firefox */
-}
-.product-detail-config::-webkit-scrollbar {
-  display: none; /* Hide scrollbar for Chrome/Safari */
 }
 
 .detail-header-meta {
