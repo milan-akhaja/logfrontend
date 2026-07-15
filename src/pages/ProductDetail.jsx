@@ -12,6 +12,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const [product, setProduct] = useState(null);
   const [activeTab, setActiveTab] = useState('details'); // details, washcare, shipping
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedSecondSize, setSelectedSecondSize] = useState('');
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState([]);
   
@@ -29,15 +30,20 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             // If sizes is array
             if (Array.isArray(found.sizes) && found.sizes.length > 0) {
               const available = found.sizes.filter(s => ['S', 'M', 'L', 'XL'].includes(s));
-              if (available.length > 0) setSelectedSize(available[0]);
+              if (available.length > 0) {
+                setSelectedSize(available[0]);
+                setSelectedSecondSize(available[0]);
+              }
             } else {
               // If sizes is object (e.g. { S: 30, M: 40 })
               const keys = Object.keys(found.sizes).filter(k => ['S', 'M', 'L', 'XL'].includes(k));
               const inStockSize = keys.find(k => found.sizes[k] > 0);
               if (inStockSize) {
                 setSelectedSize(inStockSize);
+                setSelectedSecondSize(inStockSize);
               } else if (keys.length > 0) {
                 setSelectedSize(keys[0]);
+                setSelectedSecondSize(keys[0]);
               }
             }
           }
@@ -97,19 +103,35 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   };
 
   const handleAddToBag = () => {
-    if (!selectedSize) {
-      alert('Please select a size');
-      return;
+    if (product.bogoOffer?.enabled) {
+      if (!selectedSize || !selectedSecondSize) {
+        alert('Please select both sizes for the BOGO offer');
+        return;
+      }
+      onAddToCart(product, selectedSize, selectedSecondSize);
+    } else {
+      if (!selectedSize) {
+        alert('Please select a size');
+        return;
+      }
+      onAddToCart(product, selectedSize);
     }
-    onAddToCart(product, selectedSize);
   };
 
   const handleBuyNow = () => {
-    if (!selectedSize) {
-      alert('Please select a size');
-      return;
+    if (product.bogoOffer?.enabled) {
+      if (!selectedSize || !selectedSecondSize) {
+        alert('Please select both sizes for the BOGO offer');
+        return;
+      }
+      onBuyNow(product, selectedSize, selectedSecondSize);
+    } else {
+      if (!selectedSize) {
+        alert('Please select a size');
+        return;
+      }
+      onBuyNow(product, selectedSize);
     }
-    onBuyNow(product, selectedSize);
   };
 
   // Helper check if size is available in stock
@@ -212,34 +234,90 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               />
             </div>
 
-            {/* Size Selector (S, M, L, XL only) */}
-            <div className="detail-size-selector-section">
-              <div className="size-selector-header-row">
-                <span className="size-section-label">Select Size</span>
-                <button 
-                  className="size-guide-trigger-btn"
-                  onClick={() => setShowSizeChart(true)}
-                >
-                  Size Guide
-                </button>
-              </div>
-
-              <div className="detail-size-options-grid">
-                {['S', 'M', 'L', 'XL'].map(size => {
-                  const isAvailable = isSizeAvailable(size);
-                  return (
-                    <button
-                      key={size}
-                      className={`detail-size-option-btn ${selectedSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
-                      onClick={() => isAvailable && setSelectedSize(size)}
-                      disabled={!isAvailable}
+            {product.bogoOffer?.enabled ? (
+              <>
+                {/* Size Selector 1 */}
+                <div className="detail-size-selector-section">
+                  <div className="size-selector-header-row">
+                    <span className="size-section-label">Select First Size</span>
+                    <button 
+                      className="size-guide-trigger-btn"
+                      onClick={() => setShowSizeChart(true)}
                     >
-                      {size}
+                      Size Guide
                     </button>
-                  );
-                })}
+                  </div>
+
+                  <div className="detail-size-options-grid">
+                    {['S', 'M', 'L', 'XL'].map(size => {
+                      const isAvailable = isSizeAvailable(size);
+                      return (
+                        <button
+                          key={size}
+                          className={`detail-size-option-btn ${selectedSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                          onClick={() => isAvailable && setSelectedSize(size)}
+                          disabled={!isAvailable}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Size Selector 2 */}
+                <div className="detail-size-selector-section" style={{ marginTop: '20px' }}>
+                  <div className="size-selector-header-row">
+                    <span className="size-section-label">Select Second Size (BOGO Free Piece)</span>
+                  </div>
+
+                  <div className="detail-size-options-grid">
+                    {['S', 'M', 'L', 'XL'].map(size => {
+                      const isAvailable = isSizeAvailable(size);
+                      return (
+                        <button
+                          key={size}
+                          className={`detail-size-option-btn ${selectedSecondSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                          onClick={() => isAvailable && setSelectedSecondSize(size)}
+                          disabled={!isAvailable}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Original Size Selector */
+              <div className="detail-size-selector-section">
+                <div className="size-selector-header-row">
+                  <span className="size-section-label">Select Size</span>
+                  <button 
+                    className="size-guide-trigger-btn"
+                    onClick={() => setShowSizeChart(true)}
+                  >
+                    Size Guide
+                  </button>
+                </div>
+
+                <div className="detail-size-options-grid">
+                  {['S', 'M', 'L', 'XL'].map(size => {
+                    const isAvailable = isSizeAvailable(size);
+                    return (
+                      <button
+                        key={size}
+                        className={`detail-size-option-btn ${selectedSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
+                        onClick={() => isAvailable && setSelectedSize(size)}
+                        disabled={!isAvailable}
+                      >
+                        {size}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* CTA Buy Buttons */}
             <div className="detail-actions-row">

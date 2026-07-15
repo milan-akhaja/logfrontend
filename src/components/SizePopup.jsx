@@ -5,12 +5,14 @@ import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 
 export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyNow }) {
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedSecondSize, setSelectedSecondSize] = useState('');
   const [showChart, setShowChart] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       lockBodyScroll();
       setSelectedSize(''); // Reset size selection on open
+      setSelectedSecondSize('');
     }
     return () => {
       if (isOpen) unlockBodyScroll();
@@ -31,20 +33,36 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   };
 
   const handleAdd = () => {
-    if (!selectedSize) {
-      alert('Please select a size first');
-      return;
+    if (product.bogoOffer?.enabled) {
+      if (!selectedSize || !selectedSecondSize) {
+        alert('Please select both sizes for the BOGO offer');
+        return;
+      }
+      onAddToBag(product, selectedSize, selectedSecondSize);
+    } else {
+      if (!selectedSize) {
+        alert('Please select a size first');
+        return;
+      }
+      onAddToBag(product, selectedSize);
     }
-    onAddToBag(product, selectedSize);
     onClose();
   };
 
   const handleBuy = () => {
-    if (!selectedSize) {
-      alert('Please select a size first');
-      return;
+    if (product.bogoOffer?.enabled) {
+      if (!selectedSize || !selectedSecondSize) {
+        alert('Please select both sizes for the BOGO offer');
+        return;
+      }
+      onBuyNow(product, selectedSize, selectedSecondSize);
+    } else {
+      if (!selectedSize) {
+        alert('Please select a size first');
+        return;
+      }
+      onBuyNow(product, selectedSize);
     }
-    onBuyNow(product, selectedSize);
     onClose();
   };
 
@@ -70,39 +88,108 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
             
 
 
-            <div className="size-selection-area">
-              <div className="size-selection-header">
-                <span className="select-size-label">Select Size</span>
-                <button 
-                  className="size-guide-btn" 
-                  onClick={() => setShowChart(true)}
-                >
-                  Size Guide
-                </button>
-              </div>
-
-              <div className="size-buttons-grid">
-                {sizesList.map(size => {
-                  const stock = getStockForSize(size);
-                  const isOutOfStock = stock <= 0;
-                  
-                  return (
-                    <button
-                      key={size}
-                      type="button"
-                      disabled={isOutOfStock}
-                      onClick={() => setSelectedSize(size)}
-                      className={`size-select-btn ${selectedSize === size ? 'active' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+            {product.bogoOffer?.enabled ? (
+              <>
+                {/* Size Selector 1 */}
+                <div className="size-selection-area">
+                  <div className="size-selection-header">
+                    <span className="select-size-label">Select First Size</span>
+                    <button 
+                      className="size-guide-btn" 
+                      onClick={() => setShowChart(true)}
                     >
-                      <span className="size-name">{size}</span>
-                      <span className="size-stock-status">
-                        {isOutOfStock ? 'Sold Out' : `${stock} left`}
-                      </span>
+                      Size Guide
                     </button>
-                  );
-                })}
+                  </div>
+
+                  <div className="size-buttons-grid">
+                    {sizesList.map(size => {
+                      const stock = getStockForSize(size);
+                      const isOutOfStock = stock <= 0;
+                      
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => setSelectedSize(size)}
+                          className={`size-select-btn ${selectedSize === size ? 'active' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+                        >
+                          <span className="size-name">{size}</span>
+                          <span className="size-stock-status">
+                            {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Size Selector 2 */}
+                <div className="size-selection-area" style={{ marginTop: '20px' }}>
+                  <div className="size-selection-header">
+                    <span className="select-size-label">Select Second Size (BOGO Free Piece)</span>
+                  </div>
+
+                  <div className="size-buttons-grid">
+                    {sizesList.map(size => {
+                      const stock = getStockForSize(size);
+                      const isOutOfStock = stock <= 0;
+                      
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          disabled={isOutOfStock}
+                          onClick={() => setSelectedSecondSize(size)}
+                          className={`size-select-btn ${selectedSecondSize === size ? 'active' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+                        >
+                          <span className="size-name">{size}</span>
+                          <span className="size-stock-status">
+                            {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Original Size Selector */
+              <div className="size-selection-area">
+                <div className="size-selection-header">
+                  <span className="select-size-label">Select Size</span>
+                  <button 
+                    className="size-guide-btn" 
+                    onClick={() => setShowChart(true)}
+                  >
+                    Size Guide
+                  </button>
+                </div>
+
+                <div className="size-buttons-grid">
+                  {sizesList.map(size => {
+                    const stock = getStockForSize(size);
+                    const isOutOfStock = stock <= 0;
+                    
+                    return (
+                      <button
+                        key={size}
+                        type="button"
+                        disabled={isOutOfStock}
+                        onClick={() => setSelectedSize(size)}
+                        className={`size-select-btn ${selectedSize === size ? 'active' : ''} ${isOutOfStock ? 'disabled' : ''}`}
+                      >
+                        <span className="size-name">{size}</span>
+                        <span className="size-stock-status">
+                          {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="size-popup-actions">
               <button className="btn btn-outline" onClick={handleAdd}>

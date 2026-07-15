@@ -111,7 +111,12 @@ export default function CartDrawer({
     localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(customerInfo));
   }, [customerInfo]);
 
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = cart.reduce((sum, item) => {
+    if (item.isBogo) {
+      return sum + (item.price * Math.ceil(item.quantity / 2));
+    }
+    return sum + (item.price * item.quantity);
+  }, 0);
   
   const discountAmount = 0;
   const netSubtotal = subtotal;
@@ -204,7 +209,9 @@ export default function CartDrawer({
       imageUrl: item.imageUrl,
       price: item.price,
       quantity: item.quantity,
-      selectedSize: item.selectedSize
+      selectedSize: item.selectedSize,
+      selectedSize1: item.selectedSize1,
+      selectedSize2: item.selectedSize2
     }));
     const saveOrder = (paymentId) => apiJson('/api/orders', {
       method: 'POST',

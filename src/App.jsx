@@ -510,26 +510,43 @@ export default function App() {
       }
     }
   }, []);
-
   const saveCartState = (newCart) => {
     setCart(newCart);
     localStorage.setItem('log_react_cart', JSON.stringify(newCart));
   };
 
-  const handleAddToCart = (product, size) => {
-    if (!size) {
+  const handleAddToCart = (product, size, secondSize) => {
+    const isBogo = product.bogoOffer?.enabled;
+    if (isBogo && (!size || !secondSize)) {
       setSizePopupProduct(product);
       return;
     }
-    const cartItemId = `${product.id}-${size}`;
+    if (!isBogo && !size) {
+      setSizePopupProduct(product);
+      return;
+    }
+
+    const finalSize = isBogo ? `${size}, ${secondSize}` : size;
+    const cartItemId = isBogo ? `${product.id}-${size}-${secondSize}` : `${product.id}-${size}`;
     const existing = cart.find(item => item.cartItemId === cartItemId);
     let updated;
     if (existing) {
       updated = cart.map(item => 
-        item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + 1 } : item
+        item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + (isBogo ? 2 : 1) } : item
       );
     } else {
-      updated = [...cart, { ...product, cartItemId, selectedSize: size, quantity: 1 }];
+      updated = [
+        ...cart,
+        {
+          ...product,
+          cartItemId,
+          selectedSize: finalSize,
+          selectedSize1: size,
+          selectedSize2: secondSize || size,
+          isBogo,
+          quantity: isBogo ? 2 : 1
+        }
+      ];
     }
     saveCartState(updated);
     sendGoogleEvent('add_to_cart', {
@@ -538,25 +555,40 @@ export default function App() {
       items: [{
         item_id: product.id,
         item_name: product.name,
-        item_variant: size,
+        item_variant: finalSize,
         price: Number(product.price || 0),
-        quantity: 1
+        quantity: isBogo ? 2 : 1
       }]
     });
-    showToast(`${product.name} (${size}) added to Bag`);
+    showToast(`${product.name} (${finalSize}) added to Bag`);
   };
 
-  const handleBuyNow = (product, size) => {
-    if (!size) return;
-    const cartItemId = `${product.id}-${size}`;
+  const handleBuyNow = (product, size, secondSize) => {
+    const isBogo = product.bogoOffer?.enabled;
+    if (isBogo && (!size || !secondSize)) return;
+    if (!isBogo && !size) return;
+
+    const finalSize = isBogo ? `${size}, ${secondSize}` : size;
+    const cartItemId = isBogo ? `${product.id}-${size}-${secondSize}` : `${product.id}-${size}`;
     const existing = cart.find(item => item.cartItemId === cartItemId);
     let updated;
     if (existing) {
       updated = cart.map(item => 
-        item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + 1 } : item
+        item.cartItemId === cartItemId ? { ...item, quantity: item.quantity + (isBogo ? 2 : 1) } : item
       );
     } else {
-      updated = [...cart, { ...product, cartItemId, selectedSize: size, quantity: 1 }];
+      updated = [
+        ...cart,
+        {
+          ...product,
+          cartItemId,
+          selectedSize: finalSize,
+          selectedSize1: size,
+          selectedSize2: secondSize || size,
+          isBogo,
+          quantity: isBogo ? 2 : 1
+        }
+      ];
     }
     saveCartState(updated);
     setCartOpen(true);
@@ -565,7 +597,8 @@ export default function App() {
   const handleQtyChange = (cartItemId, delta) => {
     const updated = cart.map(item => {
       if (item.cartItemId === cartItemId) {
-        const qty = item.quantity + delta;
+        const change = item.isBogo ? delta * 2 : delta;
+        const qty = item.quantity + change;
         return qty > 0 ? { ...item, quantity: qty } : null;
       }
       return item;
