@@ -3755,6 +3755,7 @@ export default function Admin({ onToast }) {
                 <div>Name: {selectedOrder.customerInfo?.name}</div>
                 <div>Email: {selectedOrder.customerInfo?.email}</div>
                 <div>Phone: {selectedOrder.customerInfo?.phone}</div>
+                <div>Date of Birth: {selectedOrder.customerInfo?.dob || 'Not provided'}</div>
                 <div>Address: {selectedOrder.customerInfo?.address}</div>
                 <div>Payment: {selectedOrder.paymentMethod || (selectedOrder.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : selectedOrder.paymentId === 'COD' ? 'Cash on Delivery' : selectedOrder.paymentId || 'Pending')}</div>
                 <div>Delivery: {selectedOrder.deliveryMethod || selectedOrder.customerInfo?.deliveryMethod || 'Standard shipping'}</div>
