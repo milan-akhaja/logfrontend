@@ -39,6 +39,16 @@ export default function Terms() {
         </section>
 
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Offer Terms</h2>
+          <p style={{ marginBottom: '12px' }}>
+            Products purchased under any promotional offer, including <strong>Buy 1 Get 1 Free</strong>, discounts, combo offers, or sale events, are <strong>not eligible for return or exchange</strong>.
+          </p>
+          <p>
+            Please check the size guide carefully before placing your order. If you receive a damaged, defective, or incorrect item, contact us within <strong>48 hours</strong> of delivery, and we'll be happy to help.
+          </p>
+        </section>
+
+        <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Linked Policies</h2>
           <p>
             Your use of the website and transactions are also governed by our Privacy Policy, Shipping Policy, and Return, Refund & Cancellation Policy, each incorporated into these terms by reference.

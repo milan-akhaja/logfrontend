@@ -4,6 +4,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { priceNumber, formatPrice, getPriceDisplay } from './lib/pricing';
 import ProductPrice from './components/ProductPrice';
+import Terms from './pages/Terms';
 
 describe('Pricing Helper Functions', () => {
   it('priceNumber parses string values correctly', () => {
@@ -49,5 +50,19 @@ describe('ProductPrice React Component', () => {
     
     // Check if the discount percent text is rendered
     expect(screen.getByText('20% OFF')).toBeDefined();
+  });
+});
+
+describe('Terms React Component', () => {
+  it('renders the Offer Terms section correctly', () => {
+    render(<Terms />);
+    
+    // Check for section heading
+    expect(screen.getByRole('heading', { name: /OFFER TERMS/i })).toBeDefined();
+    
+    // Check for specific text content from the offer terms
+    expect(screen.getByText(/Buy 1 Get 1 Free/i)).toBeDefined();
+    expect(screen.getByText(/not eligible for return or exchange/i)).toBeDefined();
+    expect(screen.getByText(/48 hours/i)).toBeDefined();
   });
 });
