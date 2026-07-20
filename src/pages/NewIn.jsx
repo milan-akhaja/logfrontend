@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, MessageSquare, Mail, Clock, ShoppingCart } from 'lucide-react';
+import { Mail, Clock, ShoppingCart } from 'lucide-react';
 import ProductPrice from '../components/ProductPrice';
 import { appPath, mediaUrl } from '../lib/urls';
 
@@ -144,6 +144,15 @@ export default function NewIn({ onAddToCart, onToast }) {
                     )}
                   </div>
                 </div>
+                        onClick={(e) => e.stopPropagation()}
+                        disabled
+                      >
+                        <span className="add-to-bag-text">Sold Out</span>
+                        <span className="add-to-bag-icon" style={{ fontSize: '10px', fontWeight: '800' }}>SO</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -160,30 +169,6 @@ export default function NewIn({ onAddToCart, onToast }) {
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', marginBottom: '30px' }}>
-              <a
-                href="tel:+917878623123"
-                onClick={handleContactClick}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ink)', fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}
-              >
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Phone size={20} />
-                </div>
-                <span>Call Us</span>
-              </a>
-
-              <a
-                href="http://wa.me/917878623123"
-                target="_blank"
-                rel="noreferrer"
-                onClick={handleContactClick}
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'var(--ink)', fontWeight: '800', fontSize: '11px', textTransform: 'uppercase' }}
-              >
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <MessageSquare size={20} />
-                </div>
-                <span>WhatsApp</span>
-              </a>
-
               <a
                 href="mailto:contact@logcloth.com"
                 onClick={handleContactClick}

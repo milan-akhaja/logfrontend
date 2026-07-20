@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, MessageSquare, Mail, Clock, Instagram } from 'lucide-react';
+import { Mail, Clock, Instagram } from 'lucide-react';
 import ContentBlockLines from './ContentBlockLines';
 import useContentBlocks from '../hooks/useContentBlocks';
 
@@ -124,26 +124,6 @@ export default function Footer({ onToast }) {
             
             {/* Outline Contact Icons Panel instead of Newsletter */}
             <div style={{ display: 'flex', gap: '15px', marginTop: '20px', marginBottom: '10px' }}>
-              <a 
-                href="tel:+917878623123" 
-                aria-label="Call LOG support"
-                title="Call Support"
-                onClick={handleContactClick}
-                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
-              >
-                <Phone size={16} color="#FFFFFF" />
-              </a>
-              <a 
-                href="http://wa.me/917878623123" 
-                target="_blank" 
-                rel="noreferrer"
-                aria-label="Message LOG support on WhatsApp"
-                title="WhatsApp Support"
-                onClick={handleContactClick}
-                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
-              >
-                <MessageSquare size={16} color="#FFFFFF" />
-              </a>
               <a 
                 href="mailto:contact@logcloth.com" 
                 aria-label="Email LOG support"
