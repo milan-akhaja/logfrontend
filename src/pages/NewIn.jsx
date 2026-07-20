@@ -144,15 +144,6 @@ export default function NewIn({ onAddToCart, onToast }) {
                     )}
                   </div>
                 </div>
-                        onClick={(e) => e.stopPropagation()}
-                        disabled
-                      >
-                        <span className="add-to-bag-text">Sold Out</span>
-                        <span className="add-to-bag-icon" style={{ fontSize: '10px', fontWeight: '800' }}>SO</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
               </div>
             );
           })}
