@@ -62,13 +62,13 @@ export default function PrivacyPolicy() {
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Grievance & Contact</h2>
           <p style={{ marginBottom: '8px' }}>
-            For privacy requests, complaints, or questions, contact us at <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a>. Support hours: Monday to Friday, 9:00 AM to 6:00 PM IST.
+            For privacy requests, complaints, or questions, contact us at <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a> or phone <a href="tel:+917878623123" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>+91 7878623123</a>. Support hours: Monday to Friday, 9:00 AM to 6:00 PM IST.
           </p>
           <p style={{ marginBottom: '4px' }}>
-            <strong>Legal Name:</strong> LOGCLOTH
+            <strong>Legal Name:</strong> rasadiya sahaj atulbhai
           </p>
           <p>
-            <strong>Address:</strong> D-603, jamin green-1,vaishonavdevi circle,ahmedabad-382501
+            <strong>Address:</strong> C-1, SAGAR COMPOUND, LANE, Vasta Devdi Rd, nr. COMMUNITY HALL, Tunki, Katargam, Surat, Gujarat 395004
           </p>
         </section>
       </div>
