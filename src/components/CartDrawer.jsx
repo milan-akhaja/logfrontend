@@ -439,9 +439,12 @@ export default function CartDrawer({
                 <div className="checkout-payment-options">
                   <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
-                    <span>
-                      <span className="checkout-payment-card-main">Online Payment (UPI, Cards, Net Banking)</span>
-                      <span className="checkout-payment-card-note">Pay securely via PayU</span>
+                    <span style={{ width: '100%' }}>
+                      <span className="checkout-payment-card-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                        <span>Online Payment (PayU)</span>
+                        <span style={{ fontSize: '9px', background: 'var(--ink)', color: '#FFFFFF', padding: '2px 7px', borderRadius: '3px', fontWeight: '800', letterSpacing: '0.05em' }}>UPI • CARDS • NETBANKING</span>
+                      </span>
+                      <span className="checkout-payment-card-note">Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
                     </span>
                   </label>
                   <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
