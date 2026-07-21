@@ -227,15 +227,15 @@ export default function CartDrawer({
     });
     try {
       setIsSubmittingOrder(true);
-      if (paymentMethod === 'cod' || paymentMethod === 'founder_delivery') {
-        const data = await saveOrder(paymentMethod === 'founder_delivery' ? 'FOUNDER_DELIVERY' : 'COD');
+      if (paymentMethod === 'cod') {
+        const data = await saveOrder('COD');
         onPurchase?.({
           transaction_id: data.order?.id || clientOrderId,
           value: Number(total || 0),
           tax: 0,
           shipping: Number(shipping || 0),
           currency: 'INR',
-          payment_type: paymentMethod === 'founder_delivery' ? 'Founder Delivery' : 'COD',
+          payment_type: 'COD',
           items: orderItems.map((item) => ({
             item_id: item.id,
             item_name: item.name,
@@ -259,7 +259,7 @@ export default function CartDrawer({
         return;
       }
 
-      if (paymentMethod === 'payu') {
+      if (paymentMethod === 'payu' || paymentMethod === 'founder_delivery') {
         const data = await apiJson('/api/payments/payu/initiate', {
           method: 'POST',
           body: JSON.stringify({
@@ -468,7 +468,7 @@ export default function CartDrawer({
                     />
                     <span>
                       <span className="checkout-payment-card-main">Delivery by Founder</span>
-                      <span className="checkout-payment-card-note">Ahmedabad only. Founder delivery charge +₹3,000.</span>
+                      <span className="checkout-payment-card-note">Ahmedabad only. Founder delivery charge +₹3,000. Pay online via PayU.</span>
                     </span>
                   </label>
                 </div>
