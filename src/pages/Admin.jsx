@@ -1040,6 +1040,22 @@ export default function Admin({ onToast }) {
     }
   };
 
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm(`Delete order ${orderId}? This will delete the order record and restore product stock back to inventory.`)) return;
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
+      if (res.ok) {
+        onToast(`Order ${orderId} deleted & stock restored.`);
+        fetchData();
+      } else {
+        onToast(await getApiError(res, 'Order delete failed.'));
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Order delete request failed.');
+    }
+  };
+
   const handleResetReturnRecords = async () => {
     if (!window.confirm('Reset all return and exchange requests?')) return;
     try {
@@ -2818,9 +2834,14 @@ export default function Admin({ onToast }) {
                       </td>
                       <td>{new Date(order.date).toLocaleDateString()}</td>
                       <td>
-                        <button className="admin-icon-btn" onClick={() => setSelectedOrder(order)}>
-                          <Eye size={14} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button className="admin-icon-btn" onClick={() => setSelectedOrder(order)} title="View Order Details">
+                            <Eye size={14} />
+                          </button>
+                          <button className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteOrder(order.id)} title="Delete Order & Restore Inventory Stock">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
