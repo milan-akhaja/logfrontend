@@ -298,6 +298,10 @@ export default function CartDrawer({
 
       onToast('Select a valid payment option.');
       setIsSubmittingOrder(false);
+    } catch (err) {
+      console.error(err);
+      onToast(err.message || 'Network error during checkout.');
+      setIsSubmittingOrder(false);
     }
   };
 
