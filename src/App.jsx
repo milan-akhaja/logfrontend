@@ -387,6 +387,33 @@ function AppContent({
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [completedOrder, setCompletedOrder] = useState(null);
 
+  // Handle PayU payment return redirect
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get('payment');
+    const orderId = params.get('orderId');
+
+    if (paymentStatus === 'payu-success' && orderId) {
+      fetch(`/api/orders/public/${encodeURIComponent(orderId)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data && data.order) {
+            setCompletedOrder(data.order);
+            onClearCart?.();
+            localStorage.removeItem('log_checkout_client_order_id');
+            localStorage.removeItem('log_checkout_customer_draft');
+            showToast('Payment successful! Your order has been placed.');
+          }
+        })
+        .catch((e) => console.error(e));
+
+      navigate(location.pathname, { replace: true });
+    } else if (paymentStatus === 'payu-failed') {
+      showToast('PayU payment failed or was cancelled. Please try again.');
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.search, location.pathname, navigate, onClearCart, showToast]);
+
   // Helper for quick actions
   const handleShopNowTrigger = async (productId) => {
     try {

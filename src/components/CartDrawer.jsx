@@ -258,12 +258,45 @@ export default function CartDrawer({
         setIsSubmittingOrder(false);
         return;
       }
-      onToast('Select a valid payment option.');
-      setIsSubmittingOrder(false);
 
-    } catch (err) {
-      console.error(err);
-      onToast(err.message || 'Network error during checkout.');
+      if (paymentMethod === 'payu') {
+        const data = await apiJson('/api/payments/payu/initiate', {
+          method: 'POST',
+          body: JSON.stringify({
+            items: orderItems,
+            customerInfo: orderCustomerInfo,
+            amount: total,
+            clientOrderId,
+            couponCode: null,
+            discountAmount,
+            deliveryOption: orderCustomerInfo.deliveryOption
+          })
+        });
+
+        if (data.action && data.fields) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = data.action;
+
+          Object.entries(data.fields).forEach(([key, val]) => {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = key;
+            hiddenField.value = val !== undefined && val !== null ? String(val) : '';
+            form.appendChild(hiddenField);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+
+        onToast(data?.error || 'Failed to initiate PayU payment.');
+        setIsSubmittingOrder(false);
+        return;
+      }
+
+      onToast('Select a valid payment option.');
       setIsSubmittingOrder(false);
     }
   };
@@ -400,6 +433,13 @@ export default function CartDrawer({
               <div className="checkout-payment-section">
                 <h4>Payment Option</h4>
                 <div className="checkout-payment-options">
+                  <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
+                    <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
+                    <span>
+                      <span className="checkout-payment-card-main">Online Payment (UPI, Cards, Net Banking)</span>
+                      <span className="checkout-payment-card-note">Pay securely via PayU</span>
+                    </span>
+                  </label>
                   <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                     <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
                     <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
