@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { mediaUrl } from '../lib/urls';
+import { apiUrl, mediaUrl } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+
+function cleanCityName(rawCity) {
+  if (!rawCity) return '';
+  return rawCity
+    .replace(/\s+(?:G\s*P\s*O|H\.?O\.?|S\.?O\.?)$/i, '')
+    .replace(/^(?:District Court|Municipal Corporation)\s*\((.*?)\)$/i, '$1')
+    .trim();
+}
 
 const CHECKOUT_DRAFT_KEY = 'log_checkout_customer_draft';
 const CHECKOUT_ORDER_KEY = 'log_checkout_client_order_id';
@@ -209,37 +217,60 @@ export default function CartDrawer({
 
     const fetchPincodeDetails = async () => {
       setIsLoadingPincode(true);
-      try {
-        const response = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, {
-          signal: controller.signal
+
+      const backendFetch = apiJson(`/api/pincode/${cleanPin}`, { signal: controller.signal })
+        .then(data => {
+          if (data?.success && (data.district || data.state)) {
+            return { city: cleanCityName(data.district), state: matchIndianState(data.state) };
+          }
+          throw new Error('Backend pincode empty');
         });
-        if (!response.ok) return;
-        const data = await response.json();
+
+      const zippoFetch = fetch(`https://api.zippopotam.us/in/${cleanPin}`, { signal: controller.signal })
+        .then(r => {
+          if (!r.ok) throw new Error('Zippo fetch error');
+          return r.json();
+        })
+        .then(data => {
+          if (data?.places?.length > 0) {
+            const place = data.places.find(x => x['place name']?.toLowerCase().includes('g p o')) || data.places[0];
+            return { city: cleanCityName(place['place name']), state: matchIndianState(place.state) };
+          }
+          throw new Error('Zippo places empty');
+        });
+
+      const postalFetch = fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, { signal: controller.signal })
+        .then(r => {
+          if (!r.ok) throw new Error('Postal fetch error');
+          return r.json();
+        })
+        .then(data => {
+          if (Array.isArray(data) && data[0]?.Status === 'Success' && data[0]?.PostOffice?.length > 0) {
+            const po = data[0].PostOffice[0];
+            return { city: cleanCityName(po.District || po.Block || po.Name), state: matchIndianState(po.State) };
+          }
+          throw new Error('Postal data empty');
+        });
+
+      try {
+        const result = await Promise.any([backendFetch, zippoFetch, postalFetch]);
         if (!isMounted) return;
 
-        if (Array.isArray(data) && data[0]?.Status === 'Success' && data[0]?.PostOffice?.length > 0) {
-          const po = data[0].PostOffice[0];
-          const fetchedDistrict = (po.District || po.Block || po.Name || '').trim();
-          const fetchedState = (po.State || '').trim();
-
-          const matchedState = matchIndianState(fetchedState);
-
-          setCustomerInfo(prev => ({
-            ...prev,
-            ...(fetchedDistrict ? { city: fetchedDistrict } : {}),
-            ...(matchedState ? { state: matchedState } : {})
-          }));
-        }
+        setCustomerInfo(prev => ({
+          ...prev,
+          ...(result.city ? { city: result.city } : {}),
+          ...(result.state ? { state: result.state } : {})
+        }));
       } catch (err) {
         if (err.name !== 'AbortError') {
-          console.error('Error fetching pincode details:', err);
+          console.log('Pincode auto-fill failed across all sources:', err);
         }
       } finally {
         if (isMounted) setIsLoadingPincode(false);
       }
     };
 
-    const timer = setTimeout(fetchPincodeDetails, 300);
+    const timer = setTimeout(fetchPincodeDetails, 200);
 
     return () => {
       isMounted = false;
