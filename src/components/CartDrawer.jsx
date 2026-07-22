@@ -52,6 +52,67 @@ function formatCurrency(value) {
   return `₹${Number(value || 0).toLocaleString('en-IN')}`;
 }
 
+const INDIAN_STATES = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal"
+];
+
+function matchIndianState(rawState) {
+  if (!rawState) return '';
+  const cleanRaw = rawState.trim().toLowerCase().replace(/&/g, 'and');
+
+  if (cleanRaw.includes('orissa')) return 'Odisha';
+  if (cleanRaw.includes('pondicherry')) return 'Puducherry';
+  if (cleanRaw.includes('delhi')) return 'Delhi';
+  if (cleanRaw.includes('daman') || cleanRaw.includes('dadra')) return 'Dadra and Nagar Haveli and Daman and Diu';
+  if (cleanRaw.includes('andaman')) return 'Andaman and Nicobar Islands';
+  if (cleanRaw.includes('jammu')) return 'Jammu and Kashmir';
+
+  const exactMatch = INDIAN_STATES.find(s => s.toLowerCase() === cleanRaw);
+  if (exactMatch) return exactMatch;
+
+  const includesMatch = INDIAN_STATES.find(s => {
+    const cleanS = s.toLowerCase();
+    return cleanRaw.includes(cleanS) || cleanS.includes(cleanRaw);
+  });
+
+  return includesMatch || '';
+}
+
 function getClientOrderId() {
   let value = localStorage.getItem(CHECKOUT_ORDER_KEY);
   if (!value) {
@@ -137,8 +198,63 @@ export default function CartDrawer({
     }
   }, [founderDeliveryAvailable, paymentMethod]);
 
+  const [isLoadingPincode, setIsLoadingPincode] = useState(false);
+
+  useEffect(() => {
+    const cleanPin = String(customerInfo.pinCode || '').replace(/\D/g, '');
+    if (cleanPin.length !== 6) return;
+
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const fetchPincodeDetails = async () => {
+      setIsLoadingPincode(true);
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${cleanPin}`, {
+          signal: controller.signal
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!isMounted) return;
+
+        if (Array.isArray(data) && data[0]?.Status === 'Success' && data[0]?.PostOffice?.length > 0) {
+          const po = data[0].PostOffice[0];
+          const fetchedDistrict = (po.District || po.Block || po.Name || '').trim();
+          const fetchedState = (po.State || '').trim();
+
+          const matchedState = matchIndianState(fetchedState);
+
+          setCustomerInfo(prev => ({
+            ...prev,
+            ...(fetchedDistrict ? { city: fetchedDistrict } : {}),
+            ...(matchedState ? { state: matchedState } : {})
+          }));
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching pincode details:', err);
+        }
+      } finally {
+        if (isMounted) setIsLoadingPincode(false);
+      }
+    };
+
+    const timer = setTimeout(fetchPincodeDetails, 300);
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [customerInfo.pinCode]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === 'pinCode') {
+      const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
+      setCustomerInfo(prev => ({ ...prev, pinCode: digitsOnly }));
+      return;
+    }
     setCustomerInfo(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
@@ -342,44 +458,28 @@ export default function CartDrawer({
               <div className="checkout-three-col">
                 <input type="text" name="city" value={customerInfo.city} onChange={handleInputChange} required placeholder="City" />
                 <select name="state" value={customerInfo.state} onChange={handleInputChange} required>
-                  <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                  <option value="Andhra Pradesh">Andhra Pradesh</option>
-                  <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                  <option value="Assam">Assam</option>
-                  <option value="Bihar">Bihar</option>
-                  <option value="Chandigarh">Chandigarh</option>
-                  <option value="Chhattisgarh">Chhattisgarh</option>
-                  <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Goa">Goa</option>
-                  <option value="Gujarat">Gujarat</option>
-                  <option value="Haryana">Haryana</option>
-                  <option value="Himachal Pradesh">Himachal Pradesh</option>
-                  <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                  <option value="Jharkhand">Jharkhand</option>
-                  <option value="Karnataka">Karnataka</option>
-                  <option value="Kerala">Kerala</option>
-                  <option value="Ladakh">Ladakh</option>
-                  <option value="Lakshadweep">Lakshadweep</option>
-                  <option value="Madhya Pradesh">Madhya Pradesh</option>
-                  <option value="Maharashtra">Maharashtra</option>
-                  <option value="Manipur">Manipur</option>
-                  <option value="Meghalaya">Meghalaya</option>
-                  <option value="Mizoram">Mizoram</option>
-                  <option value="Nagaland">Nagaland</option>
-                  <option value="Odisha">Odisha</option>
-                  <option value="Puducherry">Puducherry</option>
-                  <option value="Punjab">Punjab</option>
-                  <option value="Rajasthan">Rajasthan</option>
-                  <option value="Sikkim">Sikkim</option>
-                  <option value="Tamil Nadu">Tamil Nadu</option>
-                  <option value="Telangana">Telangana</option>
-                  <option value="Tripura">Tripura</option>
-                  <option value="Uttar Pradesh">Uttar Pradesh</option>
-                  <option value="Uttarakhand">Uttarakhand</option>
-                  <option value="West Bengal">West Bengal</option>
+                  {INDIAN_STATES.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
                 </select>
-                <input type="text" name="pinCode" value={customerInfo.pinCode} onChange={handleInputChange} required inputMode="numeric" placeholder="PIN code" />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <input
+                    type="text"
+                    name="pinCode"
+                    value={customerInfo.pinCode}
+                    onChange={handleInputChange}
+                    required
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="PIN code"
+                    style={{ width: '100%' }}
+                  />
+                  {isLoadingPincode && (
+                    <span style={{ position: 'absolute', right: '12px', fontSize: '11px', color: '#666', pointerEvents: 'none', background: '#fff', padding: '2px 4px', borderRadius: '3px' }}>
+                      Auto-filling...
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="checkout-phone-row">
