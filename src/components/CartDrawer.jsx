@@ -28,7 +28,14 @@ const PHONE_COUNTRY_CODES = [
 function trackGoAffProOrder(orderId, totalAmount, email = '') {
   try {
     if (typeof window !== 'undefined') {
-      if (typeof window.gproTrackOrder === 'function') {
+      window.goaffpro_order = {
+        number: String(orderId || ''),
+        total: Number(totalAmount || 0),
+        email: email
+      };
+      if (typeof window.goaffproTrackConversion !== 'undefined') {
+        window.goaffproTrackConversion(window.goaffpro_order);
+      } else if (typeof window.gproTrackOrder === 'function') {
         window.gproTrackOrder(orderId, totalAmount);
       } else if (typeof window.goaffproTrackOrder === 'function') {
         window.goaffproTrackOrder(orderId, totalAmount);
@@ -45,6 +52,7 @@ function trackGoAffProOrder(orderId, totalAmount, email = '') {
     console.warn('GoAffPro tracking warning:', err);
   }
 }
+
 
 
 function getSavedCustomerInfo(defaultInfo) {
