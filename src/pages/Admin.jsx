@@ -23,7 +23,9 @@ import {
   Upload,
   GripVertical,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  ExternalLink,
+  Share2
 } from 'lucide-react';
 import { mediaUrl } from '../lib/urls';
 import { DEFAULT_PRICE_DISPLAY_OPTIONS } from '../lib/pricing';
@@ -45,8 +47,10 @@ const ADMIN_TABS = [
   ['gallery', 'Gallery'],
   ['contentblocks', 'Banners & Quotes'],
   ['newinconfig', 'New In'],
-  ['heroconfig', 'Hero']
+  ['heroconfig', 'Hero'],
+  ['goaffpro', 'GoAffPro Affiliates']
 ];
+
 
 const PRODUCT_IMAGE_LIMIT = 20;
 const MAX_IMAGE_UPLOAD_MB = 25;
@@ -246,7 +250,279 @@ function compressImageFile(file) {
   });
 }
 
+function GoAffProAdminTab({ onToast }) {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [affiliates, setAffiliates] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [error, setError] = useState('');
+  const [activeSubTab, setActiveSubTab] = useState('overview');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const fetchGoAffProData = async () => {
+    setLoading(true);
+    setError('');
+    const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
+    const headers = { 'Authorization': `Bearer ${token}` };
+    try {
+      const [statsRes, affiliatesRes, ordersRes] = await Promise.allSettled([
+        window.fetch('/api/admin/goaffpro/stats', { headers }),
+        window.fetch('/api/admin/goaffpro/affiliates', { headers }),
+        window.fetch('/api/admin/goaffpro/orders', { headers })
+      ]);
+
+      if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
+        const statsData = await statsRes.value.json();
+        setStats(statsData.stats || statsData);
+      } else if (statsRes.status === 'fulfilled' && !statsRes.value.ok) {
+        const errData = await statsRes.value.json().catch(() => ({}));
+        if (errData.error) setError(errData.error);
+      }
+
+      if (affiliatesRes.status === 'fulfilled' && affiliatesRes.value.ok) {
+        const affData = await affiliatesRes.value.json();
+        setAffiliates(Array.isArray(affData) ? affData : affData.affiliates || affData.data || []);
+      }
+
+      if (ordersRes.status === 'fulfilled' && ordersRes.value.ok) {
+        const ordData = await ordersRes.value.json();
+        setOrders(Array.isArray(ordData) ? ordData : ordData.orders || ordData.data || []);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to fetch GoAffPro data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoAffProData();
+  }, []);
+
+  const filteredAffiliates = affiliates.filter((aff) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    const name = `${aff.first_name || ''} ${aff.last_name || ''}`.toLowerCase();
+    const email = (aff.email || '').toLowerCase();
+    const code = (aff.ref_code || aff.code || aff.referral_code || '').toLowerCase();
+    return name.includes(term) || email.includes(term) || code.includes(term);
+  });
+
+  const totalReferredRevenue = orders.reduce((sum, o) => sum + Number(o.total || o.amount || 0), 0);
+  const totalCommissions = orders.reduce((sum, o) => sum + Number(o.commission || o.commission_amount || 0), 0);
+
+  return (
+    <div style={{ marginTop: '20px' }}>
+      <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', marginBottom: '20px', border: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800' }}>GoAffPro Affiliate Marketing</h2>
+            <span style={{ fontSize: '11px', background: '#DEF7EC', color: '#03543F', padding: '4px 10px', borderRadius: '12px', fontWeight: '700' }}>
+              ✓ Integration Active
+            </span>
+          </div>
+          <p style={{ margin: '5px 0 0', color: 'var(--admin-text-muted)', fontSize: '13px' }}>
+            Track affiliate performance, manage referral codes, and view sales & commissions.
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="admin-btn" onClick={fetchGoAffProData} disabled={loading}>
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <span>{loading ? 'Refreshing...' : 'Refresh Data'}</span>
+          </button>
+          <a
+            href="https://admin.goaffpro.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="admin-btn admin-btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
+          >
+            <span>GoAffPro Portal</span>
+            <ExternalLink size={14} />
+          </a>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid var(--admin-border)', paddingBottom: '10px' }}>
+        {[
+          ['overview', 'Overview Stats'],
+          ['affiliates', `Affiliates Directory (${affiliates.length})`],
+          ['orders', `Referral Orders (${orders.length})`]
+        ].map(([tabId, label]) => (
+          <button
+            key={tabId}
+            onClick={() => setActiveSubTab(tabId)}
+            style={{
+              background: activeSubTab === tabId ? 'var(--ink)' : 'none',
+              color: activeSubTab === tabId ? 'white' : 'var(--admin-text-main)',
+              border: activeSubTab === tabId ? '2px solid var(--ink)' : '2px solid transparent',
+              padding: '8px 16px',
+              fontWeight: '700',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--admin-text-muted)' }}>
+          <RefreshCw size={24} className="spin" style={{ marginBottom: '10px' }} />
+          <div>Loading GoAffPro affiliate statistics...</div>
+        </div>
+      ) : error ? (
+        <div className="admin-card" style={{ padding: '20px', border: '1px solid #FDE8E8', background: '#FDF2F2', color: '#9B1C1C', borderRadius: '8px', marginBottom: '20px' }}>
+          <strong>API Connection Status:</strong> {error}
+        </div>
+      ) : null}
+
+      {!loading && (
+        <>
+          {activeSubTab === 'overview' && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px', marginBottom: '25px' }}>
+                <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Total Affiliates</div>
+                  <div style={{ fontSize: '26px', fontWeight: '800', marginTop: '5px' }}>{stats?.total_affiliates || affiliates.length || 0}</div>
+                  <div style={{ fontSize: '11px', color: '#10B981', marginTop: '4px' }}>Active partner network</div>
+                </div>
+
+                <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Referred Sales Revenue</div>
+                  <div style={{ fontSize: '26px', fontWeight: '800', marginTop: '5px' }}>₹{Number(stats?.total_sales || totalReferredRevenue).toLocaleString('en-IN')}</div>
+                  <div style={{ fontSize: '11px', color: '#10B981', marginTop: '4px' }}>Generated via affiliate links</div>
+                </div>
+
+                <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Total Referral Orders</div>
+                  <div style={{ fontSize: '26px', fontWeight: '800', marginTop: '5px' }}>{stats?.total_orders || orders.length || 0}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', marginTop: '4px' }}>Conversions tracked</div>
+                </div>
+
+                <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Commissions Earned</div>
+                  <div style={{ fontSize: '26px', fontWeight: '800', marginTop: '5px', color: '#059669' }}>₹{Number(stats?.total_commission || totalCommissions).toLocaleString('en-IN')}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', marginTop: '4px' }}>Payouts & rewards</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSubTab === 'affiliates' && (
+            <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                <h3 style={{ margin: 0, fontWeight: '700' }}>Affiliates Directory</h3>
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or code..."
+                  className="admin-input"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ width: '280px', padding: '8px 12px' }}
+                />
+              </div>
+
+              {filteredAffiliates.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--admin-text-muted)' }}>
+                  No affiliates found. Check your search query or recruit your first affiliate in GoAffPro!
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--admin-border)', color: 'var(--admin-text-muted)' }}>
+                        <th style={{ padding: '10px' }}>Affiliate Name</th>
+                        <th style={{ padding: '10px' }}>Email</th>
+                        <th style={{ padding: '10px' }}>Referral Code</th>
+                        <th style={{ padding: '10px' }}>Commission</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Total Sales</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Total Earnings</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAffiliates.map((aff, idx) => {
+                        const code = aff.ref_code || aff.code || aff.referral_code || 'N/A';
+                        const name = `${aff.first_name || ''} ${aff.last_name || ''}`.trim() || aff.name || 'Affiliate #' + (idx + 1);
+                        return (
+                          <tr key={aff.id || idx} style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                            <td style={{ padding: '12px 10px', fontWeight: '700' }}>{name}</td>
+                            <td style={{ padding: '12px 10px', color: 'var(--admin-text-muted)' }}>{aff.email || 'N/A'}</td>
+                            <td style={{ padding: '12px 10px' }}>
+                              <span style={{ background: '#F3F4F6', padding: '4px 8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: '700' }}>
+                                {code}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 10px' }}>{aff.commission_rate ? `${aff.commission_rate}%` : 'Default'}</td>
+                            <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: '700' }}>
+                              ₹{Number(aff.total_sales || aff.sales || 0).toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: '700', color: '#059669' }}>
+                              ₹{Number(aff.total_earnings || aff.commission || 0).toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeSubTab === 'orders' && (
+            <div className="admin-card" style={{ padding: '20px', borderRadius: '8px', border: '1px solid var(--admin-border)' }}>
+              <h3 style={{ margin: '0 0 15px', fontWeight: '700' }}>Referral Orders</h3>
+              {orders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: 'var(--admin-text-muted)' }}>
+                  No referral orders recorded yet. Referred orders will automatically populate here when customers purchase using affiliate links!
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--admin-border)', color: 'var(--admin-text-muted)' }}>
+                        <th style={{ padding: '10px' }}>Order ID</th>
+                        <th style={{ padding: '10px' }}>Affiliate</th>
+                        <th style={{ padding: '10px' }}>Customer</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Order Amount</th>
+                        <th style={{ padding: '10px', textAlign: 'right' }}>Commission</th>
+                        <th style={{ padding: '10px' }}>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((ord, idx) => (
+                        <tr key={ord.id || idx} style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                          <td style={{ padding: '12px 10px', fontWeight: '700' }}>#{ord.order_number || ord.order_id || ord.id}</td>
+                          <td style={{ padding: '12px 10px' }}>{ord.affiliate_name || ord.affiliate?.name || 'Affiliate'}</td>
+                          <td style={{ padding: '12px 10px', color: 'var(--admin-text-muted)' }}>{ord.customer_name || ord.email || 'Customer'}</td>
+                          <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: '700' }}>
+                            ₹{Number(ord.total || ord.amount || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: '700', color: '#059669' }}>
+                            ₹{Number(ord.commission || ord.commission_amount || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td style={{ padding: '12px 10px', color: 'var(--admin-text-muted)' }}>
+                            {ord.created_at ? new Date(ord.created_at).toLocaleDateString() : 'Recent'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Admin({ onToast }) {
+
   const [token, setToken] = useState(() => {
     localStorage.removeItem('admin_token');
     return sessionStorage.getItem('admin_token') || '';
@@ -1740,7 +2016,9 @@ export default function Admin({ onToast }) {
               {activeTab === 'contentblocks' && 'Banners & Quotes'}
               {activeTab === 'newinconfig' && 'New In Page Settings'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
+              {activeTab === 'goaffpro' && 'GoAffPro Affiliate Marketing'}
             </h1>
+
           </div>
           <div className="admin-header-actions">
             <button className="admin-btn" onClick={fetchData}>
@@ -3760,7 +4038,10 @@ export default function Admin({ onToast }) {
             </form>
           </div>
         )}
+
+        {activeTab === 'goaffpro' && <GoAffProAdminTab onToast={onToast} />}
       </main>
+
 
       {/* Order detail modal */}
       {selectedOrder && (

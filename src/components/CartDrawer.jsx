@@ -25,6 +25,28 @@ const PHONE_COUNTRY_CODES = [
   { value: '+33', label: 'France +33', country: 'France' }
 ];
 
+function trackGoAffProOrder(orderId, totalAmount, email = '') {
+  try {
+    if (typeof window !== 'undefined') {
+      if (typeof window.gproTrackOrder === 'function') {
+        window.gproTrackOrder(orderId, totalAmount);
+      } else if (typeof window.goaffproTrackOrder === 'function') {
+        window.goaffproTrackOrder(orderId, totalAmount);
+      } else if (window.gpro && typeof window.gpro.trackOrder === 'function') {
+        window.gpro.trackOrder({
+          order_id: orderId,
+          total: totalAmount,
+          currency: 'INR',
+          email: email
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('GoAffPro tracking warning:', err);
+  }
+}
+
+
 function getSavedCustomerInfo(defaultInfo) {
   try {
     const saved = JSON.parse(localStorage.getItem(CHECKOUT_DRAFT_KEY) || 'null');
@@ -376,6 +398,7 @@ export default function CartDrawer({
       setIsSubmittingOrder(true);
       if (paymentMethod === 'cod') {
         const data = await saveOrder('COD');
+        trackGoAffProOrder(data.order?.id || clientOrderId, total, orderCustomerInfo.email);
         onPurchase?.({
           transaction_id: data.order?.id || clientOrderId,
           value: Number(total || 0),
