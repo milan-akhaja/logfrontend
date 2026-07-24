@@ -242,11 +242,7 @@ export default function CartDrawer({
       });
       setEmailOtpSent(true);
       setEmailTimer(30);
-      let msg = res.message || 'OTP sent to your email!';
-      if (res.debugCode) {
-        msg += ` (OTP code: ${res.debugCode})`;
-      }
-      onToast(msg);
+      onToast(res.message || 'Verification code sent to your email.');
     } catch (err) {
       onToast(err.message || 'Failed to send Email OTP.');
     } finally {
@@ -287,15 +283,11 @@ export default function CartDrawer({
       setIsSendingPhoneOtp(true);
       const res = await apiJson('/api/otp/send-phone', {
         method: 'POST',
-        body: JSON.stringify({ phone: localPhone, phoneCountryCode })
+        body: JSON.stringify({ phone: localPhone, phoneCountryCode, email: customerInfo.email })
       });
       setPhoneOtpSent(true);
       setPhoneTimer(30);
-      let msg = res.message || 'OTP sent to your phone!';
-      if (res.debugCode) {
-        msg += ` (OTP code: ${res.debugCode})`;
-      }
-      onToast(msg);
+      onToast(res.message || 'Verification code sent to your phone number.');
     } catch (err) {
       onToast(err.message || 'Failed to send Phone OTP.');
     } finally {
