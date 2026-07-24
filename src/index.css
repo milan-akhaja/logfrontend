@@ -1997,15 +1997,27 @@ header.scrolled .bag-count {
 }
 
 .checkout-phone-row {
-  display: grid;
-  grid-template-columns: minmax(116px, 0.36fr) minmax(0, 1fr);
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
-.checkout-phone-row select,
-.checkout-phone-row .checkout-input {
+.checkout-phone-row select {
+  width: 78px;
+  min-width: 78px;
+  max-width: 78px;
   min-height: 56px;
-  padding: 8px 13px;
+  flex-shrink: 0;
+  padding: 8px 4px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.checkout-phone-row .checkout-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
 }
 
 .checkout-save-row {

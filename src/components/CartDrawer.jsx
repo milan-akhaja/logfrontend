@@ -15,14 +15,14 @@ const CHECKOUT_DRAFT_KEY = 'log_checkout_customer_draft';
 const CHECKOUT_ORDER_KEY = 'log_checkout_client_order_id';
 const FOUNDER_DELIVERY_FEE = 3000;
 const PHONE_COUNTRY_CODES = [
-  { value: '+91', label: 'India +91', country: 'India', digits: 10 },
-  { value: '+1', label: 'USA/Canada +1', country: 'United States', digits: 10 },
-  { value: '+44', label: 'UK +44', country: 'United Kingdom' },
-  { value: '+971', label: 'UAE +971', country: 'United Arab Emirates' },
-  { value: '+61', label: 'Australia +61', country: 'Australia' },
-  { value: '+65', label: 'Singapore +65', country: 'Singapore' },
-  { value: '+49', label: 'Germany +49', country: 'Germany' },
-  { value: '+33', label: 'France +33', country: 'France' }
+  { value: '+91', label: '+91', country: 'India', digits: 10 },
+  { value: '+1', label: '+1', country: 'United States', digits: 10 },
+  { value: '+44', label: '+44', country: 'United Kingdom' },
+  { value: '+971', label: '+971', country: 'United Arab Emirates' },
+  { value: '+61', label: '+61', country: 'Australia' },
+  { value: '+65', label: '+65', country: 'Singapore' },
+  { value: '+49', label: '+49', country: 'Germany' },
+  { value: '+33', label: '+33', country: 'France' }
 ];
 
 function trackGoAffProOrder(orderId, totalAmount, email = '') {
