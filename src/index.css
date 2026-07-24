@@ -2041,6 +2041,95 @@ header.scrolled .bag-count {
   font-size: 15px;
 }
 
+/* OTP Verification Styles */
+.otp-field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.btn-otp-action {
+  white-space: nowrap;
+  padding: 0 14px;
+  min-height: 56px;
+  height: 56px;
+  background: var(--ink, #0f0f11);
+  color: #ffffff;
+  border: 1px solid var(--ink, #0f0f11);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-otp-action:hover:not(:disabled) {
+  background: #2a2a2e;
+  border-color: #2a2a2e;
+}
+
+.btn-otp-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-otp-verify {
+  white-space: nowrap;
+  padding: 0 16px;
+  min-height: 48px;
+  height: 48px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-otp-verify:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-otp-verify:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.otp-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  min-height: 56px;
+}
+
+.otp-lock-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  color: #ad6800;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .checkout-payment-options {
   display: flex;
   flex-direction: column;
