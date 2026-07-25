@@ -160,15 +160,15 @@ function getClientOrderId() {
   return value;
 }
 
-export default function CartDrawer({ 
-  isOpen, 
-  onClose, 
-  cart, 
-  onQtyChange, 
-  onRemove, 
+export default function CartDrawer({
+  isOpen,
+  onClose,
+  cart,
+  onQtyChange,
+  onRemove,
   onClearCart,
   onPurchase,
-  onToast 
+  onToast
 }) {
   const [showCheckoutForm, setShowCheckoutForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -275,8 +275,8 @@ export default function CartDrawer({
   const handleSendPhoneOtp = async () => {
     const phoneCountryCode = customerInfo.phoneCountryCode || '+91';
     const localPhone = normalizeLocalPhone(customerInfo.phone, phoneCountryCode);
-    if (!localPhone || localPhone.length < 6) {
-      onToast('Please enter a valid phone number first.');
+    if (!localPhone || (phoneCountryCode === '+91' && localPhone.length !== 10) || localPhone.length < 6) {
+      onToast('Please enter a 10-digit mobile number.');
       return;
     }
     try {
@@ -338,7 +338,7 @@ export default function CartDrawer({
     }
     return sum + (item.price * item.quantity);
   }, 0);
-  
+
   const discountAmount = 0;
   const netSubtotal = subtotal;
   const baseShipping = netSubtotal > 799 ? 0 : (cart.length > 0 ? 80 : 0);
@@ -626,11 +626,11 @@ export default function CartDrawer({
 
   return (
     <>
-      <div 
-        className={`cart-drawer-overlay ${isOpen ? 'open' : ''}`} 
+      <div
+        className={`cart-drawer-overlay ${isOpen ? 'open' : ''}`}
         onClick={onClose}
       ></div>
-      
+
       <div className={`cart-drawer ${isOpen ? 'open' : ''}`}>
         <div className="cart-header">
           <h2 className="cart-title">Your Bag</h2>
@@ -900,17 +900,17 @@ export default function CartDrawer({
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-outline" 
+                <button
+                  type="button"
+                  className="btn btn-outline"
                   style={{ flex: 1, padding: '12px', fontSize: '11px', border: '1px solid #111', color: '#111' }}
                   onClick={() => setShowCheckoutForm(false)}
                 >
                   Back
                 </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-accent" 
+                <button
+                  type="submit"
+                  className="btn btn-accent"
                   disabled={isSubmittingOrder || !emailVerified || !phoneVerified}
                   style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: (!emailVerified || !phoneVerified) ? 0.6 : 1 }}
                 >
@@ -921,8 +921,8 @@ export default function CartDrawer({
           ) : cart.length === 0 ? (
             <div className="cart-empty-msg">
               <p style={{ fontSize: '15px', marginBottom: '15px' }}>Your bag is empty</p>
-              <button 
-                className="btn btn-accent" 
+              <button
+                className="btn btn-accent"
                 style={{ padding: '10px 20px', fontSize: '11px' }}
                 onClick={onClose}
               >
@@ -934,12 +934,12 @@ export default function CartDrawer({
               <div className="cart-item" key={item.cartItemId}>
                 <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F3', borderRadius: '4px', overflow: 'hidden' }}>
                   {item.imageUrl ? (
-                    <img 
-                      src={mediaUrl(item.imageUrl)} 
-                      alt={item.name} 
+                    <img
+                      src={mediaUrl(item.imageUrl)}
+                      alt={item.name}
                       loading="lazy"
                       decoding="async"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (
                     <div className={`product-graphic ${item.graphicClass}`}>
@@ -996,8 +996,8 @@ export default function CartDrawer({
               <span className="cart-totals-label">Grand Total</span>
               <span className="cart-totals-val">₹{total.toLocaleString('en-IN')}</span>
             </div>
-            <button 
-              className="checkout-btn" 
+            <button
+              className="checkout-btn"
               onClick={() => setShowCheckoutForm(true)}
             >
               Proceed to Checkout
@@ -1007,7 +1007,7 @@ export default function CartDrawer({
       </div>
 
       {showSuccessModal && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: '0',
@@ -1023,7 +1023,7 @@ export default function CartDrawer({
             padding: '20px'
           }}
         >
-          <div 
+          <div
             style={{
               background: '#FAF9F6',
               color: '#0F0F11',
@@ -1038,7 +1038,7 @@ export default function CartDrawer({
               border: '1px solid rgba(0,0,0,0.05)'
             }}
           >
-            <div 
+            <div
               style={{
                 background: '#e8f5e9',
                 border: '1px solid #c8e6c9',
@@ -1129,8 +1129,8 @@ export default function CartDrawer({
               </div>
             )}
 
-            <button 
-              className="btn btn-accent" 
+            <button
+              className="btn btn-accent"
               style={{ width: '100%', border: 'none', background: 'var(--ink)', color: 'white', padding: '14px', cursor: 'pointer', fontWeight: '800', textTransform: 'uppercase' }}
               onClick={() => {
                 setShowSuccessModal(false);
