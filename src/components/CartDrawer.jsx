@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl, mediaUrl } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { isFirebaseConfigured, sendFirebasePhoneOtp } from '../firebase';
 
 function cleanCityName(rawCity) {
   if (!rawCity) return '';
@@ -206,6 +207,7 @@ export default function CartDrawer({
   const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
   const [isVerifyingPhoneOtp, setIsVerifyingPhoneOtp] = useState(false);
   const [phoneTimer, setPhoneTimer] = useState(0);
+  const [firebaseConfirmation, setFirebaseConfirmation] = useState(null);
 
   const [lastDonation, setLastDonation] = useState(0);
   const [lastOrderSummary, setLastOrderSummary] = useState(null);
@@ -281,15 +283,26 @@ export default function CartDrawer({
     }
     try {
       setIsSendingPhoneOtp(true);
+      const fullPhone = `${phoneCountryCode}${localPhone}`;
+
+      if (isFirebaseConfigured()) {
+        const confirmation = await sendFirebasePhoneOtp(fullPhone, 'recaptcha-container');
+        setFirebaseConfirmation(confirmation);
+        setPhoneOtpSent(true);
+        setPhoneTimer(30);
+        onToast('Firebase Free SMS verification code sent to your mobile phone!');
+        return;
+      }
+
       const res = await apiJson('/api/otp/send-phone', {
         method: 'POST',
         body: JSON.stringify({ phone: localPhone, phoneCountryCode, email: customerInfo.email })
       });
       setPhoneOtpSent(true);
       setPhoneTimer(30);
-      onToast(res.message || 'Verification code sent to your phone number.');
+      onToast(res.message || 'Verification code sent to your phone messages (SMS).');
     } catch (err) {
-      onToast(err.message || 'Failed to send Phone OTP.');
+      onToast(err.message || 'Failed to send Phone OTP via SMS.');
     } finally {
       setIsSendingPhoneOtp(false);
     }
@@ -305,6 +318,13 @@ export default function CartDrawer({
     }
     try {
       setIsVerifyingPhoneOtp(true);
+      if (firebaseConfirmation) {
+        await firebaseConfirmation.confirm(otp);
+        setPhoneVerified(true);
+        onToast('Phone number verified successfully via Firebase!');
+        return;
+      }
+
       const res = await apiJson('/api/otp/verify-phone', {
         method: 'POST',
         body: JSON.stringify({ phone: localPhone, phoneCountryCode, otp })
@@ -805,6 +825,12 @@ export default function CartDrawer({
                     </button>
                   </div>
                 )}
+                {!phoneVerified && phoneOtpSent && (
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted, #777)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span>💬</span> <span>OTP code has been sent as a text message (SMS) to your mobile number.</span>
+                  </div>
+                )}
+                <div id="recaptcha-container"></div>
               </div>
 
               <div className="checkout-field">
