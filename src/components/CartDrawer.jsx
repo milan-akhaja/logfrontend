@@ -286,12 +286,18 @@ export default function CartDrawer({
       const fullPhone = `${phoneCountryCode}${localPhone}`;
 
       if (isFirebaseConfigured()) {
-        const confirmation = await sendFirebasePhoneOtp(fullPhone, 'recaptcha-container');
-        setFirebaseConfirmation(confirmation);
-        setPhoneOtpSent(true);
-        setPhoneTimer(30);
-        onToast('Firebase Free SMS verification code sent to your mobile phone!');
-        return;
+        try {
+          const confirmation = await sendFirebasePhoneOtp(fullPhone, 'recaptcha-container');
+          setFirebaseConfirmation(confirmation);
+          setPhoneOtpSent(true);
+          setPhoneTimer(30);
+          onToast('SMS verification code sent to your mobile phone!');
+          return;
+        } catch (fbErr) {
+          console.error('Firebase Phone Auth error:', fbErr);
+          onToast(`Firebase SMS error: ${fbErr.message || fbErr.code || 'Failed to send SMS'}`);
+          return;
+        }
       }
 
       const res = await apiJson('/api/otp/send-phone', {
