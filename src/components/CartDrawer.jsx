@@ -306,6 +306,9 @@ export default function CartDrawer({
       });
       setPhoneOtpSent(true);
       setPhoneTimer(30);
+      if (res.devCode) {
+        setPhoneOtp(res.devCode);
+      }
       onToast(res.message || 'Verification code sent to your phone messages (SMS).');
     } catch (err) {
       onToast(err.message || 'Failed to send Phone OTP via SMS.');
