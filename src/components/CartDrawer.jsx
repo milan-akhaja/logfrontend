@@ -191,15 +191,7 @@ export default function CartDrawer({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // Email OTP states
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [emailOtp, setEmailOtp] = useState('');
-  const [isSendingEmailOtp, setIsSendingEmailOtp] = useState(false);
-  const [isVerifyingEmailOtp, setIsVerifyingEmailOtp] = useState(false);
-  const [emailTimer, setEmailTimer] = useState(0);
-
-  // Phone OTP states
+  // Phone OTP states (WhatsApp)
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
   const [phoneOtp, setPhoneOtp] = useState('');
@@ -214,63 +206,11 @@ export default function CartDrawer({
 
   useEffect(() => {
     let interval = null;
-    if (emailTimer > 0) {
-      interval = setInterval(() => setEmailTimer((prev) => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [emailTimer]);
-
-  useEffect(() => {
-    let interval = null;
     if (phoneTimer > 0) {
       interval = setInterval(() => setPhoneTimer((prev) => prev - 1), 1000);
     }
     return () => clearInterval(interval);
   }, [phoneTimer]);
-
-  const handleSendEmailOtp = async () => {
-    const email = customerInfo.email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      onToast('Please enter a valid email address first.');
-      return;
-    }
-    try {
-      setIsSendingEmailOtp(true);
-      const res = await apiJson('/api/otp/send-email', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-      setEmailOtpSent(true);
-      setEmailTimer(30);
-      onToast(res.message || 'Verification code sent to your email.');
-    } catch (err) {
-      onToast(err.message || 'Failed to send Email OTP.');
-    } finally {
-      setIsSendingEmailOtp(false);
-    }
-  };
-
-  const handleVerifyEmailOtp = async () => {
-    const email = customerInfo.email.trim();
-    const otp = emailOtp.trim();
-    if (!otp || otp.length !== 6) {
-      onToast('Please enter the 6-digit OTP code.');
-      return;
-    }
-    try {
-      setIsVerifyingEmailOtp(true);
-      const res = await apiJson('/api/otp/verify-email', {
-        method: 'POST',
-        body: JSON.stringify({ email, otp })
-      });
-      setEmailVerified(true);
-      onToast(res.message || 'Email verified successfully!');
-    } catch (err) {
-      onToast(err.message || 'Invalid or expired Email OTP.');
-    } finally {
-      setIsVerifyingEmailOtp(false);
-    }
-  };
 
   const handleSendPhoneOtp = async () => {
     const phoneCountryCode = customerInfo.phoneCountryCode || '+91';
@@ -433,11 +373,6 @@ export default function CartDrawer({
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'email') {
-      setEmailVerified(false);
-      setEmailOtpSent(false);
-      setEmailOtp('');
-    }
     if (name === 'phoneCountryCode') {
       setPhoneVerified(false);
       setPhoneOtpSent(false);
@@ -653,53 +588,15 @@ export default function CartDrawer({
                 <input type="text" name="firstName" value={customerInfo.firstName} onChange={handleInputChange} required placeholder="First name" />
                 <input type="text" name="lastName" value={customerInfo.lastName} onChange={handleInputChange} required placeholder="Last name" />
               </div>
-              <div className="otp-field-container">
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="email"
-                    name="email"
-                    value={customerInfo.email}
-                    onChange={handleInputChange}
-                    required
-                    className="checkout-input"
-                    placeholder="Email"
-                    style={{ flex: 1 }}
-                  />
-                  {!emailVerified ? (
-                    <button
-                      type="button"
-                      className="btn-otp-action"
-                      onClick={handleSendEmailOtp}
-                      disabled={isSendingEmailOtp || emailTimer > 0 || !customerInfo.email}
-                    >
-                      {isSendingEmailOtp ? 'Sending...' : emailTimer > 0 ? `Resend (${emailTimer}s)` : emailOtpSent ? 'Resend OTP' : 'Send OTP'}
-                    </button>
-                  ) : (
-                    <span className="otp-verified-badge">✓ Verified</span>
-                  )}
-                </div>
-                {!emailVerified && emailOtpSent && (
-                  <div className="otp-input-row" style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={emailOtp}
-                      onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Enter 6-digit Email OTP"
-                      maxLength={6}
-                      className="checkout-input"
-                      style={{ flex: 1, letterSpacing: '3px', fontWeight: 'bold' }}
-                    />
-                    <button
-                      type="button"
-                      className="btn-otp-verify"
-                      onClick={handleVerifyEmailOtp}
-                      disabled={isVerifyingEmailOtp || emailOtp.length !== 6}
-                    >
-                      {isVerifyingEmailOtp ? 'Verifying...' : 'Verify Email'}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <input
+                type="email"
+                name="email"
+                value={customerInfo.email}
+                onChange={handleInputChange}
+                required
+                className="checkout-input"
+                placeholder="Email address"
+              />
 
               <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address" />
               <input type="text" name="apartment" value={customerInfo.apartment} onChange={handleInputChange} className="checkout-input" placeholder="Apartment, suite, etc. (optional)" />
@@ -824,11 +721,11 @@ export default function CartDrawer({
 
               <div className="checkout-payment-section">
                 <h4>Payment Option</h4>
-                {!emailVerified || !phoneVerified ? (
+                {!phoneVerified ? (
                   <div className="otp-lock-banner">
                     <span style={{ fontSize: '16px', marginRight: '6px' }}>🔒</span>
                     <span>
-                      <strong>Verification Required:</strong> Please verify both your <strong>Email</strong> and <strong>Phone number</strong> via OTP above to choose a payment mode and place your order.
+                      <strong>Verification Required:</strong> Please verify your <strong>Phone number via WhatsApp OTP</strong> above to select a payment mode and place your order.
                     </span>
                   </div>
                 ) : (
@@ -911,10 +808,10 @@ export default function CartDrawer({
                 <button
                   type="submit"
                   className="btn btn-accent"
-                  disabled={isSubmittingOrder || !emailVerified || !phoneVerified}
-                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: (!emailVerified || !phoneVerified) ? 0.6 : 1 }}
+                  disabled={isSubmittingOrder || !phoneVerified}
+                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: !phoneVerified ? 0.6 : 1 }}
                 >
-                  {isSubmittingOrder ? 'Placing Order...' : (!emailVerified || !phoneVerified) ? 'Verify OTPs to Order' : 'Place Order'}
+                  {isSubmittingOrder ? 'Placing Order...' : !phoneVerified ? 'Verify WhatsApp OTP to Order' : 'Place Order'}
                 </button>
               </div>
             </form>
