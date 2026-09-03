@@ -1,4 +1,6 @@
-const CACHE_VERSION = 'log-cache-v20260709';
+// Bumped 2026-09-03: the previous version may hold cached authenticated API
+// responses (F14). Changing the version drops every old cache on activate.
+const CACHE_VERSION = 'log-cache-v20260903';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 const STATIC_ASSETS = [
@@ -40,9 +42,31 @@ function isAssetRequest(request) {
   );
 }
 
+// F14: only public, non-personal endpoints may be cached.
+//
+// This used to cache every /api/ GET, including /api/orders and /api/analytics,
+// which return order and revenue data for a logged-in admin. Those responses
+// then sat in a shared cache and were served on later misses with no auth check.
+const CACHEABLE_API_PATHS = [
+  '/api/products',
+  '/api/collections',
+  '/api/stories',
+  '/api/gallery',
+  '/api/blogs',
+  '/api/hero-config',
+  '/api/new-in-config',
+  '/api/content-blocks-config',
+  '/api/coming-soon'
+];
+
 function isApiGet(request) {
+  if (request.method !== 'GET') return false;
+  // Never cache a request that carries credentials.
+  if (request.headers.has('Authorization')) return false;
   const url = new URL(request.url);
-  return request.method === 'GET' && url.pathname.startsWith('/api/');
+  return CACHEABLE_API_PATHS.some(
+    (path) => url.pathname === path || url.pathname.startsWith(`${path}/`)
+  );
 }
 
 async function cacheFirst(request, cacheName) {

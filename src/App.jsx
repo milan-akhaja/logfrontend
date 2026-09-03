@@ -320,7 +320,17 @@ function AnalyticsTags() {
       document.head.appendChild(meta);
     }
 
-    const ga4Id = String(config.googleAnalyticsId || '').trim();
+    // F33: the tags are also hardcoded in index.html. Those are the source of
+    // truth - if one is installed statically, never inject a second. Without
+    // this, a different id typed into the admin panel would run alongside the
+    // static one and double-count every pageview and conversion.
+    const staticGa4Id = String(window.__LOG_STATIC_GA4_ID || '').trim();
+    const staticGtmId = String(window.__LOG_STATIC_GTM_ID || '').trim();
+
+    const ga4Id = staticGa4Id ? '' : String(config.googleAnalyticsId || '').trim();
+    if (staticGa4Id && String(config.googleAnalyticsId || '').trim() && String(config.googleAnalyticsId || '').trim() !== staticGa4Id) {
+      console.warn(`Ignoring admin GA4 id - ${staticGa4Id} is installed in index.html. Remove one of the two.`);
+    }
     if (ga4Id) {
       window.dataLayer = window.dataLayer || [];
       window.gtag = window.gtag || function gtag() {
@@ -338,7 +348,10 @@ function AnalyticsTags() {
       }
     }
 
-    const gtmId = String(config.googleTagManagerId || '').trim();
+    const gtmId = staticGtmId ? '' : String(config.googleTagManagerId || '').trim();
+    if (staticGtmId && String(config.googleTagManagerId || '').trim() && String(config.googleTagManagerId || '').trim() !== staticGtmId) {
+      console.warn(`Ignoring admin GTM id - ${staticGtmId} is installed in index.html. Remove one of the two.`);
+    }
     if (gtmId) {
       window.dataLayer = window.dataLayer || [];
       if (!hasScriptWithSrc(`googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`)) {
@@ -415,22 +428,30 @@ function AppContent({
     const orderId = params.get('orderId');
 
     if (paymentStatus === 'payu-success' && orderId) {
-      fetch(`/api/orders/public/${encodeURIComponent(orderId)}`)
+      // The receipt is gated on the clientOrderId this browser generated at
+      // checkout, so read it before clearing the checkout keys.
+      const clientOrderId = localStorage.getItem('log_checkout_client_order_id') || '';
+      const receiptUrl = `/api/orders/public/${encodeURIComponent(orderId)}?clientOrderId=${encodeURIComponent(clientOrderId)}`;
+
+      fetch(receiptUrl)
         .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
           if (data && data.order) {
             setCompletedOrder(data.order);
-            onClearCart?.();
-            localStorage.removeItem('log_checkout_client_order_id');
-            localStorage.removeItem('log_checkout_customer_draft');
-            showToast('Payment successful! Your order has been placed.');
           }
+          onClearCart?.();
+          localStorage.removeItem('log_checkout_client_order_id');
+          localStorage.removeItem('log_checkout_customer_draft');
+          showToast('Payment successful! Your order has been placed.');
         })
         .catch((e) => console.error(e));
 
       navigate(location.pathname, { replace: true });
     } else if (paymentStatus === 'payu-failed') {
-      showToast('PayU payment failed or was cancelled. Please try again.');
+      const reason = params.get('reason');
+      showToast(reason === 'amount'
+        ? 'Payment could not be verified. You have not been charged for this order. Please contact us if an amount was debited.'
+        : 'PayU payment failed or was cancelled. Please try again.');
       navigate(location.pathname, { replace: true });
     }
   }, [location.search, location.pathname, navigate, onClearCart, showToast]);
@@ -505,7 +526,11 @@ function AppContent({
         />
       )}
       
-      {isAdmin ? routeContent : <main id="main-content">{routeContent}</main>}
+      {!isAdmin && (
+        <a className="skip-to-content" href="#main-content">Skip to content</a>
+      )}
+
+      {isAdmin ? routeContent : <main id="main-content" tabIndex={-1}>{routeContent}</main>}
 
       {!isAdmin && (
         <Footer onToast={showToast} />

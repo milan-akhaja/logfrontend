@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Package, Gift, ArrowRight } from 'lucide-react';
 import ContentBlockLines from '../components/ContentBlockLines';
 import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
+import useIsMobile from '../hooks/useIsMobile';
 import { appPath, mediaUrl } from '../lib/urls';
 
 const slideIntervalMs = (value) => {
@@ -351,6 +352,8 @@ function GalleryScroller() {
 }
 
 export default function Shop({ onAddToCart }) {
+  // F25: mount one hero, not both. A hidden <img> still downloads its src.
+  const isMobileViewport = useIsMobile();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [collections, setCollections] = useState([]);
@@ -665,6 +668,7 @@ export default function Shop({ onAddToCart }) {
   return (
     <>
       {/* PC HERO SECTION */}
+      {!isMobileViewport && (
       <section className="hero-section pc-only">
         {desktopHeroMediaType === 'video' && desktopVideoUrl ? (
           <video
@@ -708,8 +712,10 @@ export default function Shop({ onAddToCart }) {
           Shop now
         </a>
       </section>
+      )}
 
       {/* MOBILE HERO SECTION */}
+      {isMobileViewport && (
       <section className="mobile-hero-video mobile-only">
         {mobileHeroMediaType === 'slideshow' ? (
           <div
@@ -764,6 +770,7 @@ export default function Shop({ onAddToCart }) {
           </a>
         </div>
       </section>
+      )}
 
       {/* STATS STRIP */}
       <section className="stats-strip">

@@ -68,8 +68,43 @@
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
+
+      // Consent gate. Google Consent Mode covers the Google tags above; Meta
+      // has no equivalent default, so revoke first and grant only once
+      // CookieYes reports consent. Events fired while revoked are queued by
+      // the pixel and sent after the grant, so nothing is lost.
+      fbq('consent', 'revoke');
       fbq('init', '1398026158457517');
       fbq('track', 'PageView');
+
+      (function () {
+        var granted = false;
+        function grant() {
+          if (granted) return;
+          granted = true;
+          fbq('consent', 'grant');
+        }
+        function hasStoredConsent() {
+          try {
+            var raw = decodeURIComponent(document.cookie || '');
+            // CookieYes writes e.g. "advertisement:yes" into cookieyes-consent.
+            return /cookieyes-consent[^;]*advertisement:yes/.test(raw);
+          } catch (err) {
+            return false;
+          }
+        }
+        if (hasStoredConsent()) {
+          grant();
+        } else {
+          document.addEventListener('cookieyes_consent_update', function (event) {
+            var detail = (event && event.detail) || {};
+            var accepted = detail.accepted || [];
+            if (detail.advertisement === 'yes' || (accepted.indexOf && accepted.indexOf('advertisement') > -1)) {
+              grant();
+            }
+          });
+        }
+      })();
     }
   </script>
   <!-- End Meta Pixel Code -->
@@ -87,7 +122,6 @@
 
   <meta name="title" content="LOG Clothing (logcloth) - Premium Indian Streetwear & Oversized Tees">
   <meta name="description" content="Shop LOG Clothing at logcloth.com: premium Indian streetwear, oversized graphic T-shirts, heavyweight cotton fits, and socially responsible fashion with Rs. 23 donated from every product.">
-  <meta name="keywords" content="logcloth, LOG Clothing, LOG streetwear, streetwear India, oversized t-shirts India, street wear, mens fashion India, streetwear brands, minimal clothing, 240 GSM French Terry cotton, drop shoulder t-shirts, graphic tees, cargo pants India, luxury streetwear, buy tshirts online India, street style fashion, baggy t-shirts, bio-washed cotton tees, premium fashion India">
   <meta name="author" content="LOG Clothing">
   <meta name="application-name" content="LOG Clothing">
   <meta name="robots" content="index, follow">

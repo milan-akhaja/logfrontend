@@ -191,72 +191,10 @@ export default function CartDrawer({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // Phone OTP states (WhatsApp)
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
-  const [phoneOtp, setPhoneOtp] = useState('');
-  const [isSendingPhoneOtp, setIsSendingPhoneOtp] = useState(false);
-  const [isVerifyingPhoneOtp, setIsVerifyingPhoneOtp] = useState(false);
-  const [phoneTimer, setPhoneTimer] = useState(0);
-
   const [lastDonation, setLastDonation] = useState(0);
   const [lastOrderSummary, setLastOrderSummary] = useState(null);
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (phoneTimer > 0) {
-      interval = setInterval(() => setPhoneTimer((prev) => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [phoneTimer]);
-
-  const handleSendPhoneOtp = async () => {
-    const phoneCountryCode = customerInfo.phoneCountryCode || '+91';
-    const localPhone = normalizeLocalPhone(customerInfo.phone, phoneCountryCode);
-    if (!localPhone || (phoneCountryCode === '+91' && localPhone.length !== 10) || localPhone.length < 6) {
-      onToast('Please enter a 10-digit mobile number.');
-      return;
-    }
-    try {
-      setIsSendingPhoneOtp(true);
-      const res = await apiJson('/api/otp/send-phone', {
-        method: 'POST',
-        body: JSON.stringify({ phone: localPhone, phoneCountryCode, email: customerInfo.email })
-      });
-      setPhoneOtpSent(true);
-      setPhoneTimer(30);
-      onToast(res.message || 'Verification code sent to your phone number.');
-    } catch (err) {
-      onToast(err.message || 'Failed to send Phone OTP.');
-    } finally {
-      setIsSendingPhoneOtp(false);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    const phoneCountryCode = customerInfo.phoneCountryCode || '+91';
-    const localPhone = normalizeLocalPhone(customerInfo.phone, phoneCountryCode);
-    const otp = phoneOtp.trim();
-    if (!otp || otp.length !== 6) {
-      onToast('Please enter the 6-digit OTP code.');
-      return;
-    }
-    try {
-      setIsVerifyingPhoneOtp(true);
-      const res = await apiJson('/api/otp/verify-phone', {
-        method: 'POST',
-        body: JSON.stringify({ phone: localPhone, phoneCountryCode, otp })
-      });
-      setPhoneVerified(true);
-      onToast(res.message || 'Phone number verified successfully!');
-    } catch (err) {
-      onToast(err.message || 'Invalid or expired Phone OTP.');
-    } finally {
-      setIsVerifyingPhoneOtp(false);
-    }
-  };
 
   // Scroll locking
   useEffect(() => {
@@ -373,11 +311,6 @@ export default function CartDrawer({
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (name === 'phoneCountryCode') {
-      setPhoneVerified(false);
-      setPhoneOtpSent(false);
-      setPhoneOtp('');
-    }
     if (name === 'pinCode') {
       const digitsOnly = value.replace(/\D/g, '').slice(0, 6);
       setCustomerInfo(prev => ({ ...prev, pinCode: digitsOnly }));
@@ -419,15 +352,6 @@ export default function CartDrawer({
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     if (cart.length === 0 || isSubmittingOrder) return;
-
-    if (!emailVerified) {
-      onToast('Please verify your Email address with OTP before placing your order.');
-      return;
-    }
-    if (!phoneVerified) {
-      onToast('Please verify your Phone number with OTP before placing your order.');
-      return;
-    }
 
     const currentDonation = donation;
     setLastDonation(currentDonation);
@@ -474,7 +398,6 @@ export default function CartDrawer({
         paymentId,
         clientOrderId,
         couponCode: null,
-        discountAmount,
         deliveryOption: orderCustomerInfo.deliveryOption
       })
     });
@@ -519,10 +442,8 @@ export default function CartDrawer({
           body: JSON.stringify({
             items: orderItems,
             customerInfo: orderCustomerInfo,
-            amount: total,
             clientOrderId,
             couponCode: null,
-            discountAmount,
             deliveryOption: orderCustomerInfo.deliveryOption
           })
         });
@@ -628,7 +549,7 @@ export default function CartDrawer({
                 </div>
               </div>
 
-              <div className="otp-field-container">
+              <div className="checkout-field">
                 <div className="checkout-phone-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <select
                     name="phoneCountryCode"
@@ -646,9 +567,6 @@ export default function CartDrawer({
                     name="phone"
                     value={customerInfo.phone}
                     onChange={(e) => {
-                      setPhoneVerified(false);
-                      setPhoneOtpSent(false);
-                      setPhoneOtp('');
                       const raw = e.target.value.trim();
                       const matchedCode = PHONE_COUNTRY_CODES.find((code) => raw.startsWith(code.value));
                       if (matchedCode) {
@@ -668,40 +586,7 @@ export default function CartDrawer({
                     placeholder="Phone"
                     style={{ flex: 1 }}
                   />
-                  {!phoneVerified ? (
-                    <button
-                      type="button"
-                      className="btn-otp-action"
-                      onClick={handleSendPhoneOtp}
-                      disabled={isSendingPhoneOtp || phoneTimer > 0 || !customerInfo.phone}
-                    >
-                      {isSendingPhoneOtp ? 'Sending...' : phoneTimer > 0 ? `Resend (${phoneTimer}s)` : phoneOtpSent ? 'Resend OTP' : 'Send OTP'}
-                    </button>
-                  ) : (
-                    <span className="otp-verified-badge">✓ Verified</span>
-                  )}
                 </div>
-                {!phoneVerified && phoneOtpSent && (
-                  <div className="otp-input-row" style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      value={phoneOtp}
-                      onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Enter 6-digit Phone OTP"
-                      maxLength={6}
-                      className="checkout-input"
-                      style={{ flex: 1, letterSpacing: '3px', fontWeight: 'bold' }}
-                    />
-                    <button
-                      type="button"
-                      className="btn-otp-verify"
-                      onClick={handleVerifyPhoneOtp}
-                      disabled={isVerifyingPhoneOtp || phoneOtp.length !== 6}
-                    >
-                      {isVerifyingPhoneOtp ? 'Verifying...' : 'Verify Phone'}
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="checkout-field">
@@ -721,15 +606,7 @@ export default function CartDrawer({
 
               <div className="checkout-payment-section">
                 <h4>Payment Option</h4>
-                {!phoneVerified ? (
-                  <div className="otp-lock-banner">
-                    <span style={{ fontSize: '16px', marginRight: '6px' }}>🔒</span>
-                    <span>
-                      <strong>Verification Required:</strong> Please verify your <strong>Phone number via WhatsApp OTP</strong> above to select a payment mode and place your order.
-                    </span>
-                  </div>
-                ) : (
-                  <div className="checkout-payment-options">
+                <div className="checkout-payment-options">
                     <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
                       <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
                       <span style={{ width: '100%' }}>
@@ -764,8 +641,7 @@ export default function CartDrawer({
                         <span className="checkout-payment-card-note">Ahmedabad only. Founder delivery charge +₹3,000. Pay online via PayU.</span>
                       </span>
                     </label>
-                  </div>
-                )}
+                </div>
               </div>
 
               <div className="checkout-order-summary">
@@ -808,10 +684,10 @@ export default function CartDrawer({
                 <button
                   type="submit"
                   className="btn btn-accent"
-                  disabled={isSubmittingOrder || !phoneVerified}
-                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: !phoneVerified ? 0.6 : 1 }}
+                  disabled={isSubmittingOrder}
+                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: isSubmittingOrder ? 0.6 : 1 }}
                 >
-                  {isSubmittingOrder ? 'Placing Order...' : !phoneVerified ? 'Verify WhatsApp OTP to Order' : 'Place Order'}
+                  {isSubmittingOrder ? 'Placing Order...' : 'Place Order'}
                 </button>
               </div>
             </form>
