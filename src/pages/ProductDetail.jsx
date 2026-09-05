@@ -6,6 +6,7 @@ import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
 import { mediaUrl } from '../lib/urls';
 import { getProducts } from '../lib/products';
+import { productSizes } from '../lib/sizes';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -29,14 +30,14 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
           if (found.sizes) {
             // If sizes is array
             if (Array.isArray(found.sizes) && found.sizes.length > 0) {
-              const available = found.sizes.filter(s => ['S', 'M', 'L', 'XL'].includes(s));
+              const available = productSizes(found);
               if (available.length > 0) {
                 setSelectedSize(available[0]);
                 setSelectedSecondSize(available[0]);
               }
             } else {
               // If sizes is object (e.g. { S: 30, M: 40 })
-              const keys = Object.keys(found.sizes).filter(k => ['S', 'M', 'L', 'XL'].includes(k));
+              const keys = productSizes(found);
               const inStockSize = keys.find(k => found.sizes[k] > 0);
               if (inStockSize) {
                 setSelectedSize(inStockSize);
@@ -66,6 +67,9 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     if (!node || !node.clientWidth) return;
     setSlideIdx(Math.round(node.scrollLeft / node.clientWidth));
   };
+
+  // Rendered size buttons follow the product, not a fixed list.
+  const sizeOptions = productSizes(product);
 
   if (!product) {
     return (
@@ -249,7 +253,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   </div>
 
                   <div className="detail-size-options-grid">
-                    {['S', 'M', 'L', 'XL'].map(size => {
+                    {sizeOptions.map(size => {
                       const isAvailable = isSizeAvailable(size);
                       return (
                         <button
@@ -272,7 +276,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   </div>
 
                   <div className="detail-size-options-grid">
-                    {['S', 'M', 'L', 'XL'].map(size => {
+                    {sizeOptions.map(size => {
                       const isAvailable = isSizeAvailable(size);
                       return (
                         <button
@@ -302,7 +306,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 </div>
 
                 <div className="detail-size-options-grid">
-                  {['S', 'M', 'L', 'XL'].map(size => {
+                  {sizeOptions.map(size => {
                     const isAvailable = isSizeAvailable(size);
                     return (
                       <button
@@ -355,6 +359,17 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               <div className="detail-tabs-content">
                 {activeTab === 'details' && (
                   <div className="tab-details-view" style={{ whiteSpace: 'pre-line' }}>
+                    {/* Admin-defined specification rows, if this product has any. */}
+                    {Array.isArray(product.specifications) && product.specifications.length > 0 && (
+                      <div className="details-list-block" style={{ marginBottom: '15px' }}>
+                        <strong>Specifications</strong>
+                        <ul>
+                          {product.specifications.map((spec, index) => (
+                            <li key={`${spec.label}-${index}`}>{spec.label}: {spec.value}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     {product.details ? (
                       <div>
                         <p>{product.details}</p>

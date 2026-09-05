@@ -31,6 +31,7 @@ import { mediaUrl } from '../lib/urls';
 import { DEFAULT_PRICE_DISPLAY_OPTIONS } from '../lib/pricing';
 import { DEFAULT_CONTENT_BLOCKS, FONT_OPTIONS, mergeContentBlocks } from '../lib/contentBlocks';
 import { invalidateProducts } from '../lib/products';
+import { productSizes } from '../lib/sizes';
 
 const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washed\nDesign: DTF printing\nStyle: Oversize and Half sleeve\n* Designed for a relaxed drop-shoulder streetwear fit. Order your usual size.";
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
@@ -161,6 +162,7 @@ const emptyProductDraft = {
   imageUrl: '',
   imageUrls: [],
   sizes: { S: 10, M: 10, L: 10, XL: 10 },
+  specifications: [],
   details: DEFAULT_DETAILS,
   washcare: DEFAULT_WASHCARE,
   shipping: DEFAULT_SHIPPING
@@ -665,6 +667,40 @@ export default function Admin({ onToast }) {
 
   // Dynamic Categories inputs
   const [newSubCategoryInput, setNewSubCategoryInput] = useState('');
+  const [newSizeInput, setNewSizeInput] = useState('');
+  const [newSpecLabel, setNewSpecLabel] = useState('');
+  const [newSpecValue, setNewSpecValue] = useState('');
+
+  // Applies an update to whichever product form is open.
+  const patchOpenProduct = (patch) => {
+    if (editingProduct) setEditingProduct(prev => ({ ...prev, ...patch }));
+    else setNewProduct(prev => ({ ...prev, ...patch }));
+  };
+
+  const addSizeToProduct = () => {
+    const size = newSizeInput.trim().toUpperCase().replace(/[^A-Z0-9.\-/ ]/g, '').slice(0, 12);
+    if (!size) return;
+    const sizes = editingProduct ? editingProduct.sizes || {} : newProduct.sizes || {};
+    if (sizes[size] === undefined) {
+      patchOpenProduct({ sizes: { ...sizes, [size]: 0 } });
+    }
+    setNewSizeInput('');
+  };
+
+  const addSpecification = () => {
+    const label = newSpecLabel.trim();
+    const value = newSpecValue.trim();
+    if (!label || !value) return;
+    const list = editingProduct ? editingProduct.specifications || [] : newProduct.specifications || [];
+    patchOpenProduct({ specifications: [...list, { label, value }] });
+    setNewSpecLabel('');
+    setNewSpecValue('');
+  };
+
+  const removeSpecification = (index) => {
+    const list = editingProduct ? editingProduct.specifications || [] : newProduct.specifications || [];
+    patchOpenProduct({ specifications: list.filter((_, i) => i !== index) });
+  };
   const [newColorInput, setNewColorInput] = useState('');
 
   // Story Form State
@@ -1378,7 +1414,7 @@ export default function Admin({ onToast }) {
     }
 
     // Recalculate total stock from sizes
-    const sizes = productData.sizes || { S: 0, M: 0, L: 0, XL: 0 };
+    const sizes = productData.sizes || {};
     productData.stock = Object.values(sizes).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
 
     // Sync imageUrl with first item in imageUrls array
@@ -4739,7 +4775,7 @@ export default function Admin({ onToast }) {
               <div className="admin-form-group">
                 <label className="admin-label">Size Specific Stocks</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                  {['S', 'M', 'L', 'XL'].map(sz => {
+                  {productSizes(editingProduct || newProduct).map(sz => {
                     const sizes = editingProduct ? editingProduct.sizes || {} : newProduct.sizes || {};
                     return (
                       <div key={sz}>
@@ -4756,9 +4792,100 @@ export default function Admin({ onToast }) {
                           }}
                           required
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedSizes = { ...sizes };
+                            delete updatedSizes[sz];
+                            if (editingProduct) setEditingProduct(prev => ({ ...prev, sizes: updatedSizes }));
+                            else setNewProduct(prev => ({ ...prev, sizes: updatedSizes }));
+                          }}
+                          style={{ marginTop: '4px', fontSize: '10px', background: 'none', border: 'none', color: '#b3261e', cursor: 'pointer', padding: 0 }}
+                        >
+                          Remove
+                        </button>
                       </div>
                     );
                   })}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Add a size (XXL, XS, Free Size...)"
+                    value={newSizeInput}
+                    onChange={(e) => setNewSizeInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); addSizeToProduct(); }
+                    }}
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" className="btn btn-outline" onClick={addSizeToProduct} style={{ padding: '10px 16px', fontSize: '11px' }}>
+                    Add Size
+                  </button>
+                </div>
+              </div>
+
+              {/* Specifications — any label/value the product needs */}
+              <div className="admin-form-group">
+                <label className="admin-label">Specifications (Fabric, GSM, Fit, Neck...)</label>
+
+                {(editingProduct ? editingProduct.specifications || [] : newProduct.specifications || []).map((spec, index) => (
+                  <div key={`${spec.label}-${index}`} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      className="admin-input"
+                      value={spec.label}
+                      onChange={(e) => {
+                        const list = editingProduct ? editingProduct.specifications || [] : newProduct.specifications || [];
+                        const updated = list.map((row, i) => (i === index ? { ...row, label: e.target.value } : row));
+                        patchOpenProduct({ specifications: updated });
+                      }}
+                      style={{ flex: '0 0 34%' }}
+                    />
+                    <input
+                      type="text"
+                      className="admin-input"
+                      value={spec.value}
+                      onChange={(e) => {
+                        const list = editingProduct ? editingProduct.specifications || [] : newProduct.specifications || [];
+                        const updated = list.map((row, i) => (i === index ? { ...row, value: e.target.value } : row));
+                        patchOpenProduct({ specifications: updated });
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSpecification(index)}
+                      style={{ background: 'none', border: 'none', color: '#b3261e', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Label — e.g. Fabric"
+                    value={newSpecLabel}
+                    onChange={(e) => setNewSpecLabel(e.target.value)}
+                    style={{ flex: '0 0 34%' }}
+                  />
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Value — e.g. 240 GSM French Terry"
+                    value={newSpecValue}
+                    onChange={(e) => setNewSpecValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSpecification(); } }}
+                    style={{ flex: 1 }}
+                  />
+                  <button type="button" className="btn btn-outline" onClick={addSpecification} style={{ padding: '10px 16px', fontSize: '11px' }}>
+                    Add
+                  </button>
                 </div>
               </div>
 

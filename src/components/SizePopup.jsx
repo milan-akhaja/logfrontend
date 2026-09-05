@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SizeChartModal from './SizeChartModal';
 import ProductPrice from './ProductPrice';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { productSizes } from '../lib/sizes';
 
 export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyNow }) {
   const [selectedSize, setSelectedSize] = useState('');
@@ -21,7 +22,8 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
 
   if (!isOpen || !product) return null;
 
-  const sizesList = ['S', 'M', 'L', 'XL'];
+  // Sizes come from the product, so XXL / XS / Free Size all work.
+  const sizesList = productSizes(product);
 
   // Size stocks helper
   const getStockForSize = (size) => {
