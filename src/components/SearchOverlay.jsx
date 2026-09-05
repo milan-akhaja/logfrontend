@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Folder } from 'lucide-react';
 import { formatPrice, getPriceDisplay } from '../lib/pricing';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { getProducts } from '../lib/products';
 
 export default function SearchOverlay({ isOpen, onClose }) {
   const [query, setQuery] = useState('');
@@ -14,7 +15,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
     if (isOpen) {
       lockBodyScroll();
       Promise.all([
-        fetch('/api/products').then(res => res.json()),
+        getProducts(),
         fetch('/api/collections').then(res => res.json())
       ])
         .then(([productsData, collectionsData]) => {

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-ro
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
+import { getProducts } from './lib/products';
 
 // Layout Components
 
@@ -473,8 +474,7 @@ function AppContent({
         }
         return raw;
       })();
-      const res = await fetch('/api/products');
-      const products = await res.json();
+      const products = await getProducts();
       const found = products.find(p => p.id === normalizedProductId);
       if (found) {
         setSizePopupProduct(found);

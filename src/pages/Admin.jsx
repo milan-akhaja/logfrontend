@@ -30,6 +30,7 @@ import {
 import { mediaUrl } from '../lib/urls';
 import { DEFAULT_PRICE_DISPLAY_OPTIONS } from '../lib/pricing';
 import { DEFAULT_CONTENT_BLOCKS, FONT_OPTIONS, mergeContentBlocks } from '../lib/contentBlocks';
+import { invalidateProducts } from '../lib/products';
 
 const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washed\nDesign: DTF printing\nStyle: Oversize and Half sleeve\n* Designed for a relaxed drop-shoulder streetwear fit. Order your usual size.";
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
@@ -1399,6 +1400,7 @@ export default function Admin({ onToast }) {
       });
 
       if (res.ok) {
+        invalidateProducts();
         onToast(editingProduct ? 'Product updated successfully' : 'Product added successfully');
         setShowProductModal(false);
         setEditingProduct(null);
@@ -1435,6 +1437,7 @@ export default function Admin({ onToast }) {
         body: JSON.stringify({ ...product, sizes: updatedSizes })
       });
       if (res.ok) {
+        invalidateProducts();
         onToast(`Stock updated for ${product.name} (${size})`);
         fetchData();
       } else {

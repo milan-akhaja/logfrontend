@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Clock, ShoppingCart } from 'lucide-react';
 import ProductPrice from '../components/ProductPrice';
 import { appPath, mediaUrl } from '../lib/urls';
+import { getProducts } from '../lib/products';
 
 export default function NewIn({ onAddToCart, onToast }) {
   const [products, setProducts] = useState([]);
@@ -18,8 +19,7 @@ export default function NewIn({ onAddToCart, onToast }) {
 
   useEffect(() => {
     // 1. Fetch latest products from API
-    fetch('/api/products')
-      .then(res => res.json())
+    getProducts()
       .then(data => {
         // Show only the 12 newest products (added last in the list)
         const latestProducts = [...data].reverse().slice(0, 12);

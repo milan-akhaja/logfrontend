@@ -5,6 +5,7 @@ import ContentBlockLines from '../components/ContentBlockLines';
 import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
 import useIsMobile from '../hooks/useIsMobile';
+import { getProducts } from '../lib/products';
 import { appPath, mediaUrl } from '../lib/urls';
 
 const slideIntervalMs = (value) => {
@@ -404,15 +405,23 @@ export default function Shop({ onAddToCart }) {
   const [colorFilter, setColorFilter] = useState('');
 
   useEffect(() => {
+    // The hero image URL comes from hero-config, and the hero is the LCP
+    // element. Fetch it on its own so it is not waiting on the product list -
+    // Promise.all made the hero wait for the slowest of the three.
+    fetch('/api/hero-config', { cache: 'no-store' })
+      .then(res => res.json())
+      .then(heroConfigData => {
+        if (heroConfigData) setHeroConfig(heroConfigData);
+      })
+      .catch(err => console.error('Error fetching hero config:', err));
+
     Promise.all([
-      fetch('/api/products').then(res => res.json()),
-      fetch('/api/collections').then(res => res.json()),
-      fetch('/api/hero-config', { cache: 'no-store' }).then(res => res.json())
+      getProducts(),
+      fetch('/api/collections').then(res => res.json())
     ])
-      .then(([productsData, collectionsData, heroConfigData]) => {
+      .then(([productsData, collectionsData]) => {
         setProducts(productsData || []);
         setCollections(collectionsData || []);
-        if (heroConfigData) setHeroConfig(heroConfigData);
       })
       .catch(err => console.error('Error fetching catalog data:', err));
 

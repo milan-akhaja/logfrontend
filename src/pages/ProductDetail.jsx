@@ -5,6 +5,7 @@ import SEO, { SITE_URL } from '../components/SEO';
 import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
 import { mediaUrl } from '../lib/urls';
+import { getProducts } from '../lib/products';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -20,8 +21,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const mobileGalleryRef = useRef(null);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
+    getProducts()
       .then(data => {
         const found = data.find(p => p.id === id || String(p.id) === String(id));
         setProduct(found || null);

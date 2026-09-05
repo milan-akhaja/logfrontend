@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail, Clock, Instagram } from 'lucide-react';
 import ContentBlockLines from './ContentBlockLines';
 import useContentBlocks from '../hooks/useContentBlocks';
+import { getProducts } from '../lib/products';
 
 export default function Footer({ onToast }) {
   const [openSection, setOpenSection] = useState(null);
@@ -15,8 +16,9 @@ export default function Footer({ onToast }) {
   const [newArrivalSubcategories, setNewArrivalSubcategories] = useState([]);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
+    // Shares the catalog request with the product grid instead of issuing a
+    // second identical one on every page load.
+    getProducts()
       .then(products => {
         const subs = new Set();
         const cols = new Set();

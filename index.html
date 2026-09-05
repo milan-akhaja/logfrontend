@@ -113,6 +113,13 @@
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=ffjzufzpqf" async></script>
 
   <!-- Resource Hints & Preconnects for Ultra-Fast Loading -->
+  <!-- The API and the image CDN are on other origins and are needed immediately
+       on every page. Without these, each pays a fresh DNS + TLS handshake
+       before the first byte - roughly 200-400ms on mobile data. -->
+  <link rel="preconnect" href="https://api.logcloth.com" crossorigin>
+  <link rel="dns-prefetch" href="https://api.logcloth.com">
+  <link rel="preconnect" href="https://da427mxzm741w.cloudfront.net" crossorigin>
+  <link rel="dns-prefetch" href="https://da427mxzm741w.cloudfront.net">
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <link rel="dns-prefetch" href="https://fonts.gstatic.com">
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>

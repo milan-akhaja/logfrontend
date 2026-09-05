@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ShoppingBag, BookOpen } from 'lucide-react';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { getProducts } from '../lib/products';
 
 export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
       
       Promise.all([
         fetch('/api/collections').then(res => res.json()),
-        fetch('/api/products').then(res => res.json()),
+        getProducts(),
         fetch('/api/stories').then(res => res.json())
       ])
         .then(([collectionsData, productsData, storiesData]) => {

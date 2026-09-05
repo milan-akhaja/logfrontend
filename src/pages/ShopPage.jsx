@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ProductGridCard } from './Shop';
+import { getProducts } from '../lib/products';
 
 export default function ShopPage({ onAddToCart }) {
   const [products, setProducts] = useState([]);
@@ -23,7 +24,7 @@ export default function ShopPage({ onAddToCart }) {
   useEffect(() => {
     // Fetch products & collections
     Promise.all([
-      fetch('/api/products').then(res => res.json()),
+      getProducts(),
       fetch('/api/collections').then(res => res.json())
     ])
       .then(([productsData, collectionsData]) => {
