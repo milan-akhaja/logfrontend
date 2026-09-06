@@ -2,33 +2,43 @@ import React, { useState } from 'react';
 import { apiJson } from '../lib/apiClient';
 
 /**
- * Drop signup.
+ * Drop signup — full-width band that sits directly above the footer.
  *
- * The site had no way to collect an email or a phone number anywhere — the
- * footer newsletter had been replaced with contact icons — so every visitor who
- * wasn't ready to buy that day was lost for good.
+ * The site had no email or phone capture anywhere, so every visitor who wasn't
+ * ready to buy that day was lost for good.
  *
- * Captures both channels in one step: email works everywhere and costs nothing,
+ * Collects both channels: email works everywhere and costs nothing to send,
  * phone is for WhatsApp, which outperforms email in India. The consent checkbox
  * isn't decoration — WhatsApp Business requires provable opt-in, and sending
  * without it costs you the channel.
+ *
+ * To change the drop, edit the two constants below. The date shown, the
+ * countdown and the copy all follow from them.
  */
 
-const DROP_DATE = new Date('2026-09-30T00:00:00+05:30');
+const DROP_NAME = 'No Permission 3.0';
+const DROP_DATE = new Date('2026-10-01T00:00:00+05:30');
 
-function daysUntilDrop() {
-  const diff = DROP_DATE.getTime() - Date.now();
-  return diff <= 0 ? 0 : Math.ceil(diff / 86400000);
+function dropDayMonth() {
+  return {
+    day: String(DROP_DATE.getDate()).padStart(2, '0'),
+    month: String(DROP_DATE.getMonth() + 1).padStart(2, '0')
+  };
 }
 
-export default function DropSignup({ source = 'footer', onToast }) {
+function hasDropped() {
+  return DROP_DATE.getTime() - Date.now() <= 0;
+}
+
+export default function DropSignup({ source = 'footer-band', onToast }) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [consent, setConsent] = useState(true);
   const [status, setStatus] = useState('idle'); // idle | sending | done
   const [error, setError] = useState('');
 
-  const days = daysUntilDrop();
+  const { day, month } = dropDayMonth();
+  const live = hasDropped();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,69 +72,63 @@ export default function DropSignup({ source = 'footer', onToast }) {
     }
   };
 
-  if (status === 'done') {
-    return (
-      <div className="drop-signup drop-signup-done">
-        <p className="drop-signup-title">You're on the list</p>
-        <p className="drop-signup-sub">
-          We'll message you before NO PERMISSION 3.0 goes live. No spam, and you can leave any time.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <form className="drop-signup" onSubmit={handleSubmit} noValidate>
-      <p className="drop-signup-title">Get the drop first</p>
-      <p className="drop-signup-sub">
-        {days > 0
-          ? `NO PERMISSION 3.0 lands in ${days} day${days === 1 ? '' : 's'}. The list gets first access — sizes sell out.`
-          : 'NO PERMISSION 3.0 is live. Join the list so you never miss the next one.'}
+    <section className="drop-band" aria-labelledby="drop-band-heading">
+      <p className="drop-band-kicker">{live ? 'Out now' : 'Next drop'}</p>
+
+      <p className="drop-band-date">
+        {day}<em>.{month}</em>
       </p>
 
-      <div className="drop-signup-fields">
-        <label className="drop-signup-label" htmlFor="drop-email">Email</label>
-        <input
-          id="drop-email"
-          className="drop-signup-input"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="you@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+      <h2 id="drop-band-heading" className="drop-band-name">{DROP_NAME}</h2>
 
-        <label className="drop-signup-label" htmlFor="drop-phone">
-          WhatsApp <span className="drop-signup-optional">optional</span>
-        </label>
-        <input
-          id="drop-phone"
-          className="drop-signup-input"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          placeholder="98765 43210"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
+      <div className="drop-band-inner">
+        {status === 'done' ? (
+          <p className="drop-band-done">
+            You're on the list. We'll message you before it goes live — no spam, and you can leave any time.
+          </p>
+        ) : (
+          <>
+            <form className="drop-band-form" onSubmit={handleSubmit} noValidate>
+              <input
+                className="drop-band-input"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@email.com"
+                aria-label="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <input
+                className="drop-band-input"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="WhatsApp (optional)"
+                aria-label="WhatsApp number, optional"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <button className="drop-band-btn" type="submit" disabled={status === 'sending'}>
+                {status === 'sending' ? 'Joining…' : 'Notify me'}
+              </button>
+            </form>
+
+            <label className="drop-band-consent">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              <span>Send me drop alerts by email and WhatsApp.</span>
+            </label>
+
+            {error && <p className="drop-band-error" role="alert">{error}</p>}
+          </>
+        )}
       </div>
-
-      <label className="drop-signup-consent">
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(e) => setConsent(e.target.checked)}
-        />
-        <span>Send me drop alerts by email and WhatsApp.</span>
-      </label>
-
-      {error && <p className="drop-signup-error" role="alert">{error}</p>}
-
-      <button className="drop-signup-btn" type="submit" disabled={status === 'sending'}>
-        {status === 'sending' ? 'Joining...' : 'Notify me'}
-      </button>
-    </form>
+    </section>
   );
 }

@@ -10,6 +10,7 @@ import { getProducts } from './lib/products';
 // Layout Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import DropSignup from './components/DropSignup';
 import CartDrawer from './components/CartDrawer';
 import SizePopup from './components/SizePopup';
 import SEO from './components/SEO';
@@ -533,7 +534,10 @@ function AppContent({
       {isAdmin ? routeContent : <main id="main-content" tabIndex={-1}>{routeContent}</main>}
 
       {!isAdmin && (
-        <Footer onToast={showToast} />
+        <>
+          <DropSignup onToast={showToast} />
+          <Footer onToast={showToast} />
+        </>
       )}
 
       <CartDrawer 

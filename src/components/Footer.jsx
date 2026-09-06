@@ -4,7 +4,6 @@ import { Mail, Clock, Instagram } from 'lucide-react';
 import ContentBlockLines from './ContentBlockLines';
 import useContentBlocks from '../hooks/useContentBlocks';
 import { getProducts } from '../lib/products';
-import DropSignup from './DropSignup';
 
 export default function Footer({ onToast }) {
   const [openSection, setOpenSection] = useState(null);
@@ -143,8 +142,6 @@ export default function Footer({ onToast }) {
               <Clock size={12} color="rgba(255, 255, 255, 0.7)" />
               <span>Mon - Sat, 12PM - 6PM</span>
             </div>
-
-            <DropSignup source="footer" onToast={onToast} />
           </div>
 
           {/* Col 1: Follow the log movements */}
