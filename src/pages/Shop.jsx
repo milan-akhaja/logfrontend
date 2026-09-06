@@ -361,6 +361,18 @@ export default function Shop({ onAddToCart }) {
   const [showAllProducts, setShowAllProducts] = useState(false);
   const contentBlocks = useContentBlocks();
   const homeManifesto = contentBlocks.home_manifesto;
+
+  // Starting price is read off the catalogue rather than typed in, so it can
+  // never drift from what the products actually cost. (It said ₹623 while the
+  // cheapest product was ₹699.)
+  const startingPrice = products.reduce((lowest, p) => {
+    const price = Number(p.price);
+    if (!Number.isFinite(price) || price <= 0) return lowest;
+    return lowest === null || price < lowest ? price : lowest;
+  }, null);
+  const startingPriceLabel = startingPrice === null
+    ? ''
+    : `₹${startingPrice.toLocaleString('en-IN')}`;
   const [mobileVideoSrc, setMobileVideoSrc] = useState('');
   const [desktopHeroSlideIndex, setDesktopHeroSlideIndex] = useState(0);
   const [mobileHeroSlideIndex, setMobileHeroSlideIndex] = useState(0);
@@ -786,7 +798,7 @@ export default function Shop({ onAddToCart }) {
         <div className="container">
           <div className="stats-grid">
             <div className="stat-item reveal">
-              <div className="stat-val">₹623</div>
+              <div className="stat-val">{startingPriceLabel || "—"}</div>
               <div className="stat-label">Starting Price</div>
             </div>
             <div className="stat-item reveal">
@@ -889,7 +901,7 @@ export default function Shop({ onAddToCart }) {
         <div className="container">
           <h2 className="statement-title reveal">Your Tee.<br /><span className="outline">Their Future.</span></h2>
           <p className="statement-sub reveal">Every product funds something real. Start shopping.</p>
-          <a href="#shop-catalog" className="btn btn-white reveal">Shop Now - From ₹623</a>
+          <a href="#shop-catalog" className="btn btn-white reveal">{startingPriceLabel ? `Shop Now - From ${startingPriceLabel}` : "Shop Now"}</a>
         </div>
       </section>
     </>
