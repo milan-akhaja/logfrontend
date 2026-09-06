@@ -50,6 +50,7 @@ const ADMIN_TABS = [
   ['contentblocks', 'Banners & Quotes'],
   ['newinconfig', 'New In'],
   ['heroconfig', 'Hero'],
+  ['subscribers', 'Drop List'],
   ['goaffpro', 'GoAffPro Affiliates']
 ];
 
@@ -675,6 +676,29 @@ export default function Admin({ onToast }) {
   const patchOpenProduct = (patch) => {
     if (editingProduct) setEditingProduct(prev => ({ ...prev, ...patch }));
     else setNewProduct(prev => ({ ...prev, ...patch }));
+  };
+
+  // Export for importing into Brevo, MailerLite or a WhatsApp broadcast tool.
+  const downloadSubscribersCsv = () => {
+    const header = ['email', 'phone', 'consent', 'source', 'joined'];
+    const rows = subscribers.map((sub) => [
+      sub.email,
+      sub.phone ? '+' + sub.phone : '',
+      sub.consent ? 'yes' : 'no',
+      sub.source || '',
+      sub.createdAt ? new Date(sub.createdAt).toISOString().slice(0, 10) : ''
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((cell) => '"' + String(cell).replace(/"/g, '""') + '"').join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'log-drop-list-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const addSizeToProduct = () => {
@@ -2055,6 +2079,7 @@ export default function Admin({ onToast }) {
               {activeTab === 'contentblocks' && 'Banners & Quotes'}
               {activeTab === 'newinconfig' && 'New In Page Settings'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
+              {activeTab === 'subscribers' && 'Drop List'}
               {activeTab === 'goaffpro' && 'GoAffPro Affiliate Marketing'}
             </h1>
 
@@ -4075,6 +4100,62 @@ export default function Admin({ onToast }) {
                 <button type="submit" className="btn btn-accent" style={{ alignSelf: 'flex-start', padding: '10px 24px' }}>Save Settings</button>
               </div>
             </form>
+          </div>
+        )}
+
+        {activeTab === 'subscribers' && (
+          <div className="admin-section">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+              <h2 className="admin-section-title" style={{ margin: 0 }}>
+                {subscribers.length} on the list
+              </h2>
+              <span style={{ fontSize: '12px', color: 'var(--admin-muted, #666)' }}>
+                {subscribers.filter(s2 => s2.consent).length} agreed to marketing ·{' '}
+                {subscribers.filter(s2 => s2.phone).length} gave a WhatsApp number
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ marginLeft: 'auto', padding: '10px 16px', fontSize: '11px' }}
+                onClick={downloadSubscribersCsv}
+                disabled={subscribers.length === 0}
+              >
+                Download CSV
+              </button>
+            </div>
+
+            {subscribers.length === 0 ? (
+              <p style={{ fontSize: '14px', color: 'var(--admin-muted, #666)' }}>
+                Nobody has signed up yet. The form is at the bottom of every page on the site.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>Email</th>
+                      <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>WhatsApp</th>
+                      <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>Consent</th>
+                      <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>Source</th>
+                      <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscribers.map((sub) => (
+                      <tr key={sub.email}>
+                        <td style={{ padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{sub.email}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{sub.phone ? '+' + sub.phone : '—'}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{sub.consent ? 'Yes' : 'No'}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{sub.source || '—'}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>
+                          {sub.createdAt ? new Date(sub.createdAt).toLocaleDateString('en-IN') : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
