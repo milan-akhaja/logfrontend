@@ -219,7 +219,10 @@ export default function CartDrawer({
 
   const discountAmount = 0;
   const netSubtotal = subtotal;
-  const baseShipping = netSubtotal > 799 ? 0 : (cart.length > 0 ? 80 : 0);
+  // Shipping is free on every order. Must match FLAT_SHIPPING_FEE in the
+  // backend's pricing.js - the server decides what is actually charged, so if
+  // these disagree the customer sees one number and pays another.
+  const baseShipping = 0;
   const founderDeliveryAvailable = isAhmedabadCity(customerInfo.city);
   const isFounderDelivery = paymentMethod === 'founder_delivery';
   const founderDeliveryFee = isFounderDelivery ? FOUNDER_DELIVERY_FEE : 0;
