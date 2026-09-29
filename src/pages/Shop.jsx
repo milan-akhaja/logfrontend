@@ -94,7 +94,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         {/* Carousel Slides */}
         {displayImages.map((imgUrl, idx) => (
           slideIdx === idx && (
-            <img key={idx} src={mediaUrl(imgUrl)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img key={idx} src={mediaUrl(imgUrl)} alt={Array.isArray(product.colors) && product.colors.find(Boolean) ? `${product.name} – ${String(product.colors.find(Boolean)).trim().toLowerCase()}` : product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )
         ))}
 

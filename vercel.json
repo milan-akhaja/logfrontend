@@ -1,9 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "dist/index.html",
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/page?sitemap=1"
+    },
+    {
       "source": "/((?!api(?:/|$)|uploads(?:/|$)).*)",
-      "destination": "/index.html"
+      "destination": "/api/page?p=/$1"
     }
   ],
   "headers": [
