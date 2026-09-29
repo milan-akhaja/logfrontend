@@ -802,6 +802,12 @@ export default function CartDrawer({
                 )}
               </div>
 
+              <p className="checkout-policy-line">
+                {cartHasDrop
+                  ? 'pre-order: size exchange only within 7 days. no returns.'
+                  : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
+              </p>
+
               <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
                 <button
                   type="button"

@@ -128,7 +128,28 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
       price: product.preorderPrice !== null && product.preorderPrice !== undefined ? product.preorderPrice : product.price,
       availability: `https://schema.org/${seoAvailability}`,
       itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@id': `${SITE_URL}/#organization` }
+      seller: { '@id': `${SITE_URL}/#organization` },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' }
+      },
+      hasMerchantReturnPolicy: product.isPreorder === true
+        ? {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+          merchantReturnLink: `${SITE_URL}/refund-policy`
+        }
+        : {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+          merchantReturnDays: 7,
+          restockingFee: { '@type': 'MonetaryAmount', value: 23, currency: 'INR' },
+          itemDefectReturnFees: 'https://schema.org/FreeReturn',
+          merchantReturnLink: `${SITE_URL}/refund-policy`
+        }
     }
   };
 
@@ -397,6 +418,12 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 </button>
               </div>
             )}
+
+            <p className="product-policy-line">
+              {isDrop
+                ? `pre-order: size exchange only within 7 days. no returns.${product.preorderDispatchText ? ` ${product.preorderDispatchText}` : ''}`
+                : 'free shipping · dispatch within 15 days · 7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
+            </p>
 
             {/* Tabbed Info Description */}
             <div className="detail-info-tabs-card">

@@ -161,6 +161,42 @@ function imageAlt(product) {
   return colour ? `${product.name} – ${colour}` : product.name;
 }
 
+// Shipping and returns, exactly as the policy states and nothing more.
+// Drop pieces are exchange-only: schema.org has no "exchange only" category,
+// and a 7-day window with an exchange refund type can be shown by Google as
+// "7-day returns", which would be false. NotPermitted is the honest choice;
+// the size exchange is explained on the page itself.
+// Normal products: 7-day window; the ₹23 kept from a customer-initiated
+// refund is the closest thing schema.org has to it, a restocking fee; a
+// defective item comes back free (full refund when the fault is ours).
+// Delivery time and return method are left out - the policy does not state them.
+function offerPolicies(product) {
+  const returnPolicy = product.isPreorder === true
+    ? {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'IN',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+      merchantReturnLink: `${SITE_URL}/refund-policy`
+    }
+    : {
+      '@type': 'MerchantReturnPolicy',
+      applicableCountry: 'IN',
+      returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+      merchantReturnDays: 7,
+      restockingFee: { '@type': 'MonetaryAmount', value: 23, currency: 'INR' },
+      itemDefectReturnFees: 'https://schema.org/FreeReturn',
+      merchantReturnLink: `${SITE_URL}/refund-policy`
+    };
+  return {
+    shippingDetails: {
+      '@type': 'OfferShippingDetails',
+      shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' },
+      shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' }
+    },
+    hasMerchantReturnPolicy: returnPolicy
+  };
+}
+
 function productJsonLd(product, url) {
   const images = productImages(product);
   return {
@@ -179,7 +215,8 @@ function productJsonLd(product, url) {
       price: currentPrice(product),
       availability: `https://schema.org/${availabilityOf(product)}`,
       itemCondition: 'https://schema.org/NewCondition',
-      seller: { '@id': `${SITE_URL}/#organization` }
+      seller: { '@id': `${SITE_URL}/#organization` },
+      ...offerPolicies(product)
     }
   };
 }

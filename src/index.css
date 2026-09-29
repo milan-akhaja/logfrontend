@@ -6557,3 +6557,18 @@ header.scrolled .nav-action-icon-btn {
 }
 
 .checkout-contact a { color: var(--ink); font-weight: 700; text-decoration: underline; }
+
+.product-policy-line {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--grey-dark);
+}
+
+.checkout-policy-line {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--grey-dark);
+}

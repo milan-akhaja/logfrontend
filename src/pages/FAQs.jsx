@@ -6,7 +6,7 @@ export default function FAQs() {
   const faqData = [
     {
       q: "What is your return & refund policy?",
-      a: "You can request a return within 7 days of delivery. The product must be unworn, unwashed, with original tags & packaging. Discounted or clearance items and used/damaged products are non-returnable. Please note: we do not refund the ₹23 charity donation portion since it is immediately transferred to charity on your behalf."
+      a: "Regular products: you can request a return within 7 days of delivery. The product must be unworn, unwashed, with original tags & packaging. Discounted or clearance items and used/damaged products are non-returnable. Refunds are sent within 7 days of us receiving the return, minus ₹23 per product (it goes to the LOG Fund) — full refund if we got it wrong. Pre-order (numbered drop) pieces: no returns or refunds, size exchange only within 7 days of delivery."
     },
     {
       q: "How do I request a return or exchange?",
@@ -14,11 +14,11 @@ export default function FAQs() {
     },
     {
       q: "How long does shipping take and what does it cost?",
-      a: "LOG orders are dispatched within 24-48 business hours. We offer FREE standard shipping PAN India with zero delivery costs. Standard transit time is 3 to 5 business days after dispatch."
+      a: "Regular orders are dispatched within 15 days. Pre-order (numbered drop) pieces ship by the date shown on the product page and at checkout. Shipping is FREE on all orders across India. Standard transit time is 3 to 5 business days after dispatch."
     },
     {
       q: "Why wasn't the ₹23 donation refunded?",
-      a: "At LOG, we are a streetwear brand with a conscience. ₹23 from every item purchased is immediately allocated and donated to charity partners. Since this is an outright donation to those in need, it cannot be recalled or refunded."
+      a: "For refunds you request, ₹23 per product is deducted — it goes to the LOG Fund. If the fault is ours (a defective item, the wrong item or size sent, or a pre-order piece that sold out before your payment reached us), you get a full refund with nothing deducted."
     },
     {
       q: "Can I cancel my order?",

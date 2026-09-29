@@ -45,7 +45,8 @@ export default function MakeReturn() {
   return (
     <div className="make-return-container">
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Make a Return / Exchange</h1>
-      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '40px' }}>Request a hassle-free return or size exchange within 7 days of delivery.</p>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '10px' }}>Request a hassle-free return or size exchange within 7 days of delivery.</p>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '13px', marginBottom: '40px' }}>Pre-order (numbered drop) pieces: size exchange only — no returns or refunds. Refunds you request are minus ₹23 per product (it goes to the LOG Fund); full refund if we got it wrong. Questions: <a href="mailto:contact@logcloth.com" style={{ color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a></p>
 
       {submitted ? (
         <div style={{ background: '#f0fff4', border: '2px solid green', padding: '40px', borderRadius: '8px', textAlign: 'center' }}>
