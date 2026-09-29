@@ -6547,3 +6547,13 @@ header.scrolled .nav-action-icon-btn {
 
 .order-success-piece + .order-success-item { margin-top: 8px; }
 .order-success-piece-missing { font-weight: 600; color: var(--grey-dark); }
+.order-success-piece-missing a { color: inherit; text-decoration: underline; }
+
+.checkout-contact {
+  margin: 12px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--grey-dark);
+}
+
+.checkout-contact a { color: var(--ink); font-weight: 700; text-decoration: underline; }

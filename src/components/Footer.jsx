@@ -136,7 +136,10 @@ export default function Footer({ onToast }) {
                 <Mail size={16} color="#FFFFFF" />
               </a>
             </div>
-            
+            <p style={{ margin: '0 0 10px', fontSize: '13px' }}>
+              <a href="mailto:contact@logcloth.com" style={{ color: 'rgba(255, 255, 255, 0.85)', textDecoration: 'underline' }}>contact@logcloth.com</a>
+            </p>
+
             {/* Business Hours */}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px', fontWeight: '700' }}>
               <Clock size={12} color="rgba(255, 255, 255, 0.7)" />

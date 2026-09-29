@@ -820,6 +820,9 @@ export default function CartDrawer({
                   {isSubmittingOrder ? 'Placing Order...' : 'Place Order'}
                 </button>
               </div>
+              <p className="checkout-contact">
+                Questions? <a href="mailto:contact@logcloth.com">contact@logcloth.com</a>
+              </p>
             </form>
           ) : cart.length === 0 ? (
             <div className="cart-empty-msg">

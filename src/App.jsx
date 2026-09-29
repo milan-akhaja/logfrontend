@@ -171,7 +171,7 @@ function OrderReceiptModal({ order, onClose }) {
                   ))}
                   {unnumbered && (
                     <div className="order-success-piece order-success-piece-missing">
-                      This design sold out just before your payment reached us. We'll contact you.
+                      This design sold out just before your payment reached us. We'll contact you - or email <a href="mailto:contact@logcloth.com">contact@logcloth.com</a>.
                     </div>
                   )}
                 </React.Fragment>
