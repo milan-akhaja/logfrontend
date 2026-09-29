@@ -41,6 +41,30 @@ export function mediaUrl(input) {
   return apiUrl(input);
 }
 
+// Phone-sized copies the backend makes of every uploaded image:
+// uploads/123-photo.webp -> uploads/123-photo-400w.webp, -800w.webp
+// (same rule as logbackend src/catalog.js). The original is always listed too,
+// so large screens still get full quality.
+const IMAGE_VARIANT_WIDTHS = [400, 800];
+
+export function mediaSrcSet(input) {
+  const url = mediaUrl(input);
+  if (typeof url !== 'string' || !/\/uploads\/[^?#]+\.webp$/i.test(url) || /-\d+w\.webp$/i.test(url)) {
+    return undefined;
+  }
+  return [
+    ...IMAGE_VARIANT_WIDTHS.map((width) => `${url.replace(/\.webp$/i, `-${width}w.webp`)} ${width}w`),
+    `${url} 1600w`
+  ].join(', ');
+}
+
+// If a copy is ever missing, forget the srcset and load the original instead
+// of showing a broken image.
+export function srcSetFallback(event) {
+  const image = event.currentTarget;
+  if (image.hasAttribute('srcset')) image.removeAttribute('srcset');
+}
+
 export function appPath(path = '/') {
   if (!path || typeof path !== 'string') {
     return path;

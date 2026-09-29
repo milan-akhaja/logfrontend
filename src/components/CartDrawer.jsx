@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiUrl, mediaUrl } from '../lib/urls';
+import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 import { getProducts } from '../lib/products';
@@ -852,6 +852,9 @@ export default function CartDrawer({
                   {item.imageUrl ? (
                     <img
                       src={mediaUrl(item.imageUrl)}
+                      srcSet={mediaSrcSet(item.imageUrl)}
+                      sizes="100px"
+                      onError={srcSetFallback}
                       alt={item.name}
                       loading="lazy"
                       decoding="async"

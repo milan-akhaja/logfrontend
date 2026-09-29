@@ -221,6 +221,17 @@ function productJsonLd(product, url) {
   };
 }
 
+// Same phone-sized copies the app asks for (src/lib/urls.js), so the browser
+// downloads one image here and reuses it when React takes over the page.
+function srcSetAttr(url) {
+  if (!/\/uploads\/[^?#]+\.webp$/i.test(url) || /-\d+w\.webp$/i.test(url)) return '';
+  const set = [400, 800]
+    .map((width) => `${url.replace(/\.webp$/i, `-${width}w.webp`)} ${width}w`)
+    .concat(`${url} 1600w`)
+    .join(', ');
+  return ` srcset="${escapeHtml(set)}" sizes="(max-width: 768px) 100vw, 50vw"`;
+}
+
 function productBody(product) {
   const price = currentPrice(product);
   const original = Number(product.price || 0);
@@ -238,7 +249,7 @@ function productBody(product) {
     ${isDropProduct(product) ? `<p>Oversized tee · 240 GSM · ${DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)}</p>${claimed}` : ''}
     ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
     ${details.length ? `<ul>${details.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
-    ${productImages(product).map((url, index) => `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}"${index ? ' loading="lazy"' : ''}>`).join('\n    ')}
+    ${productImages(product).map((url, index) => `<img src="${escapeHtml(url)}"${srcSetAttr(url)} alt="${escapeHtml(alt)}"${index ? ' loading="lazy"' : ' fetchpriority="high"'}>`).join('\n    ')}
   </article>
 </main>`;
 }

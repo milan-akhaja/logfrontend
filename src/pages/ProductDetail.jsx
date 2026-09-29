@@ -4,7 +4,7 @@ import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
 import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
-import { mediaUrl } from '../lib/urls';
+import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
 
@@ -85,7 +85,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const displayImages = product.imageUrls && product.imageUrls.length > 0 
     ? product.imageUrls 
     : (product.imageUrl ? [product.imageUrl] : []);
-  const primaryImage = displayImages[0] || product.imageUrl || `${SITE_URL}/assets/hero_streetwear.png`;
+  const primaryImage = displayImages[0] || product.imageUrl || `${SITE_URL}/assets/hero_streetwear.webp`;
 
   // Title, description and structured data follow the same rules as the
   // server-rendered page in api/page.js - keep the two in step, or the page
@@ -234,9 +234,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 >
                   <img 
                     src={mediaUrl(imgUrl)} 
+                    srcSet={mediaSrcSet(imgUrl)}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    onError={srcSetFallback}
                     alt={idx === 0 ? imageAlt : `${imageAlt} (view ${idx + 1})`} 
                     className="main-detail-img" 
                     loading={idx === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={idx === 0 ? 'high' : 'auto'}
                     decoding="async"
                     style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }}
                   />
@@ -263,9 +267,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                     <div className="mobile-gallery-slide" key={`${imgUrl}-${idx}`}>
                       <img
                         src={mediaUrl(imgUrl)}
+                        srcSet={mediaSrcSet(imgUrl)}
+                        sizes="100vw"
+                        onError={srcSetFallback}
                         alt={idx === 0 ? imageAlt : `${imageAlt} (view ${idx + 1})`}
                         className="main-detail-img"
                         loading={idx === 0 ? 'eager' : 'lazy'}
+                        fetchpriority={idx === 0 ? 'high' : 'auto'}
                         decoding="async"
                       />
                     </div>

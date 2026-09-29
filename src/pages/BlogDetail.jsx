@@ -58,7 +58,7 @@ export default function BlogDetail() {
       .split(',')
       .map(keyword => keyword.trim())
       .filter(Boolean);
-  const blogImage = blog.coverImage || blog.image || `${SITE_URL}/assets/lookbook_polaroid_1.png`;
+  const blogImage = blog.coverImage || blog.image || `${SITE_URL}/assets/lookbook_polaroid_1.webp`;
   const blogJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
@@ -145,7 +145,7 @@ export default function BlogDetail() {
         {/* Cover Section */}
         <div style={{ position: 'relative', height: '400px', width: '100%', overflow: 'hidden', background: '#111113' }}>
           <img
-            src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.png')}
+            src={mediaUrl(blog.coverImage || 'assets/lookbook_polaroid_1.webp')}
             alt={blog.title}
             loading="eager"
             decoding="async"

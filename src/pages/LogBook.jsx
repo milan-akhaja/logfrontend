@@ -66,7 +66,7 @@ export default function LogBook() {
                   >
                     <div className="blog-card-image-frame">
                       <img
-                        src={mediaUrl(blog.coverImage || blog.image || 'assets/lookbook_polaroid_1.png')}
+                        src={mediaUrl(blog.coverImage || blog.image || 'assets/lookbook_polaroid_1.webp')}
                         alt={blog.title}
                         className="blog-card-image"
                         loading="lazy"
