@@ -44,7 +44,7 @@ export default function Terms() {
             Products purchased under any promotional offer, including <strong>Buy 1 Get 1 Free</strong>, discounts, combo offers, or sale events, are <strong>not eligible for return or exchange</strong>. Exception: pre-order (numbered drop) pieces can be exchanged for another size within 7 days of delivery — no returns or refunds.
           </p>
           <p>
-            Please check the size guide carefully before placing your order. If you receive a damaged, defective, or incorrect item, contact us within <strong>48 hours</strong> of delivery, and we'll be happy to help.
+            Please check the size guide carefully before placing your order. If you receive a damaged, defective, or incorrect item, contact us within <strong>7 days</strong> of delivery, and we'll be happy to help.
           </p>
         </section>
 
