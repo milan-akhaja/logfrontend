@@ -6493,3 +6493,57 @@ header.scrolled .nav-action-icon-btn {
 @media (prefers-reduced-motion: reduce) {
   .drop-band-date { animation: none; }
 }
+
+/* Numbered drop: pre-order price, piece counts, checkout wall opt-in. */
+.preorder-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+}
+
+.preorder-price-old {
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--grey-muted);
+  text-decoration: line-through;
+}
+
+.drop-claimed-count {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.detail-action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.checkout-preorder-note {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.checkout-preorder-note p { margin: 0; }
+.checkout-preorder-note p + p { margin-top: 4px; font-weight: 500; color: var(--grey-dark); }
+
+.checkout-wall { margin-top: 14px; }
+.checkout-wall .checkout-two-col { margin-top: 8px; }
+
+.order-success-piece {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+
+.order-success-piece + .order-success-item { margin-top: 8px; }
+.order-success-piece-missing { font-weight: 600; color: var(--grey-dark); }

@@ -155,12 +155,28 @@ function OrderReceiptModal({ order, onClose }) {
 
           <div className="order-success-section">
             <h3>Items</h3>
-            {order.items?.map((item, index) => (
-              <div className="order-success-item" key={`${item.id || item.name}-${index}`}>
-                <span>{item.name} {item.selectedSize ? `(${item.selectedSize})` : ''} x {item.quantity}</span>
-                <strong>{formatCurrency(Number(item.price || 0) * Number(item.quantity || 1))}</strong>
-              </div>
-            ))}
+            {order.items?.map((item, index) => {
+              const linePieces = (order.pieces || []).filter((piece) => piece.lineIndex === index);
+              const unnumbered = item.isPreorder && order.oversoldRefundNeeded && linePieces.length < Number(item.quantity || 1);
+              return (
+                <React.Fragment key={`${item.id || item.name}-${index}`}>
+                  <div className="order-success-item">
+                    <span>{item.name} {item.selectedSize ? `(${item.selectedSize})` : ''} x {item.quantity}</span>
+                    <strong>{formatCurrency(Number(item.price || 0) * Number(item.quantity || 1))}</strong>
+                  </div>
+                  {linePieces.map((piece) => (
+                    <div className="order-success-piece" key={`${piece.designId}-${piece.pieceNumber}`}>
+                      {piece.designName} · No. {String(piece.pieceNumber).padStart(2, '0')} / {piece.piecesTotal}
+                    </div>
+                  ))}
+                  {unnumbered && (
+                    <div className="order-success-piece order-success-piece-missing">
+                      This design sold out just before your payment reached us. We'll contact you.
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
 
           <div className="order-success-section">

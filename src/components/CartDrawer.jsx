@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl, mediaUrl } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { getProducts } from '../lib/products';
+
+const WALL_TEXT_MAX = 20;
 
 function cleanCityName(rawCity) {
   if (!rawCity) return '';
@@ -191,6 +194,15 @@ export default function CartDrawer({
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
+  // Numbered drop. dropIds comes from the product list; quote is the server's
+  // own pricing of this exact cart. Neither is ever used to set a price - the
+  // server recomputes everything when the order is placed.
+  const [dropIds, setDropIds] = useState(() => new Set());
+  const [quote, setQuote] = useState(null);
+  const [wallOptIn, setWallOptIn] = useState(false);
+  const [wallDisplayName, setWallDisplayName] = useState('');
+  const [wallCity, setWallCity] = useState('');
+
   const [lastDonation, setLastDonation] = useState(0);
   const [lastOrderSummary, setLastOrderSummary] = useState(null);
   const [emailHtml, setEmailHtml] = useState('');
@@ -210,14 +222,35 @@ export default function CartDrawer({
     localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(customerInfo));
   }, [customerInfo]);
 
-  const subtotal = cart.reduce((sum, item) => {
-    if (item.isBogo) {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let active = true;
+    getProducts()
+      .then((list) => {
+        if (active) setDropIds(new Set(list.filter((p) => p.isPreorder === true).map((p) => String(p.id))));
+      })
+      .catch(() => { });
+    return () => { active = false; };
+  }, [isOpen]);
+
+  // A drop cart never offers COD - decided from the product list, and also
+  // from the server quote, so either one alone is enough to hide it.
+  const cartHasDrop = cart.some((item) => dropIds.has(String(item.id))) || quote?.hasPreorder === true;
+  // Only trust the quote while it describes the cart on screen.
+  const quoteMatchesCart = Boolean(quote)
+    && quote.lines.length === cart.length
+    && quote.lines.every((line, index) => String(line.id) === String(cart[index]?.id) && line.quantity === cart[index]?.quantity);
+  const useServerTotals = cartHasDrop && quoteMatchesCart;
+
+  const clientSubtotal = cart.reduce((sum, item) => {
+    if (item.isBogo && !dropIds.has(String(item.id))) {
       return sum + (item.price * Math.ceil(item.quantity / 2));
     }
     return sum + (item.price * item.quantity);
   }, 0);
 
-  const discountAmount = 0;
+  const subtotal = useServerTotals ? quote.subtotal : clientSubtotal;
+  const discountAmount = useServerTotals ? quote.discount : 0;
   const netSubtotal = subtotal;
   // Shipping is free on every order. Must match FLAT_SHIPPING_FEE in the
   // backend's pricing.js - the server decides what is actually charged, so if
@@ -225,9 +258,49 @@ export default function CartDrawer({
   const baseShipping = 0;
   const founderDeliveryAvailable = isAhmedabadCity(customerInfo.city);
   const isFounderDelivery = paymentMethod === 'founder_delivery';
-  const founderDeliveryFee = isFounderDelivery ? FOUNDER_DELIVERY_FEE : 0;
-  const shipping = baseShipping + founderDeliveryFee;
-  const total = netSubtotal + shipping;
+  const founderDeliveryFee = useServerTotals ? quote.founderDeliveryFee : (isFounderDelivery ? FOUNDER_DELIVERY_FEE : 0);
+  const shipping = useServerTotals ? quote.shipping : baseShipping + founderDeliveryFee;
+  const total = useServerTotals ? quote.total : netSubtotal + shipping;
+  // A drop cart without a server quote shows no grand total of its own.
+  const totalPending = cartHasDrop && !useServerTotals;
+
+  useEffect(() => {
+    if (!isOpen || cart.length === 0) {
+      setQuote(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      apiJson('/api/orders/quote', {
+        method: 'POST',
+        signal: controller.signal,
+        body: JSON.stringify({
+          items: cart.map((item) => ({
+            id: item.id,
+            price: item.price,
+            quantity: item.quantity,
+            selectedSize: item.selectedSize,
+            selectedSize1: item.selectedSize1,
+            selectedSize2: item.selectedSize2
+          })),
+          deliveryOption: paymentMethod === 'founder_delivery' ? 'founder_delivery' : 'standard',
+          customerInfo: { city: customerInfo.city }
+        })
+      })
+        .then((data) => setQuote(data?.success ? data : null))
+        .catch((err) => {
+          if (err?.name !== 'AbortError') setQuote(null);
+        });
+    }, 300);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [isOpen, cart, paymentMethod, customerInfo.city]);
+
+  useEffect(() => {
+    if (cartHasDrop && paymentMethod === 'cod') setPaymentMethod('payu');
+  }, [cartHasDrop, paymentMethod]);
 
   // Donation calculation (₹23 per product quantity)
   const totalItemsQty = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -381,6 +454,10 @@ export default function CartDrawer({
       onToast('Delivery by founder is available only in Ahmedabad.');
       return;
     }
+    if (cartHasDrop && paymentMethod === 'cod') {
+      onToast('Pre-order pieces need full payment now. Please choose online payment.');
+      return;
+    }
 
     const clientOrderId = getClientOrderId();
     const orderItems = cart.map(item => ({
@@ -447,7 +524,8 @@ export default function CartDrawer({
             customerInfo: orderCustomerInfo,
             clientOrderId,
             couponCode: null,
-            deliveryOption: orderCustomerInfo.deliveryOption
+            deliveryOption: orderCustomerInfo.deliveryOption,
+            ...(cartHasDrop && wallOptIn ? { wallOptIn: true, wallDisplayName, wallCity } : {})
           })
         });
 
@@ -620,10 +698,12 @@ export default function CartDrawer({
                         <span className="checkout-payment-card-note">Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
                       </span>
                     </label>
-                    <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
-                      <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                      <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
-                    </label>
+                    {!cartHasDrop && (
+                      <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                        <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
+                        <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
+                      </label>
+                    )}
                     <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
                       <input
                         type="radio"
@@ -645,13 +725,54 @@ export default function CartDrawer({
                       </span>
                     </label>
                 </div>
+                {cartHasDrop && (
+                  <div className="checkout-preorder-note">
+                    <p>pre-order — full payment now.</p>
+                    {useServerTotals && quote.dispatchText && <p>{quote.dispatchText}</p>}
+                  </div>
+                )}
               </div>
+
+              {cartHasDrop && (
+                <div className="checkout-wall">
+                  <label className="checkout-save-row">
+                    <input type="checkbox" checked={wallOptIn} onChange={(e) => setWallOptIn(e.target.checked)} />
+                    <span>show my name on the LOG wall</span>
+                  </label>
+                  {wallOptIn && (
+                    <div className="checkout-two-col">
+                      <input
+                        type="text"
+                        value={wallDisplayName}
+                        onChange={(e) => setWallDisplayName(e.target.value.slice(0, WALL_TEXT_MAX))}
+                        maxLength={WALL_TEXT_MAX}
+                        placeholder="Display name (optional)"
+                        aria-label="Display name for the LOG wall"
+                      />
+                      <input
+                        type="text"
+                        value={wallCity}
+                        onChange={(e) => setWallCity(e.target.value.slice(0, WALL_TEXT_MAX))}
+                        maxLength={WALL_TEXT_MAX}
+                        placeholder="City (optional)"
+                        aria-label="City for the LOG wall"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="checkout-order-summary">
                 <div className="cart-totals-row">
                   <span className="cart-totals-label">Subtotal</span>
                   <span className="cart-totals-val">{formatCurrency(subtotal)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
+                    <span className="cart-totals-label">Pre-order discount</span>
+                    <span className="cart-totals-val">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
                 {baseShipping > 0 ? (
                   <div className="cart-totals-row">
                     <span className="cart-totals-label">Shipping</span>
@@ -669,10 +790,16 @@ export default function CartDrawer({
                     <span className="cart-totals-val">{formatCurrency(founderDeliveryFee)}</span>
                   </div>
                 )}
-                <div className="cart-totals-row grand-total">
-                  <span className="cart-totals-label">Grand Total</span>
-                  <span className="cart-totals-val">{formatCurrency(total)}</span>
-                </div>
+                {totalPending ? (
+                  <div className="cart-totals-row grand-total">
+                    <span className="cart-totals-label">final price confirmed at payment.</span>
+                  </div>
+                ) : (
+                  <div className="cart-totals-row grand-total">
+                    <span className="cart-totals-label">Grand Total</span>
+                    <span className="cart-totals-val">{formatCurrency(total)}</span>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
@@ -706,7 +833,11 @@ export default function CartDrawer({
               </button>
             </div>
           ) : (
-            cart.map(item => (
+            cart.map((item, index) => {
+              const line = quoteMatchesCart ? quote.lines[index] : null;
+              const isDropItem = line ? line.isPreorder : dropIds.has(String(item.id));
+              const lineDiscount = line ? Number(line.preorderDiscount || 0) : 0;
+              return (
               <div className="cart-item" key={item.cartItemId}>
                 <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F3', borderRadius: '4px', overflow: 'hidden' }}>
                   {item.imageUrl ? (
@@ -726,7 +857,19 @@ export default function CartDrawer({
                 <div className="cart-item-details">
                   <div>
                     <div className="cart-item-name">{item.name} ({item.selectedSize})</div>
-                    <div className="cart-item-price">₹{item.price}</div>
+                    {isDropItem && lineDiscount > 0 ? (
+                      <>
+                        <div className="cart-item-price">
+                          <span className="preorder-price-old">₹{line.price}</span>₹{line.price - lineDiscount}
+                        </div>
+                        <div className="preorder-note">pre-order · ₹{lineDiscount} off per piece</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="cart-item-price">₹{item.price}</div>
+                        {isDropItem && <div className="preorder-note">pre-order</div>}
+                      </>
+                    )}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="cart-item-qty">
@@ -738,7 +881,8 @@ export default function CartDrawer({
                   </div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -750,7 +894,7 @@ export default function CartDrawer({
             </div>
             {discountAmount > 0 && (
               <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                <span className="cart-totals-label">Discount</span>
+                <span className="cart-totals-label">{cartHasDrop ? 'Pre-order discount' : 'Discount'}</span>
                 <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
               </div>
             )}
@@ -768,10 +912,16 @@ export default function CartDrawer({
             <div className="cart-donation-banner">
               ₹{donation} will be donated to charity from this order (₹23 per product)
             </div>
-            <div className="cart-totals-row grand-total">
-              <span className="cart-totals-label">Grand Total</span>
-              <span className="cart-totals-val">₹{total.toLocaleString('en-IN')}</span>
-            </div>
+            {totalPending ? (
+              <div className="cart-totals-row grand-total">
+                <span className="cart-totals-label">final price confirmed at payment.</span>
+              </div>
+            ) : (
+              <div className="cart-totals-row grand-total">
+                <span className="cart-totals-label">Grand Total</span>
+                <span className="cart-totals-val">₹{total.toLocaleString('en-IN')}</span>
+              </div>
+            )}
             <button
               className="checkout-btn"
               onClick={() => setShowCheckoutForm(true)}

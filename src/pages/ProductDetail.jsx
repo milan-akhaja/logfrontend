@@ -138,9 +138,25 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     }
   };
 
+  // Numbered drop: every field below is decided by the server.
+  const isDrop = product.isPreorder === true;
+  const dropNotOpen = isDrop && product.preorderPhase === 'before';
+  const dropSoldOut = isDrop && product.soldOut === true;
+  const dropBlocked = dropNotOpen || dropSoldOut;
+  const dropOpensLabel = dropNotOpen && product.preorderOpensAt
+    ? new Date(product.preorderOpensAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', hour: 'numeric', minute: '2-digit'
+    }).replace('/', '.')
+    : '';
+  let dropButtonLabel = '';
+  if (dropSoldOut) dropButtonLabel = 'SOLD OUT';
+  else if (dropNotOpen) dropButtonLabel = dropOpensLabel ? `OPENS ${dropOpensLabel.toUpperCase()}` : 'OPENING SOON';
+
   // Helper check if size is available in stock
   const isSizeAvailable = (size) => {
     if (!product.sizes) return false;
+    // For drop products the numbered pieces are the only limit, not size stock.
+    if (isDrop && !Array.isArray(product.sizes)) return product.sizes[size] !== undefined;
     if (Array.isArray(product.sizes)) {
       return product.sizes.includes(size);
     }
@@ -230,12 +246,27 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   {product.bogoOffer.label || 'BOGO OFFER'}
                 </div>
               )}
-              <ProductPrice
-                product={product}
-                className="detail-product-prices"
-                currentClassName="detail-product-price"
-                originalClassName="price-original detail-price-original"
-              />
+              {isDrop && product.preorderPrice !== null && product.preorderPrice !== undefined ? (
+                <div className="detail-product-prices">
+                  <div className="product-price-line">
+                    <span className="detail-product-price">₹{Number(product.preorderPrice).toLocaleString('en-IN')}</span>
+                    <span className="price-original detail-price-original">₹{Number(product.price).toLocaleString('en-IN')}</span>
+                  </div>
+                  <span className="preorder-note">pre-order · ₹{product.preorderDiscount} off per piece</span>
+                </div>
+              ) : (
+                <ProductPrice
+                  product={product}
+                  className="detail-product-prices"
+                  currentClassName="detail-product-price"
+                  originalClassName="price-original detail-price-original"
+                />
+              )}
+              {isDrop && Number(product.piecesTotal) > 0 && (
+                <div className="drop-claimed-count">
+                  {product.piecesClaimed} / {product.piecesTotal} claimed
+                </div>
+              )}
             </div>
 
             {product.bogoOffer?.enabled ? (
@@ -324,14 +355,22 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             )}
 
             {/* CTA Buy Buttons */}
-            <div className="detail-actions-row">
-              <button className="detail-action-btn btn-add-bag" onClick={handleAddToBag}>
-                ADD TO BAG
-              </button>
-              <button className="detail-action-btn btn-buy-now" onClick={handleBuyNow}>
-                BUY NOW
-              </button>
-            </div>
+            {dropBlocked ? (
+              <div className="detail-actions-row">
+                <button className="detail-action-btn btn-add-bag" disabled>
+                  {dropButtonLabel}
+                </button>
+              </div>
+            ) : (
+              <div className="detail-actions-row">
+                <button className="detail-action-btn btn-add-bag" onClick={handleAddToBag}>
+                  ADD TO BAG
+                </button>
+                <button className="detail-action-btn btn-buy-now" onClick={handleBuyNow}>
+                  BUY NOW
+                </button>
+              </div>
+            )}
 
             {/* Tabbed Info Description */}
             <div className="detail-info-tabs-card">
