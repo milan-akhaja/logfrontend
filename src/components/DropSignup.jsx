@@ -17,7 +17,7 @@ import { apiJson } from '../lib/apiClient';
  */
 
 const DROP_NAME = 'No Permission 3.0';
-const DROP_DATE = new Date('2026-10-01T00:00:00+05:30');
+const DROP_DATE = new Date('2026-10-01T20:00:00+05:30');
 
 function dropDayMonth() {
   return {
