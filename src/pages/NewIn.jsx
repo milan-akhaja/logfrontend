@@ -13,7 +13,7 @@ export default function NewIn({ onAddToCart, onToast }) {
     desc: 'Introducing the Porsche 911 graphic print alongside our Born Again signature. Custom heavyweight-combed fabric blends designed to sit perfectly and hold shape.',
     buttonText: 'Explore Drops',
     buttonLink: '#new-drops-catalog',
-    imageUrl: 'assets/lookbook_polaroid_1.png'
+    imageUrl: 'assets/lookbook_polaroid_1.webp'
   });
   const navigate = useNavigate();
 

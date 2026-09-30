@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiUrl, mediaUrl } from '../lib/urls';
+import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 import { getProducts } from '../lib/products';
@@ -802,6 +802,12 @@ export default function CartDrawer({
                 )}
               </div>
 
+              <p className="checkout-policy-line">
+                {cartHasDrop
+                  ? 'pre-order: size exchange only within 7 days. no returns.'
+                  : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
+              </p>
+
               <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
                 <button
                   type="button"
@@ -846,6 +852,9 @@ export default function CartDrawer({
                   {item.imageUrl ? (
                     <img
                       src={mediaUrl(item.imageUrl)}
+                      srcSet={mediaSrcSet(item.imageUrl)}
+                      sizes="100px"
+                      onError={srcSetFallback}
                       alt={item.name}
                       loading="lazy"
                       decoding="async"

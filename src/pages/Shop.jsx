@@ -6,7 +6,7 @@ import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
 import useIsMobile from '../hooks/useIsMobile';
 import { getProducts } from '../lib/products';
-import { appPath, mediaUrl } from '../lib/urls';
+import { appPath, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 
 const slideIntervalMs = (value) => {
   const parsed = Number(value);
@@ -94,7 +94,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         {/* Carousel Slides */}
         {displayImages.map((imgUrl, idx) => (
           slideIdx === idx && (
-            <img key={idx} src={mediaUrl(imgUrl)} alt={product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img key={idx} src={mediaUrl(imgUrl)} srcSet={mediaSrcSet(imgUrl)} sizes="(max-width: 768px) 50vw, 25vw" onError={srcSetFallback} alt={Array.isArray(product.colors) && product.colors.find(Boolean) ? `${product.name} – ${String(product.colors.find(Boolean)).trim().toLowerCase()}` : product.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )
         ))}
 
@@ -393,7 +393,7 @@ export default function Shop({ onAddToCart }) {
     title: 'Wear\nSome\nthing\nReal.',
     desc: 'Streetwear built for India. Minimal by choice, meaningful by design. Every product you buy puts ₹23 into the hands of someone who needs it more.',
     desktopMediaType: 'image',
-    bgImage: 'assets/hero_streetwear.png',
+    bgImage: 'assets/hero_streetwear.webp',
     desktopVideoUrl: '',
     desktopSlides: [],
     desktopSlideIntervalMs: 5000,
@@ -713,6 +713,9 @@ export default function Shop({ onAddToCart }) {
               <img
                 key={`${image}-${index}`}
                 src={mediaUrl(image)}
+                srcSet={mediaSrcSet(image)}
+                sizes="100vw"
+                onError={srcSetFallback}
                 alt=""
                 className={`hero-bg-image hero-slideshow-image ${index === desktopHeroSlideIndex ? 'active' : ''}`}
                 loading={index === 0 ? 'eager' : 'lazy'}
@@ -722,7 +725,7 @@ export default function Shop({ onAddToCart }) {
             ))}
           </div>
         ) : (
-          <img src={mediaUrl(desktopSingleImage)} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+          <img src={mediaUrl(desktopSingleImage)} srcSet={mediaSrcSet(desktopSingleImage)} sizes="100vw" onError={srcSetFallback} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
         )}
         <div className="hero-overlay"></div>
         <a
@@ -748,6 +751,9 @@ export default function Shop({ onAddToCart }) {
               <img
                 key={`${image}-${index}`}
                 src={mediaUrl(index === mobileHeroSlideIndex ? mobileImageUrl : image)}
+                srcSet={mediaSrcSet(index === mobileHeroSlideIndex ? mobileImageUrl : image)}
+                sizes="100vw"
+                onError={srcSetFallback}
                 alt=""
                 className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
                 loading={index === 0 ? 'eager' : 'lazy'}
@@ -759,6 +765,9 @@ export default function Shop({ onAddToCart }) {
         ) : mobileHeroMediaType === 'image' ? (
           <img
             src={mediaUrl(mobileSingleImage)}
+            srcSet={mediaSrcSet(mobileSingleImage)}
+            sizes="100vw"
+            onError={srcSetFallback}
             alt="LOG streetwear mobile hero"
             className="mobile-hero-image"
             loading="eager"

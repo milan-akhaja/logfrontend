@@ -4,7 +4,7 @@ import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
 import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
-import { mediaUrl } from '../lib/urls';
+import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
 
@@ -85,24 +85,71 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const displayImages = product.imageUrls && product.imageUrls.length > 0 
     ? product.imageUrls 
     : (product.imageUrl ? [product.imageUrl] : []);
-  const primaryImage = displayImages[0] || product.imageUrl || `${SITE_URL}/assets/hero_streetwear.png`;
-  const productDescription = product.desc || product.description || `${product.name} from LOG premium Indian streetwear. Oversized fit, heavyweight cotton feel, and Rs. 23 donated from every product.`;
+  const primaryImage = displayImages[0] || product.imageUrl || `${SITE_URL}/assets/hero_streetwear.webp`;
+
+  // Title, description and structured data follow the same rules as the
+  // server-rendered page in api/page.js - keep the two in step, or the page
+  // changes its own title once JavaScript loads.
+  const productColour = Array.isArray(product.colors) && product.colors.find(Boolean)
+    ? String(product.colors.find(Boolean)).trim().toLowerCase()
+    : '';
+  const isDropDesign = Number(product.is_preorder || 0) === 1;
+  const seoTitle = isDropDesign
+    ? `${product.name} — Oversized 240 GSM Tee | LOG Clothing`
+    : `${product.name} | LOG Clothing`;
+  const seoDescriptionFull = isDropDesign
+    ? `${product.name} — oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM. One of 40 numbered pieces from the No Permission 3.0 drop by LOG Clothing.`
+    : `${product.name}${productColour ? ` in ${productColour}` : ''} from LOG Clothing. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
+  const productDescription = seoDescriptionFull.length <= 155
+    ? seoDescriptionFull
+    : `${seoDescriptionFull.slice(0, 154).replace(/\s+\S*$/, '')}…`;
+  const imageAlt = productColour ? `${product.name} – ${productColour}` : product.name;
+  let seoAvailability = Number(product.stock || 0) > 0 ? 'InStock' : 'OutOfStock';
+  if (product.isPreorder === true) {
+    if (product.soldOut === true) seoAvailability = 'SoldOut';
+    else seoAvailability = product.preorderPhase === 'after' ? 'InStock' : 'PreOrder';
+  }
   const productJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     image: displayImages.length ? displayImages : [primaryImage],
     description: productDescription,
+    sku: String(product.id),
+    ...(productColour ? { color: productColour } : {}),
     brand: {
       '@type': 'Brand',
-      name: 'LOG'
+      name: 'LOG Clothing'
     },
     offers: {
       '@type': 'Offer',
       url: `${SITE_URL}/product/${product.id}`,
       priceCurrency: 'INR',
-      price: product.price,
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+      price: product.preorderPrice !== null && product.preorderPrice !== undefined ? product.preorderPrice : product.price,
+      availability: `https://schema.org/${seoAvailability}`,
+      itemCondition: 'https://schema.org/NewCondition',
+      seller: { '@id': `${SITE_URL}/#organization` },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' },
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' }
+      },
+      hasMerchantReturnPolicy: product.isPreorder === true
+        ? {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+          merchantReturnLink: `${SITE_URL}/refund-policy`
+        }
+        : {
+          '@type': 'MerchantReturnPolicy',
+          applicableCountry: 'IN',
+          returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+          merchantReturnDays: 7,
+          restockingFee: { '@type': 'MonetaryAmount', value: 23, currency: 'INR' },
+          itemDefectReturnFees: 'https://schema.org/FreeReturn',
+          merchantReturnLink: `${SITE_URL}/refund-policy`
+        }
     }
   };
 
@@ -166,7 +213,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   return (
     <div className="product-detail-page-container">
       <SEO
-        title={`${product.name} - LOG Streetwear`}
+        title={seoTitle}
         description={productDescription}
         image={primaryImage}
         type="product"
@@ -187,9 +234,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 >
                   <img 
                     src={mediaUrl(imgUrl)} 
-                    alt={`${product.name} detail view ${idx + 1}`} 
+                    srcSet={mediaSrcSet(imgUrl)}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    onError={srcSetFallback}
+                    alt={idx === 0 ? imageAlt : `${imageAlt} (view ${idx + 1})`} 
                     className="main-detail-img" 
                     loading={idx === 0 ? 'eager' : 'lazy'}
+                    fetchpriority={idx === 0 ? 'high' : 'auto'}
                     decoding="async"
                     style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px' }}
                   />
@@ -216,9 +267,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                     <div className="mobile-gallery-slide" key={`${imgUrl}-${idx}`}>
                       <img
                         src={mediaUrl(imgUrl)}
-                        alt={`${product.name} detail view ${idx + 1}`}
+                        srcSet={mediaSrcSet(imgUrl)}
+                        sizes="100vw"
+                        onError={srcSetFallback}
+                        alt={idx === 0 ? imageAlt : `${imageAlt} (view ${idx + 1})`}
                         className="main-detail-img"
                         loading={idx === 0 ? 'eager' : 'lazy'}
+                        fetchpriority={idx === 0 ? 'high' : 'auto'}
                         decoding="async"
                       />
                     </div>
@@ -371,6 +426,12 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 </button>
               </div>
             )}
+
+            <p className="product-policy-line">
+              {isDrop
+                ? `pre-order: size exchange only within 7 days. no returns.${product.preorderDispatchText ? ` ${product.preorderDispatchText}` : ''}`
+                : 'free shipping · dispatch within 15 days · 7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
+            </p>
 
             {/* Tabbed Info Description */}
             <div className="detail-info-tabs-card">

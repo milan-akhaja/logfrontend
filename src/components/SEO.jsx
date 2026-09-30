@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const SITE_URL = 'https://logcloth.com';
-const DEFAULT_TITLE = 'LOG Clothing (logcloth) - Premium Indian Streetwear & Oversized T-Shirts';
+const DEFAULT_TITLE = 'LOG Clothing — Numbered Streetwear Drops | No Permission 3.0';
 const DEFAULT_DESCRIPTION = 'Shop LOG Clothing at logcloth.com: premium Indian streetwear, oversized graphic T-shirts, heavyweight cotton fits, and socially responsible fashion with Rs. 23 donated from every product.';
 const DEFAULT_IMAGE = `${SITE_URL}/logo-512.png`;
 
@@ -87,11 +87,11 @@ export default function SEO({
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
     upsertMeta('meta[property="og:image"]', { property: 'og:image', content: image });
 
-    upsertMeta('meta[property="twitter:card"]', { property: 'twitter:card', content: 'summary_large_image' });
-    upsertMeta('meta[property="twitter:url"]', { property: 'twitter:url', content: canonicalUrl });
-    upsertMeta('meta[property="twitter:title"]', { property: 'twitter:title', content: fullTitle });
-    upsertMeta('meta[property="twitter:description"]', { property: 'twitter:description', content: description });
-    upsertMeta('meta[property="twitter:image"]', { property: 'twitter:image', content: image });
+    upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' });
+    upsertMeta('meta[name="twitter:url"]', { name: 'twitter:url', content: canonicalUrl });
+    upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: fullTitle });
+    upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: description });
+    upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: image });
 
     if (jsonLd) {
       upsertJsonLd('page-jsonld', jsonLd);

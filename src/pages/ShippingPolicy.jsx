@@ -4,7 +4,7 @@ export default function ShippingPolicy() {
   return (
     <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '850px', margin: '0 auto', color: 'var(--ink)' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Shipping Policy</h1>
-      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: July 2026</p>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: September 2026</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', lineHeight: '1.7', fontSize: '15px' }}>
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
@@ -17,7 +17,7 @@ export default function ShippingPolicy() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Dispatch Timeline</h2>
           <p>
-            Orders are generally shipped within 2 days from the date of order confirmation and/or payment, or as per the delivery date agreed at the time of order confirmation, subject to courier company or postal authority norms.
+            Regular products are dispatched within 15 days of order confirmation and/or payment. Pre-order (numbered drop) pieces ship by the date shown on the product page and at checkout. Delivery after dispatch depends on courier company or postal authority norms.
           </p>
         </section>
 
@@ -38,7 +38,7 @@ export default function ShippingPolicy() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Shipping Charges</h2>
           <p>
-            Any shipping costs charged at checkout are displayed before order confirmation. If shipping charges are levied, they are non-refundable unless required by applicable law or specifically approved by LOG.
+            Shipping is free on all orders.
           </p>
         </section>
 

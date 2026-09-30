@@ -4,7 +4,7 @@ export default function Terms() {
   return (
     <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '850px', margin: '0 auto', color: 'var(--ink)' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Terms & Conditions</h1>
-      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: July 2026</p>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '30px' }}>Last Updated: September 2026</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', lineHeight: '1.7', fontSize: '15px' }}>
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
@@ -41,10 +41,10 @@ export default function Terms() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Offer Terms</h2>
           <p style={{ marginBottom: '12px' }}>
-            Products purchased under any promotional offer, including <strong>Buy 1 Get 1 Free</strong>, discounts, combo offers, or sale events, are <strong>not eligible for return or exchange</strong>.
+            Products purchased under any promotional offer, including <strong>Buy 1 Get 1 Free</strong>, discounts, combo offers, or sale events, are <strong>not eligible for return or exchange</strong>. Exception: pre-order (numbered drop) pieces can be exchanged for another size within 7 days of delivery — no returns or refunds.
           </p>
           <p>
-            Please check the size guide carefully before placing your order. If you receive a damaged, defective, or incorrect item, contact us within <strong>48 hours</strong> of delivery, and we'll be happy to help.
+            Please check the size guide carefully before placing your order. If you receive a damaged, defective, or incorrect item, contact us within <strong>7 days</strong> of delivery, and we'll be happy to help.
           </p>
         </section>
 

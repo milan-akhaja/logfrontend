@@ -1,3 +1,16 @@
+/* Stand-in for Montserrat while it downloads, sized to take the same space,
+   so the page does not jump when the real font arrives (this was the whole
+   0.4 layout shift on product pages). Values are Montserrat's metrics
+   measured against Arial; Roboto (Android) is close enough to share them. */
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial'), local('Roboto'), local('Helvetica Neue');
+  ascent-override: 84.95%;
+  descent-override: 22.03%;
+  line-gap-override: 0%;
+  size-adjust: 113.39%;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
 
 *,
@@ -49,7 +62,7 @@ input,
 select,
 textarea,
 a {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -265,7 +278,7 @@ header.scrolled .nav-container {
   padding: 14px 40px;
 }
 .nav-logo {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 42px;
   font-weight: 700;
   letter-spacing: 0;
@@ -369,7 +382,7 @@ header.scrolled .donate-indicator {
   color: white;
   border: 1px solid white;
   padding: 8px 18px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -506,7 +519,7 @@ header.scrolled .bag-count {
   z-index: 12;
   transform: translateX(-50%);
   color: #ffffff;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: clamp(15px, 1.15vw, 20px);
   font-weight: 500;
   line-height: 1.1;
@@ -596,7 +609,7 @@ header.scrolled .bag-count {
 
 .btn {
   padding: 16px 36px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
@@ -718,7 +731,7 @@ header.scrolled .bag-count {
   background: transparent;
   border: 1px solid var(--border);
   padding: 8px 20px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1050,7 +1063,7 @@ header.scrolled .bag-count {
   padding: 0;
   width: 28px;
   height: 28px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 24px;
   font-weight: 300;
   line-height: 1;
@@ -1082,7 +1095,7 @@ header.scrolled .bag-count {
   color: white;
   border: 1.5px solid white;
   padding: 8px 16px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -1909,7 +1922,7 @@ header.scrolled .bag-count {
   color: var(--paper);
   border: 1px solid var(--ink);
   padding: 16px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 13px;
   font-weight: 800;
   text-transform: uppercase;
@@ -2228,7 +2241,7 @@ footer {
   bottom: -40px;
   right: -20px;
   font-size: 200px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.045);
   line-height: 1;
@@ -2248,7 +2261,7 @@ footer {
 
 .footer-brand h2 {
   font-size: 36px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   letter-spacing: 0;
   margin-bottom: 15px;
@@ -2311,7 +2324,7 @@ footer {
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 12px 15px;
   color: white;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 12px;
   border-radius: 4px;
 }
@@ -2326,7 +2339,7 @@ footer {
   color: var(--ink);
   border: 1px solid var(--paper);
   padding: 12px 20px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -2419,7 +2432,7 @@ footer {
 
 .admin-sidebar-logo {
   font-size: 22px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   letter-spacing: 0;
   display: flex;
@@ -3424,7 +3437,7 @@ footer {
   /* Matches white theme */
   color: #0F0F11;
   font-size: 11px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   letter-spacing: 0;
   display: flex;
@@ -3603,7 +3616,7 @@ footer {
   color: #0F0F11;
   border: none;
   padding: 10px 24px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -3657,7 +3670,7 @@ footer {
 .search-large-input {
   flex-grow: 1;
   border: none;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 20px;
   font-weight: 800;
   outline: none;
@@ -4001,7 +4014,7 @@ footer {
 .size-guide-btn {
   background: #E5E7EB;
   border: none;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 11px;
   font-weight: 700;
   padding: 4px 12px;
@@ -4022,7 +4035,7 @@ footer {
   border: 1px solid var(--border);
   padding: 12px;
   border-radius: 4px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -4151,7 +4164,7 @@ footer {
 .unit-toggle button {
   background: none;
   border: none;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-size: 9px;
   font-weight: 800;
   padding: 4px 10px;
@@ -4929,7 +4942,7 @@ header.scrolled .nav-action-icon-btn {
   white-space: nowrap;
   padding-bottom: 8px;
   border-bottom: 2px solid transparent;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
 }
 
 .widget-tabs button.active {
@@ -4978,7 +4991,7 @@ header.scrolled .nav-action-icon-btn {
 }
 .burger-logo {
   font-size: 18px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -5309,7 +5322,7 @@ header.scrolled .nav-action-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
   font-weight: 700;
   letter-spacing: 0;
   font-size: 10px;
@@ -6557,3 +6570,18 @@ header.scrolled .nav-action-icon-btn {
 }
 
 .checkout-contact a { color: var(--ink); font-weight: 700; text-decoration: underline; }
+
+.product-policy-line {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--grey-dark);
+}
+
+.checkout-policy-line {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--grey-dark);
+}
