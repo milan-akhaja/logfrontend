@@ -391,8 +391,23 @@ async function renderSitemap() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
+// Last resort if the bundled copy of index.html is ever missing: the same file
+// is also served as a plain static file, so fetch it once and keep it. Without
+// this a missing template would take every page down instead of just losing
+// the extra tags.
+async function ensureTemplate(req) {
+  if (loadTemplate()) return;
+  const host = req.headers?.['x-forwarded-host'] || req.headers?.host;
+  if (!host) return;
+  try {
+    const response = await fetch(`https://${host}/index.html`);
+    if (response.ok) template = await response.text();
+  } catch { /* stays null; the handler reports it */ }
+}
+
 export default async function handler(req, res) {
   const query = req.query || {};
+  await ensureTemplate(req);
   try {
     if (query.sitemap) {
       res.setHeader('Content-Type', 'application/xml; charset=utf-8');
