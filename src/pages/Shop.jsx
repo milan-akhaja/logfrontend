@@ -573,9 +573,7 @@ export default function Shop({ onAddToCart }) {
   });
 
   const isDefaultView = !searchQuery && !collectionFilter && !categoryFilter && !subCategoryFilter && !colorFilter && filter === 'all';
-  const displayedProducts = isDefaultView && !showAllProducts
-    ? filteredProducts.slice(0, 5)
-    : filteredProducts;
+  const displayedProducts = filteredProducts;
 
   const heroShopLink = heroConfig.button1Link || '#shop-catalog';
   const desktopHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.desktopMediaType) ? heroConfig.desktopMediaType : 'image';
@@ -844,14 +842,7 @@ export default function Shop({ onAddToCart }) {
           ))}
         </div>
 
-        {/* Discover More Button */}
-        {isDefaultView && !showAllProducts && filteredProducts.length > 5 && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px', marginBottom: '20px' }}>
-            <button className="btn btn-accent" onClick={() => navigate('/shop')}>
-              Show More Products
-            </button>
-          </div>
-        )}
+        
       </section>
 
       {/* MANIFESTO SECTION */}
