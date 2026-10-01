@@ -65,6 +65,9 @@ export function ProductGridCard({ product, onAddToCart }) {
   };
 
   const navigate = useNavigate();
+  const isDrop = product.isPreorder === true;
+  const isSoldOut = isDrop ? product.soldOut === true : product.stock === 0;
+  const isLowStock = !isDrop && product.stock <= 5 && product.stock > 0;
 
   return (
     <div
@@ -84,8 +87,9 @@ export function ProductGridCard({ product, onAddToCart }) {
             {product.bogoOffer.label || 'BOGO OFFER'}
           </span>
         )}
-        {product.stock <= 5 && product.stock > 0 && <span className="product-tag tag-limited">Low Stock</span>}
-        {product.stock === 0 && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
+        {isDrop && !isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82', color: '#fff', letterSpacing: '0.05em' }}>PRE ORDER</span>}
+        {isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
+        {isLowStock && <span className="product-tag tag-limited">Low Stock</span>}
 
         {/* Scroll Buttons */}
         <button className="card-slide-arrow arrow-left" onClick={prevSlide} aria-label={`Previous image for ${product.name}`}>&#10094;</button>
@@ -125,7 +129,7 @@ export function ProductGridCard({ product, onAddToCart }) {
         <h3 className="product-name">{product.name}</h3>
         <div className="product-price-row">
           <ProductPrice product={product} prefix="RS. " compact />
-          {product.stock > 0 ? (
+          {!isSoldOut ? (
             <button
               className="add-to-bag-btn"
               aria-label={`Add ${product.name} to bag`}
@@ -134,7 +138,7 @@ export function ProductGridCard({ product, onAddToCart }) {
                 onAddToCart(product);
               }}
             >
-              <span className="add-to-bag-text">Add to Cart</span>
+              <span className="add-to-bag-text">{isDrop ? 'Pre-Order' : 'Add to Cart'}</span>
               <span className="add-to-bag-icon" aria-hidden="true">+</span>
             </button>
           ) : (

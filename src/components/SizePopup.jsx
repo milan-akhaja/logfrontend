@@ -25,8 +25,13 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   // Sizes come from the product, so XXL / XS / Free Size all work.
   const sizesList = productSizes(product);
 
+  const isDrop = product.isPreorder === true;
+
   // Size stocks helper
   const getStockForSize = (size) => {
+    if (isDrop) {
+      return product.soldOut ? 0 : (product.piecesTotal || 40);
+    }
     if (product.sizes) {
       return product.sizes[size] !== undefined ? product.sizes[size] : 0;
     }
@@ -107,7 +112,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                   <div className="size-buttons-grid">
                     {sizesList.map(size => {
                       const stock = getStockForSize(size);
-                      const isOutOfStock = stock <= 0;
+                      const isOutOfStock = isDrop ? product.soldOut === true : stock <= 0;
                       
                       return (
                         <button
@@ -119,7 +124,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                         >
                           <span className="size-name">{size}</span>
                           <span className="size-stock-status">
-                            {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                            {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
                           </span>
                         </button>
                       );
@@ -136,7 +141,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                   <div className="size-buttons-grid">
                     {sizesList.map(size => {
                       const stock = getStockForSize(size);
-                      const isOutOfStock = stock <= 0;
+                      const isOutOfStock = isDrop ? product.soldOut === true : stock <= 0;
                       
                       return (
                         <button
@@ -148,7 +153,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                         >
                           <span className="size-name">{size}</span>
                           <span className="size-stock-status">
-                            {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                            {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
                           </span>
                         </button>
                       );
@@ -172,7 +177,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                 <div className="size-buttons-grid">
                   {sizesList.map(size => {
                     const stock = getStockForSize(size);
-                    const isOutOfStock = stock <= 0;
+                    const isOutOfStock = isDrop ? product.soldOut === true : stock <= 0;
                     
                     return (
                       <button
@@ -184,7 +189,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                       >
                         <span className="size-name">{size}</span>
                         <span className="size-stock-status">
-                          {isOutOfStock ? 'Sold Out' : `${stock} left`}
+                          {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
                         </span>
                       </button>
                     );

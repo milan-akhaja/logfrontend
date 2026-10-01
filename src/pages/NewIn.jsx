@@ -96,7 +96,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                 onClick={() => navigate(`/product/${product.id}`)}
               >
                 <div className="product-img-wrapper">
-                  <span className="product-tag tag-new" style={{ background: 'var(--ink)' }}>New In</span>
+                  <span className="product-tag tag-new" style={{ background: 'var(--ink)' }}>{isDrop ? 'PRE ORDER' : 'New In'}</span>
                   {product.bogoOffer?.enabled && (
                     <span className="product-offer-badge card-offer-badge">
                       {product.bogoOffer.label || 'BOGO OFFER'}
@@ -118,7 +118,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                   <p className="product-desc">{product.desc}</p>
                   <div className="product-price-row">
                     <ProductPrice product={product} compact />
-                    {product.stock > 0 ? (
+                    {!isSoldOut ? (
                       <button
                         className="add-to-bag-btn"
                         aria-label={`Add ${product.name} to bag`}
@@ -127,7 +127,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                           onAddToCart(product);
                         }}
                       >
-                        <span className="add-to-bag-text">Add to Bag</span>
+                        <span className="add-to-bag-text">{isDrop ? 'Pre-Order' : 'Add to Bag'}</span>
                         <span className="add-to-bag-icon"><ShoppingCart size={16} /></span>
                       </button>
                     ) : (
