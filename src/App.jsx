@@ -33,6 +33,39 @@ const Terms = React.lazy(() => import('./pages/Terms'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
+class RouteErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('Route error caught by ErrorBoundary:', error, errorInfo);
+  }
+  componentDidUpdate(prevProps) {
+    if (this.props.locationKey !== prevProps.locationKey && this.state.hasError) {
+      this.setState({ hasError: false, error: null });
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '60px 20px', background: '#FAF9F6' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Unable to load this page</h2>
+          <p style={{ color: '#666', maxWidth: '420px', marginBottom: '24px', fontSize: '14px', lineHeight: '1.6' }}>An unexpected error occurred while loading this section. Please try again or return to the shop.</p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={() => window.location.reload()} className="btn" style={{ padding: '12px 24px', background: 'var(--grey-light)', border: '1px solid var(--border)', cursor: 'pointer' }}>Reload Page</button>
+            <a href="/" className="btn btn-accent" style={{ padding: '12px 24px', textDecoration: 'none' }}>Return to Shop</a>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Page Tracker Wrapper to track sessions & page views
 function PageTracker() {
   const location = useLocation();
@@ -507,6 +540,7 @@ function AppContent({
       className={isAdmin ? undefined : 'page-transition-shell'}
     >
       <React.Suspense fallback={<div className="route-loading-fallback" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAF9F6' }}><div className="loading-spinner"></div></div>}>
+        <RouteErrorBoundary locationKey={`${location.pathname}${location.search}`}>
         <Routes>
           <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
           <Route path="/shop" element={<><SEO title="Shop Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
@@ -524,6 +558,7 @@ function AppContent({
           <Route path="/privacy-policy" element={<><SEO title="Privacy Policy" description="Read how LOG Clothing collects, uses, protects, shares, and retains customer information for orders and support." canonicalPath="/privacy-policy" /><PrivacyPolicy /></>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </RouteErrorBoundary>
       </React.Suspense>
     </div>
   );

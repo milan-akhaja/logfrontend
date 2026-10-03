@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
@@ -10,6 +10,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import ShippingPolicy from './pages/ShippingPolicy';
 import Footer from './components/Footer';
+import NewIn from './pages/NewIn';
+import * as productsModule from './lib/products';
 
 describe('Pricing Helper Functions', () => {
   it('priceNumber parses string values correctly', () => {
@@ -84,5 +86,68 @@ describe('Footer Component', () => {
       </BrowserRouter>
     );
     expect(screen.getAllByText(/LOG CLOTHING/i).length).toBeGreaterThan(0);
+  });
+});
+
+describe('NewIn Component', () => {
+  it('renders products without crashing when isDrop and isSoldOut are evaluated', async () => {
+    const mockProducts = [
+      {
+        id: 'tee-1',
+        name: 'Porsche 911 Tee',
+        price: 999,
+        stock: 10,
+        isPreorder: false,
+        soldOut: false
+      },
+      {
+        id: 'tee-2',
+        name: 'Preorder Drop Tee',
+        price: 1199,
+        stock: 0,
+        isPreorder: true,
+        soldOut: false
+      },
+      {
+        id: 'tee-3',
+        name: 'Sold Out Drop Tee',
+        price: 1199,
+        stock: 0,
+        isPreorder: true,
+        soldOut: true
+      }
+    ];
+
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue(mockProducts);
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('new-in-config')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            tagline: 'Summer Drop 2026',
+            title: 'The Racing Drop',
+            desc: 'Test description',
+            buttonText: 'Explore Drops',
+            buttonLink: '#new-drops-catalog',
+            imageUrl: 'assets/lookbook_polaroid_1.webp'
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <BrowserRouter>
+        <NewIn onAddToCart={() => {}} onToast={() => {}} />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText(/New Arrivals/i)).toBeDefined();
+    // Await async product loading
+    const porscheTitle = await screen.findByText('Porsche 911 Tee');
+    expect(porscheTitle).toBeDefined();
+
+    const preorderTitle = await screen.findByText('Preorder Drop Tee');
+    expect(preorderTitle).toBeDefined();
   });
 });
