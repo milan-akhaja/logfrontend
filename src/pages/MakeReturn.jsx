@@ -398,8 +398,7 @@ export default function MakeReturn() {
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '14px' }}>
                   <strong style={{ color: 'var(--ink)' }}>Need Support?</strong>
                   <p style={{ color: 'rgba(0,0,0,0.7)', marginTop: '2px' }}>
-                    Email: <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a><br />
-                    Phone: <a href="tel:+917878623123" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>+91 78786 23123</a>
+                    Email: <a href="mailto:contact@logcloth.com" style={{ fontWeight: '700', color: 'var(--ink)', textDecoration: 'underline' }}>contact@logcloth.com</a>
                   </p>
                 </div>
 
