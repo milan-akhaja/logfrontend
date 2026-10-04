@@ -10,8 +10,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const isHome = location.pathname === '/';
   const cleanPath = location.pathname.toLowerCase().replace(/\/+$/, '');
   const isDarkPage = isHome || 
-                     cleanPath === '/our-mission' || 
-                     cleanPath === '/new-in' || 
+                     cleanPath === '/our-mission' ||  
                      cleanPath.startsWith('/blog');
   const [scrolled, setScrolled] = useState(false);
   const [stories, setStories] = useState([]);
@@ -67,8 +66,8 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/new-in" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                NEW IN
+              <NavLink to="/make-return" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                RETURN / EXCHANGE
               </NavLink>
             </li>
             <li>

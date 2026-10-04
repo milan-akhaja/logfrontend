@@ -54,7 +54,6 @@ const CACHEABLE_API_PATHS = [
   '/api/gallery',
   '/api/blogs',
   '/api/hero-config',
-  '/api/new-in-config',
   '/api/content-blocks-config',
   '/api/coming-soon'
 ];

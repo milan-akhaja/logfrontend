@@ -48,7 +48,6 @@ const ADMIN_TABS = [
   ['blogs', 'Blogs'],
   ['gallery', 'Gallery'],
   ['contentblocks', 'Banners & Quotes'],
-  ['newinconfig', 'New In'],
   ['heroconfig', 'Hero'],
   ['subscribers', 'Drop List'],
   ['goaffpro', 'GoAffPro Affiliates']
@@ -2037,14 +2036,6 @@ export default function Admin({ onToast }) {
                     onClick={() => setActiveTab('contentblocks')}
                   >
                     Banners & Quotes
-                  </div>
-                </li>
-                <li>
-                  <div
-                    className={`admin-submenu-link ${activeTab === 'newinconfig' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('newinconfig')}
-                  >
-                    New In Page Settings
                   </div>
                 </li>
                 <li>

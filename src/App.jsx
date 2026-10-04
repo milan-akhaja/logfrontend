@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
@@ -19,7 +19,6 @@ import SEO from './components/SEO';
 import Shop from './pages/Shop';
 import ShopPage from './pages/ShopPage';
 
-const NewIn = React.lazy(() => import('./pages/NewIn'));
 const OurMission = React.lazy(() => import('./pages/OurMission'));
 const LogBook = React.lazy(() => import('./pages/LogBook'));
 const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
@@ -544,7 +543,7 @@ function AppContent({
         <Routes>
           <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
           <Route path="/shop" element={<><SEO title="Shop Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
-          <Route path="/new-in" element={<><SEO title="New In - Latest LOG Streetwear Drops" description="Explore the newest LOG streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases." canonicalPath="/new-in" /><NewIn onAddToCart={onAddToCart} onToast={showToast} /></>} />
+          <Route path="/new-in" element={<Navigate to="/shop" replace />} />
           <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience" description="Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product." canonicalPath="/our-mission" /><OurMission /></>} />
           <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories, Lookbook & Impact" description="Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG." canonicalPath="/log-book" type="blog" /><LogBook /></>} />
           <Route path="/blog/:id" element={<BlogDetail />} />
