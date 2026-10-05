@@ -66,11 +66,6 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
               </NavLink>
             </li>
             <li>
-              <NavLink to="/make-return" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                RETURN / EXCHANGE
-              </NavLink>
-            </li>
-            <li>
               <NavLink to="/our-mission" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 OUR MISSION
               </NavLink>

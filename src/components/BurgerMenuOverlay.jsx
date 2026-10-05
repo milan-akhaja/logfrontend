@@ -255,9 +255,6 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
             <div className="burger-link-item" onClick={() => handleFilterClick('all', 'all')}>
               New Arrivals
             </div>
-            <div className="burger-link-item" onClick={() => { onClose(); navigate('/make-return'); }}>
-              Return / Exchange
-            </div>
             {collections.map(col => (
               <div key={col.id} className="burger-link-item" onClick={() => handleFilterClick('collection', col.id)}>
                 {col.title}
