@@ -191,7 +191,7 @@ export default function CartDrawer({
     saveInfo: false
   };
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
-  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [paymentMethod, setPaymentMethod] = useState('payu');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   // Numbered drop. dropIds comes from the product list; quote is the server's
@@ -320,13 +320,19 @@ export default function CartDrawer({
     if (cartHasDrop && paymentMethod === 'cod') setPaymentMethod('payu');
   }, [cartHasDrop, paymentMethod]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      setPaymentMethod('payu');
+    }
+  }, [isOpen]);
+
   // Donation calculation (₹23 per product quantity)
   const totalItemsQty = cart.reduce((sum, item) => sum + item.quantity, 0);
   const donation = totalItemsQty * 23;
 
   useEffect(() => {
     if (paymentMethod === 'founder_delivery' && !founderDeliveryAvailable) {
-      setPaymentMethod('cod');
+      setPaymentMethod('payu');
     }
   }, [founderDeliveryAvailable, paymentMethod]);
 
@@ -530,6 +536,7 @@ export default function CartDrawer({
         onClearCart();
         setShowCheckoutForm(false);
         setShowSuccessModal(true);
+        setPaymentMethod('payu');
         setIsSubmittingOrder(false);
         return;
       }
