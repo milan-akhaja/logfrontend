@@ -199,6 +199,8 @@ export default function CartDrawer({
   // server recomputes everything when the order is placed.
   const [dropIds, setDropIds] = useState(() => new Set());
   const [quote, setQuote] = useState(null);
+  const [quoteError, setQuoteError] = useState(false);
+  const [quoteRetry, setQuoteRetry] = useState(0);
   const [wallOptIn, setWallOptIn] = useState(false);
   const [wallDisplayName, setWallDisplayName] = useState('');
   const [wallCity, setWallCity] = useState('');
@@ -236,11 +238,13 @@ export default function CartDrawer({
   // A drop cart never offers COD - decided from the product list, and also
   // from the server quote, so either one alone is enough to hide it.
   const cartHasDrop = cart.some((item) => dropIds.has(String(item.id))) || quote?.hasPreorder === true;
-  // Only trust the quote while it describes the cart on screen.
+  // Only trust the quote while it describes the exact cart and payment method on screen.
+  const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
   const quoteMatchesCart = Boolean(quote)
-    && quote.lines.length === cart.length
+    && String(quote.paymentMethod || '').trim().toLowerCase() === normalizedPaymentMethod
+    && quote.lines?.length === cart.length
     && quote.lines.every((line, index) => String(line.id) === String(cart[index]?.id) && line.quantity === cart[index]?.quantity);
-  const useServerTotals = cartHasDrop && quoteMatchesCart;
+  const useServerTotals = quoteMatchesCart;
 
   const clientSubtotal = cart.reduce((sum, item) => {
     if (item.isBogo && !dropIds.has(String(item.id))) {
@@ -251,7 +255,7 @@ export default function CartDrawer({
 
   const subtotal = useServerTotals ? quote.subtotal : clientSubtotal;
   const discountAmount = useServerTotals ? quote.discount : 0;
-  const netSubtotal = subtotal;
+  const netSubtotal = subtotal - discountAmount;
   // Shipping is free on every order. Must match FLAT_SHIPPING_FEE in the
   // backend's pricing.js - the server decides what is actually charged, so if
   // these disagree the customer sees one number and pays another.
@@ -261,16 +265,18 @@ export default function CartDrawer({
   const founderDeliveryFee = useServerTotals ? quote.founderDeliveryFee : (isFounderDelivery ? FOUNDER_DELIVERY_FEE : 0);
   const shipping = useServerTotals ? quote.shipping : baseShipping + founderDeliveryFee;
   const total = useServerTotals ? quote.total : netSubtotal + shipping;
-  // A drop cart without a server quote shows no grand total of its own.
-  const totalPending = cartHasDrop && !useServerTotals;
+  // When quote is loading or not yet matched, totals are pending.
+  const totalPending = !useServerTotals;
 
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
       setQuote(null);
+      setQuoteError(false);
       return undefined;
     }
     const controller = new AbortController();
     const timer = setTimeout(() => {
+      setQuoteError(false);
       apiJson('/api/orders/quote', {
         method: 'POST',
         signal: controller.signal,
@@ -283,20 +289,32 @@ export default function CartDrawer({
             selectedSize1: item.selectedSize1,
             selectedSize2: item.selectedSize2
           })),
+          paymentMethod,
           deliveryOption: paymentMethod === 'founder_delivery' ? 'founder_delivery' : 'standard',
           customerInfo: { city: customerInfo.city }
         })
       })
-        .then((data) => setQuote(data?.success ? data : null))
+        .then((data) => {
+          if (data?.success) {
+            setQuote(data);
+            setQuoteError(false);
+          } else {
+            setQuote(null);
+            setQuoteError(true);
+          }
+        })
         .catch((err) => {
-          if (err?.name !== 'AbortError') setQuote(null);
+          if (err?.name !== 'AbortError') {
+            setQuote(null);
+            setQuoteError(true);
+          }
         });
     }, 300);
     return () => {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [isOpen, cart, paymentMethod, customerInfo.city]);
+  }, [isOpen, cart, paymentMethod, customerInfo.city, quoteRetry]);
 
   useEffect(() => {
     if (cartHasDrop && paymentMethod === 'cod') setPaymentMethod('payu');
@@ -427,7 +445,7 @@ export default function CartDrawer({
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    if (cart.length === 0 || isSubmittingOrder) return;
+    if (cart.length === 0 || isSubmittingOrder || !quoteMatchesCart) return;
 
     const currentDonation = donation;
     setLastDonation(currentDonation);
@@ -769,7 +787,7 @@ export default function CartDrawer({
                 </div>
                 {discountAmount > 0 && (
                   <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                    <span className="cart-totals-label">Pre-order discount</span>
+                    <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop ? 'Pre-order discount' : 'Prepaid discount')}</span>
                     <span className="cart-totals-val">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
@@ -820,12 +838,24 @@ export default function CartDrawer({
                 <button
                   type="submit"
                   className="btn btn-accent"
-                  disabled={isSubmittingOrder}
-                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: isSubmittingOrder ? 0.6 : 1 }}
+                  disabled={isSubmittingOrder || !quoteMatchesCart}
+                  style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: (isSubmittingOrder || !quoteMatchesCart) ? 0.6 : 1 }}
                 >
-                  {isSubmittingOrder ? 'Placing Order...' : 'Place Order'}
+                  {isSubmittingOrder ? 'Placing Order...' : !quoteMatchesCart ? 'Calculating...' : 'Place Order'}
                 </button>
               </div>
+              {quoteError && !quoteMatchesCart && (
+                <p style={{ color: '#c51616', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
+                  Could not calculate order totals.{' '}
+                  <button
+                    type="button"
+                    onClick={() => setQuoteRetry((c) => c + 1)}
+                    style={{ background: 'none', border: 'none', textDecoration: 'underline', color: 'inherit', cursor: 'pointer', padding: 0, font: 'inherit', fontWeight: '700' }}
+                  >
+                    Retry
+                  </button>
+                </p>
+              )}
               <p className="checkout-contact">
                 Questions? <a href="mailto:contact@logcloth.com">contact@logcloth.com</a>
               </p>
@@ -906,7 +936,7 @@ export default function CartDrawer({
             </div>
             {discountAmount > 0 && (
               <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                <span className="cart-totals-label">{cartHasDrop ? 'Pre-order discount' : 'Discount'}</span>
+                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop ? 'Pre-order discount' : 'Discount')}</span>
                 <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
               </div>
             )}
