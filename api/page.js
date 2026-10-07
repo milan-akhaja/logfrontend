@@ -146,7 +146,7 @@ function productDescription(product) {
   const colour = colourOf(product);
   if (isDropProduct(product)) {
     return truncate(
-      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}graphic tee in heavyweight 240 GSM cotton. One of ${DROP_PIECES} numbered pieces from the ${DROP_NAME} drop for men and women.`,
+      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${DROP_PIECES} numbered pieces from the ${DROP_NAME} drop.`,
       DESCRIPTION_MAX
     );
   }

@@ -98,7 +98,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
     : `${product.name} — Unisex Oversized Tee | LOG Clothing`;
   const seoDescriptionFull = isDropDesign
-    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}graphic tee in heavyweight 240 GSM cotton. One of 40 numbered pieces from the No Permission 3.0 drop for men and women.`
+    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM cotton, for men and women. One of 40 numbered pieces from the No Permission 3.0 drop.`
     : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex oversized tee from LOG Clothing. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
   const productDescription = seoDescriptionFull.length <= 155
     ? seoDescriptionFull
