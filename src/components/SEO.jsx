@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 
 const SITE_URL = 'https://logcloth.com';
 const DEFAULT_TITLE = 'LOG Clothing — Numbered Streetwear Drops | No Permission 3.0';
-const DEFAULT_DESCRIPTION = 'Shop LOG Clothing at logcloth.com: premium Indian streetwear, oversized graphic T-shirts, heavyweight cotton fits, and socially responsible fashion with Rs. 23 donated from every product.';
+const DEFAULT_DESCRIPTION = 'Unisex oversized graphic t-shirts & streetwear in India. Heavyweight 240 GSM cotton for men and women, in limited numbered drops. logcloth.com';
 const DEFAULT_IMAGE = `${SITE_URL}/logo-512.png`;
 
 function upsertMeta(selector, attributes) {

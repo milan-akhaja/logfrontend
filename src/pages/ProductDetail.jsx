@@ -95,11 +95,11 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     : '';
   const isDropDesign = Number(product.is_preorder || 0) === 1;
   const seoTitle = isDropDesign
-    ? `${product.name} — Oversized 240 GSM Tee | LOG Clothing`
-    : `${product.name} | LOG Clothing`;
+    ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
+    : `${product.name} — Unisex Oversized Tee | LOG Clothing`;
   const seoDescriptionFull = isDropDesign
-    ? `${product.name} — oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM. One of 40 numbered pieces from the No Permission 3.0 drop by LOG Clothing.`
-    : `${product.name}${productColour ? ` in ${productColour}` : ''} from LOG Clothing. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
+    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}graphic tee in heavyweight 240 GSM cotton. One of 40 numbered pieces from the No Permission 3.0 drop for men and women.`
+    : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex oversized tee from LOG Clothing. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
   const productDescription = seoDescriptionFull.length <= 155
     ? seoDescriptionFull
     : `${seoDescriptionFull.slice(0, 154).replace(/\s+\S*$/, '')}…`;
@@ -116,6 +116,10 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     image: displayImages.length ? displayImages : [primaryImage],
     description: productDescription,
     sku: String(product.id),
+    audience: {
+      '@type': 'PeopleAudience',
+      suggestedGender: 'unisex'
+    },
     ...(productColour ? { color: productColour } : {}),
     brand: {
       '@type': 'Brand',
@@ -485,7 +489,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                         <div className="details-list-block">
                           <strong>Details</strong>
                           <ul>
-                            <li>100% premium French Terry Cotton.</li>
+                            <li>Heavyweight 240 GSM cotton.</li>
                             <li>Double Bio Washed.</li>
                             <li>High Density DTF printing.</li>
                             <li>Oversized Fit / Half Sleeve design.</li>
@@ -493,7 +497,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                         </div>
                         <div className="description-text-block" style={{ marginTop: '15px' }}>
                           <strong>Description</strong>
-                          <p>{product.desc || 'Premium streetwear statement piece designed for ultimate fit and daily wear durability.'}</p>
+                          <p>{product.desc || 'Unisex oversized graphic t-shirt in heavyweight 240 GSM cotton for men and women.'}</p>
                         </div>
                       </>
                     )}

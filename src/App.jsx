@@ -541,7 +541,7 @@ function AppContent({
         <RouteErrorBoundary locationKey={`${location.pathname}${location.search}`}>
         <Routes>
           <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
-          <Route path="/shop" element={<><SEO title="Shop Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
+          <Route path="/shop" element={<><SEO title="Shop Unisex Oversized T-Shirts, Graphic Tees & Streetwear" description="Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
           <Route path="/new-in" element={<Navigate to="/shop" replace />} />
           <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience" description="Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product." canonicalPath="/our-mission" /><OurMission /></>} />
           <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories, Lookbook & Impact" description="Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG." canonicalPath="/log-book" type="blog" /><LogBook /></>} />

@@ -28,7 +28,7 @@ const API_TIMEOUT_MS = 2500;
 // Same titles and descriptions the React routes set in App.jsx, so the HTML a
 // crawler reads matches what the page says once JavaScript runs.
 const STATIC_PAGES = {
-  '/shop': ['Shop Oversized T-Shirts, Graphic Tees & Streetwear | LOG', 'Shop LOG premium Indian streetwear: oversized T-shirts, graphic tees, relaxed fits, and heavyweight cotton essentials delivered across India.'],
+  '/shop': ['Shop Unisex Oversized T-Shirts, Graphic Tees & Streetwear | LOG', 'Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India.'],
   '/new-in': ['New In - Latest LOG Streetwear Drops', 'Explore the newest LOG streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases.'],
   '/our-mission': ['Our Mission - Streetwear With a Conscience | LOG', 'Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product.'],
   '/log-book': ['LOG Book - Streetwear Stories, Lookbook & Impact', 'Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG.'],
@@ -138,20 +138,20 @@ const AVAILABILITY_LABEL = { PreOrder: 'Pre-order', InStock: 'In stock', SoldOut
 
 function productTitle(product) {
   return isDropProduct(product)
-    ? `${product.name} — Oversized 240 GSM Tee | LOG Clothing`
-    : `${product.name} | LOG Clothing`;
+    ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
+    : `${product.name} — Unisex Oversized Tee | LOG Clothing`;
 }
 
 function productDescription(product) {
   const colour = colourOf(product);
   if (isDropProduct(product)) {
     return truncate(
-      `${product.name} — oversized ${colour ? `${colour} ` : ''}tee, 240 GSM. One of ${DROP_PIECES} numbered pieces from the ${DROP_NAME} drop by LOG Clothing.`,
+      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}graphic tee in heavyweight 240 GSM cotton. One of ${DROP_PIECES} numbered pieces from the ${DROP_NAME} drop for men and women.`,
       DESCRIPTION_MAX
     );
   }
   return truncate(
-    `${product.name}${colour ? ` in ${colour}` : ''} from LOG Clothing. ${product.description || product.desc || ''}`,
+    `${product.name}${colour ? ` in ${colour}` : ''} — unisex oversized tee from LOG Clothing. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`,
     DESCRIPTION_MAX
   );
 }
@@ -206,6 +206,10 @@ function productJsonLd(product, url) {
     image: images.length ? images : [`${SITE_URL}/logo-512.png`],
     description: productDescription(product),
     sku: String(product.id),
+    audience: {
+      '@type': 'PeopleAudience',
+      suggestedGender: 'unisex'
+    },
     ...(colourOf(product) ? { color: colourOf(product) } : {}),
     brand: { '@type': 'Brand', name: 'LOG Clothing' },
     offers: {
@@ -246,7 +250,7 @@ function productBody(product) {
   <article>
     <h1>${escapeHtml(product.name)}</h1>
     <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${AVAILABILITY_LABEL[availability]}</p>
-    ${isDropProduct(product) ? `<p>Oversized tee · 240 GSM · ${DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)}</p>${claimed}` : ''}
+    ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex oversized graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
     ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
     ${details.length ? `<ul>${details.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
     ${productImages(product).map((url, index) => `<img src="${escapeHtml(url)}"${srcSetAttr(url)} alt="${escapeHtml(alt)}"${index ? ' loading="lazy"' : ' fetchpriority="high"'}>`).join('\n    ')}
