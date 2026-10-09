@@ -7,6 +7,7 @@ import useContentBlocks from '../hooks/useContentBlocks';
 import useIsMobile from '../hooks/useIsMobile';
 import { getProducts, getCachedProducts } from '../lib/products';
 import { appPath, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
+import { saveScrollPosition } from '../lib/scrollRestoration';
 
 const slideIntervalMs = (value) => {
   const parsed = Number(value);
@@ -72,8 +73,25 @@ export function ProductGridCard({ product, onAddToCart }) {
   return (
     <div
       className="product-card reveal"
+      data-product-id={product.id}
+      id={`product-card-${product.id}`}
       style={{ cursor: 'pointer' }}
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={() => {
+        const y = window.scrollY || window.pageYOffset || document.documentElement?.scrollTop || 0;
+        if (y > 0) {
+          saveScrollPosition(window.history.state?.key, window.location.pathname + window.location.search, y);
+          try {
+            sessionStorage.setItem('log_last_clicked_product', String(product.id));
+            sessionStorage.setItem('log_last_scroll_y', String(y));
+            if (window.location.pathname === '/') {
+              sessionStorage.setItem('log_home_scroll', String(y));
+            } else if (window.location.pathname === '/shop') {
+              sessionStorage.setItem('log_shop_scroll', String(y));
+            }
+          } catch (e) {}
+        }
+        navigate(`/product/${product.id}`);
+      }}
     >
       <div
         className="product-img-wrapper"

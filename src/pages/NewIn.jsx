@@ -4,6 +4,7 @@ import { Mail, Clock, ShoppingCart } from 'lucide-react';
 import ProductPrice from '../components/ProductPrice';
 import { appPath, mediaUrl } from '../lib/urls';
 import { getProducts } from '../lib/products';
+import { saveScrollPosition } from '../lib/scrollRestoration';
 
 export default function NewIn({ onAddToCart, onToast }) {
   const [products, setProducts] = useState([]);
@@ -94,8 +95,25 @@ export default function NewIn({ onAddToCart, onToast }) {
               <div
                 className="product-card reveal"
                 key={product.id}
+                data-product-id={product.id}
+                id={`product-card-${product.id}`}
                 style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/product/${product.id}`)}
+                onClick={() => {
+                  const y = window.scrollY || window.pageYOffset || document.documentElement?.scrollTop || 0;
+                  if (y > 0) {
+                    saveScrollPosition(window.history.state?.key, window.location.pathname + window.location.search, y);
+                    try {
+                      sessionStorage.setItem('log_last_clicked_product', String(product.id));
+                      sessionStorage.setItem('log_last_scroll_y', String(y));
+                      if (window.location.pathname === '/') {
+                        sessionStorage.setItem('log_home_scroll', String(y));
+                      } else if (window.location.pathname === '/shop') {
+                        sessionStorage.setItem('log_shop_scroll', String(y));
+                      }
+                    } catch (e) {}
+                  }
+                  navigate(`/product/${product.id}`);
+                }}
               >
                 <div className="product-img-wrapper">
                   <span className="product-tag tag-new" style={{ background: isSoldOut ? '#7E7E82' : 'var(--ink)' }}>

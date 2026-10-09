@@ -468,7 +468,10 @@ function ScrollManager() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          saveScrollPosition(location.key, location.pathname + location.search);
+          const y = window.scrollY || window.pageYOffset || document.documentElement?.scrollTop || 0;
+          if (y > 0) {
+            saveScrollPosition(location.key, location.pathname + location.search, y);
+          }
           ticking = false;
         });
         ticking = true;
@@ -476,8 +479,33 @@ function ScrollManager() {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      saveScrollPosition(location.key, location.pathname + location.search);
       window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.key, location.pathname, location.search]);
+
+  // Capture scroll position immediately whenever user taps or clicks any link/product
+  useEffect(() => {
+    const handleTap = (e) => {
+      const y = window.scrollY || window.pageYOffset || document.documentElement?.scrollTop || 0;
+      if (y > 0) {
+        saveScrollPosition(location.key, location.pathname + location.search, y);
+      }
+      try {
+        const targetCard = e.target?.closest?.('[data-product-id]');
+        if (targetCard) {
+          const pId = targetCard.getAttribute('data-product-id');
+          if (pId) {
+            sessionStorage.setItem('log_last_clicked_product', String(pId));
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('pointerdown', handleTap, { capture: true, passive: true });
+    window.addEventListener('click', handleTap, { capture: true, passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', handleTap, { capture: true });
+      window.removeEventListener('click', handleTap, { capture: true });
     };
   }, [location.key, location.pathname, location.search]);
 
@@ -486,26 +514,66 @@ function ScrollManager() {
     if (navigationType === 'POP') {
       // Browser back/forward: restore the previous scroll position
       const savedY = getSavedScrollPosition(location.key, location.pathname + location.search);
-      restoreScrollPosition(savedY);
+      const lastProductId = sessionStorage.getItem('log_last_clicked_product');
 
-      // Re-apply across frames in case of any dynamic rendering/image reflows
-      const raf = window.requestAnimationFrame(() => {
-        restoreScrollPosition(savedY);
-      });
-      const t1 = window.setTimeout(() => {
-        restoreScrollPosition(savedY);
-      }, 50);
-      const t2 = window.setTimeout(() => {
-        restoreScrollPosition(savedY);
-      }, 150);
+      if (savedY > 0 || lastProductId) {
+        let userInteracted = false;
+        const cancelOnInteraction = () => { userInteracted = true; };
+        window.addEventListener('touchstart', cancelOnInteraction, { passive: true, once: true });
+        window.addEventListener('wheel', cancelOnInteraction, { passive: true, once: true });
 
-      return () => {
-        window.cancelAnimationFrame(raf);
-        window.clearTimeout(t1);
-        window.clearTimeout(t2);
-      };
+        const performRestore = () => {
+          if (userInteracted) return;
+
+          // If returning to home or shop, target the exact product element if found
+          if (lastProductId && (location.pathname === '/' || location.pathname === '/shop')) {
+            const productEl = document.querySelector(`[data-product-id="${lastProductId}"]`);
+            if (productEl) {
+              const rect = productEl.getBoundingClientRect();
+              const currentY = window.scrollY || window.pageYOffset || document.documentElement?.scrollTop || 0;
+              const elemTop = rect.top + currentY;
+              const headerOffset = 90;
+              const target = Math.max(0, elemTop - headerOffset);
+              restoreScrollPosition(target);
+              return;
+            }
+          }
+          if (savedY > 0) {
+            restoreScrollPosition(savedY);
+          }
+        };
+
+        performRestore();
+        const raf = window.requestAnimationFrame(performRestore);
+        const t1 = window.setTimeout(performRestore, 50);
+        const t2 = window.setTimeout(performRestore, 150);
+        const t3 = window.setTimeout(performRestore, 300);
+        const t4 = window.setTimeout(performRestore, 500);
+        const t5 = window.setTimeout(performRestore, 800);
+
+        const cleanUpStorageTimer = window.setTimeout(() => {
+          try {
+            sessionStorage.removeItem('log_last_clicked_product');
+          } catch (e) {}
+        }, 1200);
+
+        return () => {
+          window.cancelAnimationFrame(raf);
+          window.clearTimeout(t1);
+          window.clearTimeout(t2);
+          window.clearTimeout(t3);
+          window.clearTimeout(t4);
+          window.clearTimeout(t5);
+          window.clearTimeout(cleanUpStorageTimer);
+          window.removeEventListener('touchstart', cancelOnInteraction);
+          window.removeEventListener('wheel', cancelOnInteraction);
+        };
+      }
     } else {
       // PUSH / REPLACE: new link/product click -> start at the very top
+      try {
+        sessionStorage.removeItem('log_last_clicked_product');
+      } catch (e) {}
       scrollToTopInstant();
     }
   }, [location.pathname, location.search, location.key, navigationType]);

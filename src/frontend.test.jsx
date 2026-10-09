@@ -172,6 +172,18 @@ describe('Scroll Restoration and Products Cache', () => {
     expect(getSavedScrollPosition('key-123', '/')).toBe(1250);
     expect(getSavedScrollPosition('non-existent', '/')).toBe(1250);
 
+    // Guard: saving 0 must NOT overwrite existing positive scroll position
+    window.scrollY = 0;
+    saveScrollPosition('key-123', '/');
+    expect(getSavedScrollPosition('key-123', '/')).toBe(1250);
+
+    // Fallback: sessionStorage route-level recovery
+    sessionStorage.setItem('log_shop_scroll', '620');
+    expect(getSavedScrollPosition(null, '/shop')).toBe(620);
+
+    sessionStorage.setItem('log_last_scroll_y', '780');
+    expect(getSavedScrollPosition(null, '/other-page')).toBe(780);
+
     scrollToTopInstant();
     expect(document.documentElement.scrollTop).toBe(0);
   });
