@@ -68,7 +68,11 @@ describe('Static Policy React Components', () => {
   });
 
   it('renders RefundPolicy component correctly', () => {
-    render(<RefundPolicy />);
+    render(
+      <BrowserRouter>
+        <RefundPolicy />
+      </BrowserRouter>
+    );
     expect(screen.getAllByText(/Return, Refund & Cancellation Policy/i).length).toBeGreaterThan(0);
   });
 
@@ -149,5 +153,26 @@ describe('NewIn Component', () => {
 
     const preorderTitle = await screen.findByText('Preorder Drop Tee');
     expect(preorderTitle).toBeDefined();
+  });
+});
+
+describe('Scroll Restoration and Products Cache', () => {
+  it('getCachedProducts returns null when nothing is cached or invalidated', () => {
+    productsModule.invalidateProducts();
+    expect(productsModule.getCachedProducts()).toBeNull();
+  });
+
+  it('saveScrollPosition and getSavedScrollPosition work as expected', async () => {
+    const { saveScrollPosition, getSavedScrollPosition, scrollToTopInstant } = await import('./lib/scrollRestoration');
+    
+    // Simulate scrolling on a page
+    window.scrollY = 1250;
+    saveScrollPosition('key-123', '/');
+
+    expect(getSavedScrollPosition('key-123', '/')).toBe(1250);
+    expect(getSavedScrollPosition('non-existent', '/')).toBe(1250);
+
+    scrollToTopInstant();
+    expect(document.documentElement.scrollTop).toBe(0);
   });
 });

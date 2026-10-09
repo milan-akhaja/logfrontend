@@ -5,7 +5,7 @@ import ContentBlockLines from '../components/ContentBlockLines';
 import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
 import useIsMobile from '../hooks/useIsMobile';
-import { getProducts } from '../lib/products';
+import { getProducts, getCachedProducts } from '../lib/products';
 import { appPath, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 
 const slideIntervalMs = (value) => {
@@ -356,12 +356,15 @@ function GalleryScroller() {
   );
 }
 
+let cachedHeroConfig = null;
+let cachedCollections = null;
+
 export default function Shop({ onAddToCart }) {
   // F25: mount one hero, not both. A hidden <img> still downloads its src.
   const isMobileViewport = useIsMobile();
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
-  const [collections, setCollections] = useState([]);
+  const [products, setProducts] = useState(() => getCachedProducts() || []);
+  const [collections, setCollections] = useState(() => cachedCollections || []);
   const [showAllProducts, setShowAllProducts] = useState(false);
   const contentBlocks = useContentBlocks();
   const homeManifesto = contentBlocks.home_manifesto;
@@ -392,7 +395,7 @@ export default function Shop({ onAddToCart }) {
     isActive: false,
     isHorizontal: false
   });
-  const [heroConfig, setHeroConfig] = useState({
+  const [heroConfig, setHeroConfig] = useState(() => cachedHeroConfig || ({
     tagline: 'New Season Drop',
     title: 'Wear\nSome\nthing\nReal.',
     desc: 'Streetwear built for India. Minimal by choice, meaningful by design. Every product you buy puts ₹23 into the hands of someone who needs it more.',
@@ -410,7 +413,7 @@ export default function Shop({ onAddToCart }) {
     button2Text: 'Our Mission',
     button2Link: '/our-mission',
     mobileVideoUrl: ''
-  });
+  }));
 
   // Filtering states from URL query
   const [filter, setFilter] = useState('all');
@@ -424,10 +427,13 @@ export default function Shop({ onAddToCart }) {
     // The hero image URL comes from hero-config, and the hero is the LCP
     // element. Fetch it on its own so it is not waiting on the product list -
     // Promise.all made the hero wait for the slowest of the three.
-    fetch('/api/hero-config', { cache: 'no-store' })
+    fetch('/api/hero-config')
       .then(res => res.json())
       .then(heroConfigData => {
-        if (heroConfigData) setHeroConfig(heroConfigData);
+        if (heroConfigData) {
+          cachedHeroConfig = heroConfigData;
+          setHeroConfig(heroConfigData);
+        }
       })
       .catch(err => console.error('Error fetching hero config:', err));
 
@@ -437,6 +443,7 @@ export default function Shop({ onAddToCart }) {
     ])
       .then(([productsData, collectionsData]) => {
         setProducts(productsData || []);
+        if (collectionsData) cachedCollections = collectionsData;
         setCollections(collectionsData || []);
       })
       .catch(err => console.error('Error fetching catalog data:', err));
@@ -581,7 +588,7 @@ export default function Shop({ onAddToCart }) {
 
   const heroShopLink = heroConfig.button1Link || '#shop-catalog';
   const desktopHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.desktopMediaType) ? heroConfig.desktopMediaType : 'image';
-  const mobileHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.mobileMediaType) ? heroConfig.mobileMediaType : 'video';
+  const mobileHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.mobileMediaType) ? heroConfig.mobileMediaType : 'image';
   const desktopVideoUrl = heroConfig.desktopVideoUrl || heroConfig.mobileVideoUrl || '';
   const mobileImageUrl = mobileHeroImages[mobileHeroSlideIndex] || heroConfig.mobileImageUrl || heroConfig.bgImage;
   const moveHeroSlide = (mode, direction, count) => {

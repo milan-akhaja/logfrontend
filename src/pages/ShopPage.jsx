@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { ProductGridCard } from './Shop';
-import { getProducts } from '../lib/products';
+import { getProducts, getCachedProducts } from '../lib/products';
 
 export default function ShopPage({ onAddToCart }) {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState(() => getCachedProducts() || []);
   const [collections, setCollections] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();

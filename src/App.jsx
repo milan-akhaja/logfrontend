@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
 import { getProducts } from './lib/products';
+import {
+  initScrollRestoration,
+  saveScrollPosition,
+  getSavedScrollPosition,
+  scrollToTopInstant,
+  restoreScrollPosition
+} from './lib/scrollRestoration';
 
 // Layout Components
 
@@ -22,6 +29,14 @@ const OurMission = React.lazy(() => import('./pages/OurMission'));
 const LogBook = React.lazy(() => import('./pages/LogBook'));
 const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
+if (typeof window !== 'undefined') {
+  // Preload ProductDetail chunk after load so opening products is instant
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => import('./pages/ProductDetail'), { timeout: 3000 });
+  } else {
+    setTimeout(() => import('./pages/ProductDetail'), 1500);
+  }
+}
 const Admin = React.lazy(() => import('./pages/Admin'));
 const RefundPolicy = React.lazy(() => import('./pages/RefundPolicy'));
 const MakeReturn = React.lazy(() => import('./pages/MakeReturn'));
@@ -438,13 +453,62 @@ function AnalyticsTags() {
   return null;
 }
 
-// Scroll to Top on Page navigation
-function ScrollToTop() {
-  const { pathname } = useLocation();
+// Accurate Scroll Restoration & Navigation Management
+function ScrollManager() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    initScrollRestoration();
+  }, []);
+
+  // Save current scroll position continuously while scrolling
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          saveScrollPosition(location.key, location.pathname + location.search);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      saveScrollPosition(location.key, location.pathname + location.search);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [location.key, location.pathname, location.search]);
+
+  // Handle route change
+  useEffect(() => {
+    if (navigationType === 'POP') {
+      // Browser back/forward: restore the previous scroll position
+      const savedY = getSavedScrollPosition(location.key, location.pathname + location.search);
+      restoreScrollPosition(savedY);
+
+      // Re-apply across frames in case of any dynamic rendering/image reflows
+      const raf = window.requestAnimationFrame(() => {
+        restoreScrollPosition(savedY);
+      });
+      const t1 = window.setTimeout(() => {
+        restoreScrollPosition(savedY);
+      }, 50);
+      const t2 = window.setTimeout(() => {
+        restoreScrollPosition(savedY);
+      }, 150);
+
+      return () => {
+        window.cancelAnimationFrame(raf);
+        window.clearTimeout(t1);
+        window.clearTimeout(t2);
+      };
+    } else {
+      // PUSH / REPLACE: new link/product click -> start at the very top
+      scrollToTopInstant();
+    }
+  }, [location.pathname, location.search, location.key, navigationType]);
 
   return null;
 }
@@ -750,7 +814,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename={routerBasename()}>
-      <ScrollToTop />
+      <ScrollManager />
       <AppContent 
         cart={cart}
         onAddToCart={handleAddToCart}

@@ -11,7 +11,7 @@
   size-adjust: 113.39%;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&display=swap');
+/* Google font Montserrat is preloaded asynchronously in index.html */
 
 *,
 *::before,
@@ -50,7 +50,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   background-color: var(--paper);
   text-rendering: optimizeLegibility;
   -webkit-overflow-scrolling: touch;
@@ -106,7 +105,7 @@ a {
 }
 
 .page-transition-shell {
-  animation: page-soft-enter 520ms var(--ease-soft) both;
+  animation: page-soft-enter 180ms ease-out both;
   transform-origin: 50% 28px;
 }
 
@@ -448,7 +447,7 @@ header.scrolled .bag-count {
   opacity: 0.95;
   /* Brighter background image */
   transform: translateZ(0);
-  transition: transform 6s var(--ease-soft), opacity 700ms var(--ease-soft);
+  transition: transform 6s var(--ease-soft);
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
@@ -494,6 +493,12 @@ header.scrolled .bag-count {
 .mobile-hero-slide.active {
   opacity: 0.95;
   transform: scale(1) translateZ(0);
+}
+
+.hero-slideshow-image.active:first-child,
+.mobile-hero-slide.active:first-child {
+  opacity: 0.95;
+  transition: transform 5.5s var(--ease-soft);
 }
 
 .hero-section:hover .hero-bg-image {
@@ -2228,6 +2233,7 @@ header.scrolled .bag-count {
 
 /* ── FOOTER ───────────────────────────────────────────── */
 footer {
+  overflow-anchor: none;
   background: var(--ink);
   color: var(--paper);
   padding: 80px 0 40px;
@@ -5338,6 +5344,8 @@ header.scrolled .nav-action-icon-btn {
 
 /* ── PRODUCT DETAIL PAGE STYLES ── */
 .product-detail-page-container {
+  min-height: 100vh;
+  overflow-anchor: none;
   padding-top: 140px;
   padding-bottom: 80px;
   background-color: var(--paper);

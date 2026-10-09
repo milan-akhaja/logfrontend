@@ -1,50 +1,86 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
 import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
 import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
-import { getProducts } from '../lib/products';
+import { getProducts, getCachedProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
+import { scrollToTopInstant } from '../lib/scrollRestoration';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
+  const [product, setProduct] = useState(() => {
+    const list = getCachedProducts();
+    if (list) {
+      return list.find(p => p.id === id || String(p.id) === String(id)) || null;
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(!product);
   const [activeTab, setActiveTab] = useState('details'); // details, washcare, shipping
-  const [selectedSize, setSelectedSize] = useState('');
-  const [selectedSecondSize, setSelectedSecondSize] = useState('');
+  const [selectedSize, setSelectedSize] = useState(() => {
+    if (!product) return '';
+    const available = productSizes(product);
+    return available[0] || '';
+  });
+  const [selectedSecondSize, setSelectedSecondSize] = useState(() => {
+    if (!product) return '';
+    const available = productSizes(product);
+    return available[0] || '';
+  });
   const [showSizeChart, setShowSizeChart] = useState(false);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState(() => {
+    const list = getCachedProducts();
+    if (list && product) {
+      return list.filter(p => String(p.id) !== String(product.id));
+    }
+    return [];
+  });
   
   const [slideIdx, setSlideIdx] = useState(0);
   const mobileGalleryRef = useRef(null);
 
+  // Guarantee scroll starts at top instantly on route change & when product is ready
+  useLayoutEffect(() => {
+    scrollToTopInstant();
+  }, [id]);
+
   useEffect(() => {
+    if (product) {
+      scrollToTopInstant();
+    }
+  }, [product?.id]);
+
+  useEffect(() => {
+    let active = true;
     getProducts()
       .then(data => {
+        if (!active) return;
         const found = data.find(p => p.id === id || String(p.id) === String(id));
         setProduct(found || null);
+        setLoading(false);
         if (found) {
           if (found.sizes) {
             // If sizes is array
             if (Array.isArray(found.sizes) && found.sizes.length > 0) {
               const available = productSizes(found);
               if (available.length > 0) {
-                setSelectedSize(available[0]);
-                setSelectedSecondSize(available[0]);
+                setSelectedSize(prev => prev || available[0]);
+                setSelectedSecondSize(prev => prev || available[0]);
               }
             } else {
               // If sizes is object (e.g. { S: 30, M: 40 })
               const keys = productSizes(found);
               const inStockSize = keys.find(k => found.sizes[k] > 0);
               if (inStockSize) {
-                setSelectedSize(inStockSize);
-                setSelectedSecondSize(inStockSize);
+                setSelectedSize(prev => prev || inStockSize);
+                setSelectedSecondSize(prev => prev || inStockSize);
               } else if (keys.length > 0) {
-                setSelectedSize(keys[0]);
-                setSelectedSecondSize(keys[0]);
+                setSelectedSize(prev => prev || keys[0]);
+                setSelectedSecondSize(prev => prev || keys[0]);
               }
             }
           }
@@ -52,7 +88,14 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
           setRelatedProducts(related);
         }
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -71,9 +114,17 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   // Rendered size buttons follow the product, not a fixed list.
   const sizeOptions = productSizes(product);
 
+  if (loading && !product) {
+    return (
+      <div className="product-detail-page-container" style={{ padding: '160px 20px', textAlign: 'center', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
-      <div style={{ padding: '160px 20px', textAlign: 'center', minHeight: '60vh' }}>
+      <div className="product-detail-page-container" style={{ padding: '160px 20px', textAlign: 'center', minHeight: '100vh' }}>
         <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>Product Not Found</h2>
         <button className="btn btn-accent" style={{ marginTop: '20px' }} onClick={() => navigate('/')}>
           Back to Shop

@@ -50,3 +50,10 @@ export function getProducts({ force = false } = {}) {
 export function invalidateProducts() {
   cached = null;
 }
+
+export function getCachedProducts() {
+  if (cached && Date.now() - cached.at < TTL_MS) {
+    return cached.data;
+  }
+  return null;
+}
