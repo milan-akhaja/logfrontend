@@ -334,10 +334,6 @@ export default function CartDrawer({
   }, [isOpen, cart, paymentMethod, customerInfo.city, quoteRetry]);
 
   useEffect(() => {
-    if (cartHasDrop && paymentMethod === 'cod') setPaymentMethod('payu');
-  }, [cartHasDrop, paymentMethod]);
-
-  useEffect(() => {
     if (!isOpen) {
       setPaymentMethod('payu');
     }
@@ -493,12 +489,6 @@ export default function CartDrawer({
     }
     if (isFounderDelivery && !founderDeliveryAvailable) {
       onToast('Delivery by founder is available only in Ahmedabad.');
-      return;
-    }
-    if (cartHasDrop && paymentMethod === 'cod') {
-      onToast(isDropWindowClosed
-        ? 'Numbered drop pieces need full payment now. Please choose online payment.'
-        : 'Pre-order pieces need full payment now. Please choose online payment.');
       return;
     }
 
@@ -742,12 +732,10 @@ export default function CartDrawer({
                         <span className="checkout-payment-card-note">Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
                       </span>
                     </label>
-                    {!cartHasDrop && (
-                      <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
-                        <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                        <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
-                      </label>
-                    )}
+                    <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
+                      <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
+                      <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
+                    </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
                       <input
                         type="radio"
@@ -771,7 +759,7 @@ export default function CartDrawer({
                 </div>
                 {cartHasDrop && (
                   <div className="checkout-preorder-note">
-                    <p>{isDropWindowClosed ? 'numbered drop — full payment now.' : 'pre-order — full payment now.'}</p>
+                    <p>{isDropWindowClosed ? 'numbered drop — your piece number is assigned when you place the order.' : 'pre-order — full payment now.'}</p>
                     {useServerTotals && quote.dispatchText && <p>{quote.dispatchText}</p>}
                   </div>
                 )}
