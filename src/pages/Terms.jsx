@@ -17,7 +17,7 @@ export default function Terms() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Platform</h2>
           <p>
-            These Terms & Conditions govern your access to and use of https://logcloth.com/ and related services provided by LOG Clothing. By accessing, browsing, ordering, or otherwise using the website, you agree to be bound by these terms and all linked policies.
+            These Terms & Conditions govern your access to and use of https://logcloth.com/ and related services provided by logcloth. By accessing, browsing, ordering, or otherwise using the website, you agree to be bound by these terms and all linked policies.
           </p>
         </section>
 
@@ -65,7 +65,7 @@ export default function Terms() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Indemnity & Limitation</h2>
           <p>
-            You agree to indemnify and hold LOG Clothing, its affiliates, employees, and partners harmless from claims, losses, demands, penalties, or expenses arising from your breach of these terms, misuse of the website, or violation of applicable laws. We are not liable for indirect or consequential losses arising from website use, service interruptions, or events beyond our control.
+            You agree to indemnify and hold logcloth, its affiliates, employees, and partners harmless from claims, losses, demands, penalties, or expenses arising from your breach of these terms, misuse of the website, or violation of applicable laws. We are not liable for indirect or consequential losses arising from website use, service interruptions, or events beyond our control.
           </p>
         </section>
 

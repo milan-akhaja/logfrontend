@@ -683,9 +683,9 @@ function AppContent({
           <Route path="/refund-policy" element={<><SEO title="Refund & Exchange Policy" description="Read LOG's return, refund, exchange, and charity donation policy for orders across India." canonicalPath="/refund-policy" /><RefundPolicy /></>} />
           <Route path="/make-return" element={<><SEO title="Make a Return or Exchange" description="Request a LOG return, refund, or size exchange for eligible orders within the return window." canonicalPath="/make-return" /><MakeReturn /></>} />
           <Route path="/shipping-policy" element={<><SEO title="Shipping Policy" description="Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders." canonicalPath="/shipping-policy" /><ShippingPolicy /></>} />
-          <Route path="/faqs" element={<><SEO title="FAQs - LOG cloth" description="Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations." canonicalPath="/faqs" /><FAQs /></>} />
+          <Route path="/faqs" element={<><SEO title="FAQs - logcloth" description="Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations." canonicalPath="/faqs" /><FAQs /></>} />
           <Route path="/terms" element={<><SEO title="Terms & Conditions" description="Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com." canonicalPath="/terms" /><Terms /></>} />
-          <Route path="/privacy-policy" element={<><SEO title="Privacy Policy" description="Read how LOG cloth collects, uses, protects, shares, and retains customer information for orders and support." canonicalPath="/privacy-policy" /><PrivacyPolicy /></>} />
+          <Route path="/privacy-policy" element={<><SEO title="Privacy Policy" description="Read how logcloth collects, uses, protects, shares, and retains customer information for orders and support." canonicalPath="/privacy-policy" /><PrivacyPolicy /></>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </RouteErrorBoundary>

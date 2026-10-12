@@ -20,7 +20,7 @@ const SITE_URL = 'https://logcloth.com';
 const API_URL = 'https://api.logcloth.com/api/products';
 const DROP_NAME = 'No Permission 3.0';
 const DROP_PIECES = 40;
-const HOME_TITLE = 'LOG cloth — Numbered Streetwear Drops | No Permission 3.0';
+const HOME_TITLE = 'logcloth — Numbered Streetwear Drops | No Permission 3.0';
 const DESCRIPTION_MAX = 155;
 const PRODUCTS_TTL_MS = 60 * 1000;
 const API_TIMEOUT_MS = 2500;
@@ -35,9 +35,9 @@ const STATIC_PAGES = {
   '/refund-policy': ['Refund & Exchange Policy | LOG', "Read LOG's return, refund, exchange, and charity donation policy for orders across India."],
   '/make-return': ['Make a Return or Exchange | LOG', 'Request a LOG return, refund, or size exchange for eligible orders within the return window.'],
   '/shipping-policy': ['Shipping Policy | LOG', 'Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders.'],
-  '/faqs': ['FAQs - LOG cloth', 'Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations.'],
+  '/faqs': ['FAQs - logcloth', 'Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations.'],
   '/terms': ['Terms & Conditions | LOG', 'Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com.'],
-  '/privacy-policy': ['Privacy Policy | LOG', 'Read how LOG cloth collects, uses, protects, shares, and retains customer information for orders and support.']
+  '/privacy-policy': ['Privacy Policy | LOG', 'Read how logcloth collects, uses, protects, shares, and retains customer information for orders and support.']
 };
 
 let template = null;
@@ -146,8 +146,8 @@ function availabilityLabelOf(product) {
 
 function productTitle(product) {
   return isDropProduct(product)
-    ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG cloth`
-    : `${product.name} — Unisex Oversized Tee | LOG cloth`;
+    ? `${product.name} — Unisex Oversized 240 GSM Tee | logcloth`
+    : `${product.name} — Unisex Oversized Tee | logcloth`;
 }
 
 function productDescription(product) {
@@ -160,7 +160,7 @@ function productDescription(product) {
     );
   }
   return truncate(
-    `${product.name}${colour ? ` in ${colour}` : ''} — unisex oversized tee from LOG cloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`,
+    `${product.name}${colour ? ` in ${colour}` : ''} — unisex oversized tee from logcloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`,
     DESCRIPTION_MAX
   );
 }
@@ -220,7 +220,7 @@ function productJsonLd(product, url) {
       suggestedGender: 'unisex'
     },
     ...(colourOf(product) ? { color: colourOf(product) } : {}),
-    brand: { '@type': 'Brand', name: 'LOG cloth' },
+    brand: { '@type': 'Brand', name: 'logcloth' },
     offers: {
       '@type': 'Offer',
       url,
@@ -256,7 +256,7 @@ function productBody(product) {
     ? `<p>${left} of ${dropTotal} left</p>`
     : '';
   return `<main>
-  <p><a href="/">LOG cloth</a></p>
+  <p><a href="/">logcloth</a></p>
   <article>
     <h1>${escapeHtml(product.name)}</h1>
     <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${escapeHtml(availabilityLabelOf(product))}</p>
@@ -274,7 +274,7 @@ function homeBody(products, description) {
     return `<li><a href="/product/${encodeURIComponent(product.id)}">${escapeHtml(product.name)}</a> — ${escapeHtml(formatInr(price))} · ${escapeHtml(availabilityLabelOf(product))}</li>`;
   });
   return `<main>
-  <h1>LOG cloth</h1>
+  <h1>logcloth</h1>
   <p>${escapeHtml(description)}</p>
   ${items.length ? `<ul>${items.join('')}</ul>` : ''}
 </main>`;
@@ -388,7 +388,7 @@ async function renderPage(pagePath) {
 
 // Real 404 status. The body is still the app, which shows its own Not Found page.
 function notFound(base) {
-  let html = setTitle(base, 'Page not found | LOG cloth');
+  let html = setTitle(base, 'Page not found | logcloth');
   html = setRobots(html, 'noindex, follow');
   html = html.replace(/\s*<link rel="canonical" href="[^"]*">/, '');
   return { status: 404, html };

@@ -10,7 +10,7 @@ export default function PrivacyPolicy() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Introduction</h2>
           <p>
-            LOG Clothing operates https://logcloth.com/ and respects your privacy. This Privacy Policy explains how we collect, use, share, protect, and process your personal information when you visit the website, place an order, contact us, or use our services.
+            logcloth operates https://logcloth.com/ and respects your privacy. This Privacy Policy explains how we collect, use, share, protect, and process your personal information when you visit the website, place an order, contact us, or use our services.
           </p>
           <p style={{ marginTop: '10px' }}>
             We currently offer our products and services primarily within India, and your data is primarily stored and processed in India.
