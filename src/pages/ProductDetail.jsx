@@ -500,7 +500,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
 
             <p className="product-policy-line">
               {isDrop
-                ? `${product.preorderPhase === 'after' ? 'numbered drop' : 'pre-order'}: size exchange only within 7 days. no returns.${product.preorderDispatchText ? ` ${product.preorderDispatchText}` : ''}`
+                ? `${product.preorderPhase === 'after' ? 'numbered drop' : 'pre-order'}: size exchange only within 7 days. no returns.`
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
 

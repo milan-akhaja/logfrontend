@@ -760,7 +760,6 @@ export default function CartDrawer({
                 {cartHasDrop && (
                   <div className="checkout-preorder-note">
                     <p>{isDropWindowClosed ? 'numbered drop — your piece number is assigned when you place the order.' : 'pre-order — full payment now.'}</p>
-                    {useServerTotals && quote.dispatchText && <p>{quote.dispatchText}</p>}
                   </div>
                 )}
               </div>
