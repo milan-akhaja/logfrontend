@@ -30,7 +30,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   // Size stocks helper
   const getStockForSize = (size) => {
     if (isDrop) {
-      return product.soldOut ? 0 : (product.piecesTotal || 40);
+      return product.soldOut ? 0 : Number(product.piecesTotal || 40);
     }
     if (product.sizes) {
       return product.sizes[size] !== undefined ? product.sizes[size] : 0;
@@ -124,7 +124,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                         >
                           <span className="size-name">{size}</span>
                           <span className="size-stock-status">
-                            {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
+                            {isOutOfStock ? 'Sold Out' : isDrop ? (product.preorderPhase === 'after' ? 'New Drop' : 'Pre-order') : `${stock} left`}
                           </span>
                         </button>
                       );
@@ -153,7 +153,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                         >
                           <span className="size-name">{size}</span>
                           <span className="size-stock-status">
-                            {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
+                            {isOutOfStock ? 'Sold Out' : isDrop ? (product.preorderPhase === 'after' ? 'New Drop' : 'Pre-order') : `${stock} left`}
                           </span>
                         </button>
                       );
@@ -189,7 +189,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
                       >
                         <span className="size-name">{size}</span>
                         <span className="size-stock-status">
-                          {isOutOfStock ? 'Sold Out' : isDrop ? 'Pre-order' : `${stock} left`}
+                          {isOutOfStock ? 'Sold Out' : isDrop ? (product.preorderPhase === 'after' ? 'New Drop' : 'Pre-order') : `${stock} left`}
                         </span>
                       </button>
                     );

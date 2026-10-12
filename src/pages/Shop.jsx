@@ -105,7 +105,7 @@ export function ProductGridCard({ product, onAddToCart }) {
             {product.bogoOffer.label || 'BOGO OFFER'}
           </span>
         )}
-        {isDrop && !isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82', color: '#fff', letterSpacing: '0.05em' }}>PRE ORDER</span>}
+        {isDrop && !isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82', color: '#fff', letterSpacing: '0.05em' }}>{product.preorderPhase === 'after' ? 'NEW DROP' : 'PRE ORDER'}</span>}
         {isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
         {isLowStock && <span className="product-tag tag-limited">Low Stock</span>}
 
@@ -156,7 +156,7 @@ export function ProductGridCard({ product, onAddToCart }) {
                 onAddToCart(product);
               }}
             >
-              <span className="add-to-bag-text">{isDrop ? 'Pre-Order' : 'Add to Cart'}</span>
+              <span className="add-to-bag-text">{isDrop && product.preorderPhase !== 'after' ? 'Pre-Order' : 'Add to Cart'}</span>
               <span className="add-to-bag-icon" aria-hidden="true">+</span>
             </button>
           ) : (

@@ -108,7 +108,7 @@ function colourOf(product) {
 }
 
 function isDropProduct(product) {
-  return Number(product.is_preorder || 0) === 1;
+  return Number(product?.piecesTotal || 0) > 0;
 }
 
 function productImages(product) {
@@ -145,8 +145,9 @@ function productTitle(product) {
 function productDescription(product) {
   const colour = colourOf(product);
   if (isDropProduct(product)) {
+    const total = Number(product.piecesTotal || DROP_PIECES);
     return truncate(
-      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${DROP_PIECES} numbered pieces from the ${DROP_NAME} drop.`,
+      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${total} numbered pieces from the ${DROP_NAME} drop.`,
       DESCRIPTION_MAX
     );
   }
@@ -242,15 +243,17 @@ function productBody(product) {
   const availability = availabilityOf(product);
   const alt = imageAlt(product);
   const details = String(product.details || '').split('\n').map((line) => line.trim()).filter(Boolean);
-  const claimed = Number.isFinite(Number(product.piecesClaimed)) && Number(product.piecesTotal) > 0
-    ? `<p>${Number(product.piecesClaimed)} / ${Number(product.piecesTotal)} claimed</p>`
+  const dropTotal = Number(product.piecesTotal || 0);
+  const left = Math.max(0, dropTotal - Number(product.piecesClaimed || 0));
+  const claimed = dropTotal > 0
+    ? `<p>${left} of ${dropTotal} left</p>`
     : '';
   return `<main>
   <p><a href="/">LOG Clothing</a></p>
   <article>
     <h1>${escapeHtml(product.name)}</h1>
     <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${AVAILABILITY_LABEL[availability]}</p>
-    ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex oversized graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
+    ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${dropTotal || DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex oversized graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
     ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
     ${details.length ? `<ul>${details.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
     ${productImages(product).map((url, index) => `<img src="${escapeHtml(url)}"${srcSetAttr(url)} alt="${escapeHtml(alt)}"${index ? ' loading="lazy"' : ' fetchpriority="high"'}>`).join('\n    ')}

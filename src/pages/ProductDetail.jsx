@@ -144,12 +144,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const productColour = Array.isArray(product.colors) && product.colors.find(Boolean)
     ? String(product.colors.find(Boolean)).trim().toLowerCase()
     : '';
-  const isDropDesign = Number(product.is_preorder || 0) === 1;
+  const isDropDesign = Number(product?.piecesTotal || 0) > 0;
+  const dropTotal = Number(product?.piecesTotal || 40);
   const seoTitle = isDropDesign
     ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
     : `${product.name} — Unisex Oversized Tee | LOG Clothing`;
   const seoDescriptionFull = isDropDesign
-    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM cotton, for men and women. One of 40 numbered pieces from the No Permission 3.0 drop.`
+    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${dropTotal} numbered pieces from the No Permission 3.0 drop.`
     : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex oversized tee from LOG Clothing. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
   const productDescription = seoDescriptionFull.length <= 155
     ? seoDescriptionFull
@@ -374,7 +375,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               )}
               {isDrop && Number(product.piecesTotal) > 0 && (
                 <div className="drop-claimed-count">
-                  {product.piecesClaimed} / {product.piecesTotal} claimed
+                  {Math.max(0, Number(product.piecesTotal) - Number(product.piecesClaimed || 0))} of {product.piecesTotal} left
                 </div>
               )}
             </div>
@@ -484,7 +485,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
 
             <p className="product-policy-line">
               {isDrop
-                ? `pre-order: size exchange only within 7 days. no returns.${product.preorderDispatchText ? ` ${product.preorderDispatchText}` : ''}`
+                ? `${product.preorderPhase === 'after' ? 'numbered drop' : 'pre-order'}: size exchange only within 7 days. no returns.${product.preorderDispatchText ? ` ${product.preorderDispatchText}` : ''}`
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
 

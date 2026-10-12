@@ -198,6 +198,7 @@ export default function CartDrawer({
   // own pricing of this exact cart. Neither is ever used to set a price - the
   // server recomputes everything when the order is placed.
   const [dropIds, setDropIds] = useState(() => new Set());
+  const [dropProducts, setDropProducts] = useState(() => new Map());
   const [quote, setQuote] = useState(null);
   const [quoteError, setQuoteError] = useState(false);
   const [quoteRetry, setQuoteRetry] = useState(0);
@@ -229,7 +230,10 @@ export default function CartDrawer({
     let active = true;
     getProducts()
       .then((list) => {
-        if (active) setDropIds(new Set(list.filter((p) => p.isPreorder === true).map((p) => String(p.id))));
+        if (active) {
+          setDropIds(new Set(list.filter((p) => p.isPreorder === true).map((p) => String(p.id))));
+          setDropProducts(new Map(list.map((p) => [String(p.id), p])));
+        }
       })
       .catch(() => { });
     return () => { active = false; };
@@ -238,6 +242,19 @@ export default function CartDrawer({
   // A drop cart never offers COD - decided from the product list, and also
   // from the server quote, so either one alone is enough to hide it.
   const cartHasDrop = cart.some((item) => dropIds.has(String(item.id))) || quote?.hasPreorder === true;
+  const getItemPreorderPhase = (item) => {
+    const fresh = dropProducts.get(String(item?.id));
+    if (fresh?.preorderPhase) return fresh.preorderPhase;
+    if (item?.preorderPhase) return item.preorderPhase;
+    for (const p of dropProducts.values()) {
+      if (p.isPreorder === true && p.preorderPhase) return p.preorderPhase;
+    }
+    return undefined;
+  };
+  const isDropWindowClosed = cart.some((item) => {
+    const isDrop = dropIds.has(String(item.id)) || item.isPreorder === true;
+    return isDrop && getItemPreorderPhase(item) === 'after';
+  });
   // Only trust the quote while it describes the exact cart and payment method on screen.
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
   const quoteMatchesCart = Boolean(quote)
@@ -479,7 +496,9 @@ export default function CartDrawer({
       return;
     }
     if (cartHasDrop && paymentMethod === 'cod') {
-      onToast('Pre-order pieces need full payment now. Please choose online payment.');
+      onToast(isDropWindowClosed
+        ? 'Numbered drop pieces need full payment now. Please choose online payment.'
+        : 'Pre-order pieces need full payment now. Please choose online payment.');
       return;
     }
 
@@ -752,7 +771,7 @@ export default function CartDrawer({
                 </div>
                 {cartHasDrop && (
                   <div className="checkout-preorder-note">
-                    <p>pre-order — full payment now.</p>
+                    <p>{isDropWindowClosed ? 'numbered drop — full payment now.' : 'pre-order — full payment now.'}</p>
                     {useServerTotals && quote.dispatchText && <p>{quote.dispatchText}</p>}
                   </div>
                 )}
@@ -794,7 +813,7 @@ export default function CartDrawer({
                 </div>
                 {discountAmount > 0 && (
                   <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                    <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop ? 'Pre-order discount' : 'Prepaid discount')}</span>
+                    <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Prepaid discount')}</span>
                     <span className="cart-totals-val">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
@@ -829,7 +848,9 @@ export default function CartDrawer({
 
               <p className="checkout-policy-line">
                 {cartHasDrop
-                  ? 'pre-order: size exchange only within 7 days. no returns.'
+                  ? (isDropWindowClosed
+                    ? 'numbered drop: size exchange only within 7 days. no returns.'
+                    : 'pre-order: size exchange only within 7 days. no returns.')
                   : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
               </p>
 
@@ -916,7 +937,7 @@ export default function CartDrawer({
                     ) : (
                       <>
                         <div className="cart-item-price">₹{item.price}</div>
-                        {isDropItem && <div className="preorder-note">pre-order</div>}
+                        {isDropItem && <div className="preorder-note">{getItemPreorderPhase(item) === 'after' ? 'numbered drop' : 'pre-order'}</div>}
                       </>
                     )}
                   </div>
@@ -943,7 +964,7 @@ export default function CartDrawer({
             </div>
             {discountAmount > 0 && (
               <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop ? 'Pre-order discount' : 'Discount')}</span>
+                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Discount')}</span>
                 <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
               </div>
             )}

@@ -117,7 +117,7 @@ export default function NewIn({ onAddToCart, onToast }) {
               >
                 <div className="product-img-wrapper">
                   <span className="product-tag tag-new" style={{ background: isSoldOut ? '#7E7E82' : 'var(--ink)' }}>
-                    {isSoldOut ? 'Sold Out' : isDrop ? 'PRE ORDER' : 'New In'}
+                    {isSoldOut ? 'Sold Out' : isDrop ? (product.preorderPhase === 'after' ? 'New Drop' : 'PRE ORDER') : 'New In'}
                   </span>
                   {product.bogoOffer?.enabled && (
                     <span className="product-offer-badge card-offer-badge">
@@ -149,7 +149,7 @@ export default function NewIn({ onAddToCart, onToast }) {
                           if (onAddToCart) onAddToCart(product);
                         }}
                       >
-                        <span className="add-to-bag-text">{isDrop ? 'Pre-Order' : 'Add to Bag'}</span>
+                        <span className="add-to-bag-text">{isDrop && product.preorderPhase !== 'after' ? 'Pre-Order' : 'Add to Bag'}</span>
                         <span className="add-to-bag-icon"><ShoppingCart size={16} /></span>
                       </button>
                     ) : (
