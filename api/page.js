@@ -136,6 +136,14 @@ function availabilityOf(product) {
 
 const AVAILABILITY_LABEL = { PreOrder: 'Pre-order', InStock: 'In stock', SoldOut: 'Sold out', OutOfStock: 'Out of stock' };
 
+function availabilityLabelOf(product) {
+  const availability = availabilityOf(product);
+  if (isDropProduct(product) && product.preorderPhase === 'after' && availability === 'InStock') {
+    return 'New Drop';
+  }
+  return AVAILABILITY_LABEL[availability] || 'In stock';
+}
+
 function productTitle(product) {
   return isDropProduct(product)
     ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
@@ -240,7 +248,6 @@ function srcSetAttr(url) {
 function productBody(product) {
   const price = currentPrice(product);
   const original = Number(product.price || 0);
-  const availability = availabilityOf(product);
   const alt = imageAlt(product);
   const details = String(product.details || '').split('\n').map((line) => line.trim()).filter(Boolean);
   const dropTotal = Number(product.piecesTotal || 0);
@@ -252,7 +259,7 @@ function productBody(product) {
   <p><a href="/">LOG Clothing</a></p>
   <article>
     <h1>${escapeHtml(product.name)}</h1>
-    <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${AVAILABILITY_LABEL[availability]}</p>
+    <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${escapeHtml(availabilityLabelOf(product))}</p>
     ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${dropTotal || DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex oversized graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
     ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
     ${details.length ? `<ul>${details.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
@@ -264,7 +271,7 @@ function productBody(product) {
 function homeBody(products, description) {
   const items = (products || []).map((product) => {
     const price = currentPrice(product);
-    return `<li><a href="/product/${encodeURIComponent(product.id)}">${escapeHtml(product.name)}</a> — ${escapeHtml(formatInr(price))} · ${AVAILABILITY_LABEL[availabilityOf(product)]}</li>`;
+    return `<li><a href="/product/${encodeURIComponent(product.id)}">${escapeHtml(product.name)}</a> — ${escapeHtml(formatInr(price))} · ${escapeHtml(availabilityLabelOf(product))}</li>`;
   });
   return `<main>
   <h1>LOG Clothing</h1>

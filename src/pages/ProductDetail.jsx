@@ -352,6 +352,21 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
           <div className="product-detail-config">
             <div className="detail-header-meta">
               <h1 className="detail-product-title">{product.name}</h1>
+              {(isDrop || isDropDesign) && product.preorderPhase === 'after' && (
+                <span
+                  className="product-tag tag-best"
+                  style={{
+                    position: 'static',
+                    display: 'inline-block',
+                    margin: '6px 0 10px',
+                    background: '#7E7E82',
+                    color: '#fff',
+                    letterSpacing: '0.05em'
+                  }}
+                >
+                  NEW DROP
+                </span>
+              )}
               {product.bogoOffer?.enabled && (
                 <div className="product-offer-badge detail-offer-badge">
                   {product.bogoOffer.label || 'BOGO OFFER'}
