@@ -84,12 +84,13 @@ describe('Static Policy React Components', () => {
 
 describe('Footer Component', () => {
   it('renders footer brand and links', () => {
-    render(
+    const { container } = render(
       <BrowserRouter>
         <Footer />
       </BrowserRouter>
     );
-    expect(screen.getAllByText(/LOG CLOTHING/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { level: 2, name: /^LOG$/i })).toBeDefined();
+    expect(container.querySelector('.footer-bottom').textContent).toContain('logcloth');
   });
 });
 

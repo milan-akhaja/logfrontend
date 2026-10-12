@@ -147,11 +147,11 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const isDropDesign = Number(product?.piecesTotal || 0) > 0;
   const dropTotal = Number(product?.piecesTotal || 40);
   const seoTitle = isDropDesign
-    ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG Clothing`
-    : `${product.name} — Unisex Oversized Tee | LOG Clothing`;
+    ? `${product.name} — Unisex Oversized 240 GSM Tee | LOG cloth`
+    : `${product.name} — Unisex Oversized Tee | LOG cloth`;
   const seoDescriptionFull = isDropDesign
     ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${dropTotal} numbered pieces from the No Permission 3.0 drop.`
-    : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex oversized tee from LOG Clothing. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
+    : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex oversized tee from LOG cloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
   const productDescription = seoDescriptionFull.length <= 155
     ? seoDescriptionFull
     : `${seoDescriptionFull.slice(0, 154).replace(/\s+\S*$/, '')}…`;
@@ -175,7 +175,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     ...(productColour ? { color: productColour } : {}),
     brand: {
       '@type': 'Brand',
-      name: 'LOG Clothing'
+      name: 'LOG cloth'
     },
     offers: {
       '@type': 'Offer',

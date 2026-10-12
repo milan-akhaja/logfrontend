@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const SITE_URL = 'https://logcloth.com';
-const DEFAULT_TITLE = 'LOG Clothing — Numbered Streetwear Drops | No Permission 3.0';
+const DEFAULT_TITLE = 'LOG cloth — Numbered Streetwear Drops | No Permission 3.0';
 const DEFAULT_DESCRIPTION = 'Unisex oversized graphic t-shirts & streetwear in India. Heavyweight 240 GSM cotton for men and women, in limited numbered drops. logcloth.com';
 const DEFAULT_IMAGE = `${SITE_URL}/logo-512.png`;
 
@@ -81,7 +81,7 @@ export default function SEO({
     upsertLink('canonical', canonicalUrl);
 
     upsertMeta('meta[property="og:type"]', { property: 'og:type', content: type });
-    upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'LOG Clothing' });
+    upsertMeta('meta[property="og:site_name"]', { property: 'og:site_name', content: 'LOG cloth' });
     upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl });
     upsertMeta('meta[property="og:title"]', { property: 'og:title', content: fullTitle });
     upsertMeta('meta[property="og:description"]', { property: 'og:description', content: description });
