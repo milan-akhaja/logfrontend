@@ -590,7 +590,8 @@ export default function CartDrawer({
       setIsSubmittingOrder(false);
     } catch (err) {
       console.error(err);
-      onToast(err.message || 'Network error during checkout.');
+      const serverMessage = err?.data?.error || err?.data?.message || err?.message || 'Network error during checkout.';
+      onToast(serverMessage);
       setIsSubmittingOrder(false);
     }
   };
@@ -891,6 +892,12 @@ export default function CartDrawer({
               const line = quoteMatchesCart ? quote.lines[index] : null;
               const isDropItem = line ? line.isPreorder : dropIds.has(String(item.id));
               const lineDiscount = line ? Number(line.preorderDiscount || 0) : 0;
+              const sizeKey = item.selectedSize1 || item.selectedSize;
+              const freshProduct = dropProducts.get(String(item.id)) || item;
+              const sizeStock = freshProduct.sizes && typeof freshProduct.sizes === 'object' && !Array.isArray(freshProduct.sizes)
+                ? (freshProduct.sizes[sizeKey] !== undefined ? Number(freshProduct.sizes[sizeKey]) : Infinity)
+                : (freshProduct.stock !== undefined ? Number(freshProduct.stock) : Infinity);
+              const isAtMaxStock = !item.isBogo && item.quantity >= sizeStock;
               return (
               <div className="cart-item" key={item.cartItemId}>
                 <div className="cart-item-img" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F5F5F3', borderRadius: '4px', overflow: 'hidden' }}>
@@ -932,7 +939,18 @@ export default function CartDrawer({
                     <div className="cart-item-qty">
                       <button className="qty-btn minus" onClick={() => onQtyChange(item.cartItemId, -1)}>-</button>
                       <span className="qty-num">{item.quantity}</span>
-                      <button className="qty-btn plus" onClick={() => onQtyChange(item.cartItemId, 1)}>+</button>
+                      <button 
+                        className="qty-btn plus" 
+                        onClick={() => {
+                          if (isAtMaxStock) {
+                            onToast(`Only ${sizeStock} left in stock for size ${sizeKey || 'selected'}`);
+                            return;
+                          }
+                          onQtyChange(item.cartItemId, 1);
+                        }}
+                        disabled={isAtMaxStock}
+                        style={isAtMaxStock ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+                      >+</button>
                     </div>
                     <button className="cart-item-remove" onClick={() => onRemove(item.cartItemId)}>Remove</button>
                   </div>

@@ -90,7 +90,17 @@ export default function NewIn({ onAddToCart, onToast }) {
         <div className="product-grid">
           {products.map(product => {
             const isDrop = product.isPreorder === true;
-            const isSoldOut = isDrop ? product.soldOut === true : product.stock === 0;
+            const isDropAllSizesZero = Boolean(
+              isDrop &&
+              product.sizes &&
+              typeof product.sizes === 'object' &&
+              !Array.isArray(product.sizes) &&
+              Object.keys(product.sizes).length > 0 &&
+              Object.values(product.sizes).every(count => Number(count) <= 0)
+            );
+            const isSoldOut = isDrop
+              ? (product.soldOut === true || isDropAllSizesZero)
+              : product.stock === 0;
             return (
               <div
                 className="product-card reveal"

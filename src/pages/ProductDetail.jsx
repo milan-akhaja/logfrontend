@@ -210,6 +210,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   };
 
   const handleAddToBag = () => {
+    if (isChosenSoldOut) return;
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
         alert('Please select both sizes for the BOGO offer');
@@ -226,6 +227,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   };
 
   const handleBuyNow = () => {
+    if (isChosenSoldOut) return;
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
         alert('Please select both sizes for the BOGO offer');
@@ -243,8 +245,16 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
 
   // Numbered drop: every field below is decided by the server.
   const isDrop = product.isPreorder === true;
+  const isDropAllSizesZero = Boolean(
+    isDrop &&
+    product.sizes &&
+    typeof product.sizes === 'object' &&
+    !Array.isArray(product.sizes) &&
+    Object.keys(product.sizes).length > 0 &&
+    Object.values(product.sizes).every(count => Number(count) <= 0)
+  );
   const dropNotOpen = isDrop && product.preorderPhase === 'before';
-  const dropSoldOut = isDrop && product.soldOut === true;
+  const dropSoldOut = isDrop && (product.soldOut === true || isDropAllSizesZero);
   const dropBlocked = dropNotOpen || dropSoldOut;
   const dropOpensLabel = dropNotOpen && product.preorderOpensAt
     ? new Date(product.preorderOpensAt).toLocaleString('en-IN', {
@@ -257,14 +267,16 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
 
   // Helper check if size is available in stock
   const isSizeAvailable = (size) => {
-    if (!product.sizes) return false;
-    // For drop products the numbered pieces are the only limit, not size stock.
-    if (isDrop && !Array.isArray(product.sizes)) return product.sizes[size] !== undefined;
+    if (!product.sizes || product.soldOut) return false;
     if (Array.isArray(product.sizes)) {
       return product.sizes.includes(size);
     }
-    return product.sizes[size] !== undefined && product.sizes[size] > 0;
+    return product.sizes[size] !== undefined && Number(product.sizes[size]) > 0;
   };
+
+  const isChosenSoldOut = product.bogoOffer?.enabled
+    ? Boolean((selectedSize && !isSizeAvailable(selectedSize)) || (selectedSecondSize && !isSizeAvailable(selectedSecondSize)))
+    : Boolean(selectedSize && !isSizeAvailable(selectedSize));
 
   return (
     <div className="product-detail-page-container">
@@ -418,8 +430,10 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                           className={`detail-size-option-btn ${selectedSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
                           onClick={() => isAvailable && setSelectedSize(size)}
                           disabled={!isAvailable}
+                          style={!isAvailable ? { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' } : undefined}
                         >
-                          {size}
+                          <span className="size-name">{size}</span>
+                          {!isAvailable && <span className="size-stock-status">Sold Out</span>}
                         </button>
                       );
                     })}
@@ -441,8 +455,10 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                           className={`detail-size-option-btn ${selectedSecondSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
                           onClick={() => isAvailable && setSelectedSecondSize(size)}
                           disabled={!isAvailable}
+                          style={!isAvailable ? { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' } : undefined}
                         >
-                          {size}
+                          <span className="size-name">{size}</span>
+                          {!isAvailable && <span className="size-stock-status">Sold Out</span>}
                         </button>
                       );
                     })}
@@ -471,8 +487,10 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                         className={`detail-size-option-btn ${selectedSize === size ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}`}
                         onClick={() => isAvailable && setSelectedSize(size)}
                         disabled={!isAvailable}
+                        style={!isAvailable ? { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' } : undefined}
                       >
-                        {size}
+                        <span className="size-name">{size}</span>
+                        {!isAvailable && <span className="size-stock-status">Sold Out</span>}
                       </button>
                     );
                   })}
@@ -489,11 +507,19 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               </div>
             ) : (
               <div className="detail-actions-row">
-                <button className="detail-action-btn btn-add-bag" onClick={handleAddToBag}>
-                  ADD TO BAG
+                <button 
+                  className="detail-action-btn btn-add-bag" 
+                  disabled={isChosenSoldOut} 
+                  onClick={handleAddToBag}
+                >
+                  {isChosenSoldOut ? 'SOLD OUT' : 'ADD TO BAG'}
                 </button>
-                <button className="detail-action-btn btn-buy-now" onClick={handleBuyNow}>
-                  BUY NOW
+                <button 
+                  className="detail-action-btn btn-buy-now" 
+                  disabled={isChosenSoldOut} 
+                  onClick={handleBuyNow}
+                >
+                  {isChosenSoldOut ? 'SOLD OUT' : 'BUY NOW'}
                 </button>
               </div>
             )}

@@ -786,6 +786,14 @@ export default function App() {
     const finalSize = isBogo ? `${size}, ${secondSize}` : size;
     const cartItemId = isBogo ? `${product.id}-${size}-${secondSize}` : `${product.id}-${size}`;
     const existing = cart.find(item => item.cartItemId === cartItemId);
+    const sizeStock = product.sizes && typeof product.sizes === 'object' && !Array.isArray(product.sizes)
+      ? (product.sizes[size] !== undefined ? Number(product.sizes[size]) : Infinity)
+      : (product.stock !== undefined ? Number(product.stock) : Infinity);
+    const addQty = isBogo ? 2 : 1;
+    if (!isBogo && existing && existing.quantity + addQty > sizeStock) {
+      showToast(`Only ${sizeStock} left in stock for size ${size}`);
+      return;
+    }
     let updated;
     if (existing) {
       updated = cart.map(item => 
@@ -852,6 +860,18 @@ export default function App() {
   };
 
   const handleQtyChange = (cartItemId, delta) => {
+    const targetItem = cart.find(i => i.cartItemId === cartItemId);
+    if (targetItem && delta > 0 && !targetItem.isBogo) {
+      const sizeKey = targetItem.selectedSize1 || targetItem.selectedSize;
+      const sizeStock = targetItem.sizes && typeof targetItem.sizes === 'object' && !Array.isArray(targetItem.sizes)
+        ? (targetItem.sizes[sizeKey] !== undefined ? Number(targetItem.sizes[sizeKey]) : Infinity)
+        : (targetItem.stock !== undefined ? Number(targetItem.stock) : Infinity);
+      const change = delta;
+      if (targetItem.quantity + change > sizeStock) {
+        showToast(`Only ${sizeStock} left in stock for size ${sizeKey}`);
+        return;
+      }
+    }
     const updated = cart.map(item => {
       if (item.cartItemId === cartItemId) {
         const change = item.isBogo ? delta * 2 : delta;

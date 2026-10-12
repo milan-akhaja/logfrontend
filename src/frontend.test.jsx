@@ -2,7 +2,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 import { priceNumber, formatPrice, getPriceDisplay } from './lib/pricing';
 import ProductPrice from './components/ProductPrice';
 import Terms from './pages/Terms';
@@ -11,6 +11,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import ShippingPolicy from './pages/ShippingPolicy';
 import Footer from './components/Footer';
 import NewIn from './pages/NewIn';
+import ProductDetail from './pages/ProductDetail';
 import * as productsModule from './lib/products';
 
 describe('Pricing Helper Functions', () => {
@@ -189,3 +190,63 @@ describe('Scroll Restoration and Products Cache', () => {
     expect(document.documentElement.scrollTop).toBe(0);
   });
 });
+
+describe('ProductDetail Component', () => {
+  it('product page with no size selected shows enabled ADD TO BAG and BUY NOW; with a selected size whose stock is 0 it shows disabled SOLD OUT', async () => {
+    const mockProducts = [
+      {
+        id: 'tee-no-size',
+        name: 'No Size Tee',
+        price: 999,
+        stock: 10,
+        sizes: null,
+        isPreorder: false,
+        soldOut: false
+      },
+      {
+        id: 'tee-sold-out-size',
+        name: 'Sold Out Size Tee',
+        price: 999,
+        stock: 0,
+        sizes: { S: 0 },
+        isPreorder: false,
+        soldOut: false
+      }
+    ];
+
+    productsModule.invalidateProducts();
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue(mockProducts);
+
+    // 1. With no size selected
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/product/tee-no-size']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={() => {}} onBuyNow={() => {}} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const addBtn = await screen.findByRole('button', { name: /ADD TO BAG/i });
+    const buyBtn = screen.getByRole('button', { name: /BUY NOW/i });
+    expect(addBtn.disabled).toBe(false);
+    expect(buyBtn.disabled).toBe(false);
+
+    unmount();
+
+    // 2. With a selected size whose stock is 0
+    render(
+      <MemoryRouter initialEntries={['/product/tee-sold-out-size']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={() => {}} onBuyNow={() => {}} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const soldOutBtns = await screen.findAllByRole('button', { name: /^SOLD OUT$/i });
+    expect(soldOutBtns.length).toBe(2);
+    soldOutBtns.forEach(btn => expect(btn.disabled).toBe(true));
+    expect(screen.queryByRole('button', { name: /ADD TO BAG/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /BUY NOW/i })).toBeNull();
+  });
+});
+
