@@ -1202,6 +1202,7 @@ export default function Admin({ onToast }) {
   // Base64 file upload helper
   const handleDirectUpload = async (e, onUploadDone, { allowVideo = true } = {}) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (!files.length) return;
 
     const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
@@ -1255,8 +1256,6 @@ export default function Admin({ onToast }) {
         setUploadingFiles(prev => Math.max(0, prev - 1));
       }
     }
-
-    e.target.value = '';
   };
 
   // Orders Actions
@@ -4792,7 +4791,7 @@ export default function Admin({ onToast }) {
                       <button
                         type="button"
                         onClick={() => {
-                          const list = editingProduct ? editingProduct.imageUrls : newProduct.imageUrls;
+                          const list = (editingProduct ? editingProduct.imageUrls : newProduct.imageUrls) || [];
                           const updated = list.filter((_, i) => i !== idx);
                           if (editingProduct) setEditingProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
                           else setNewProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
