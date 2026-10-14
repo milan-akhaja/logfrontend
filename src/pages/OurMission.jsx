@@ -11,17 +11,7 @@ export default function OurMission() {
   const missionStatement = contentBlocks.mission_statement;
 
   useEffect(() => {
-    // 1. Track page view
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: '/our-mission',
-        sessionId: localStorage.getItem('log_session_id') || 'guest'
-      })
-    }).catch(() => {});
-
-    // 2. Fetch and animate counter to actual total (baseline + orders)
+    // 1. Fetch and animate counter to actual total (baseline + orders)
     let animationFrameId;
     fetch('/api/donations/total')
       .then(res => res.json())

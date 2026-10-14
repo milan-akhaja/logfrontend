@@ -35,16 +35,6 @@ export default function NewIn({ onAddToCart, onToast }) {
         if (data) setNewInConfig(data);
       })
       .catch(err => console.error('Error fetching new-in config:', err));
-
-    // 2. Track page view
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: '/new-in',
-        sessionId: localStorage.getItem('log_session_id') || 'guest'
-      })
-    }).catch(() => {});
   }, []);
 
   const handleContactClick = () => {

@@ -485,16 +485,6 @@ export default function Shop({ onAddToCart }) {
         setCollections(collectionsData || []);
       })
       .catch(err => console.error('Error fetching catalog data:', err));
-
-    // 2. Track page view
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: '/',
-        sessionId: localStorage.getItem('log_session_id') || 'guest'
-      })
-    }).catch(() => { });
   }, []);
 
   useEffect(() => {

@@ -18,15 +18,6 @@ export default function LogBook() {
       })
       .catch(err => console.error('Error fetching blogs:', err));
 
-    // 2. Track page view
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        url: '/log-book',
-        sessionId: localStorage.getItem('log_session_id') || 'guest'
-      })
-    }).catch(() => {});
   }, []);
 
   const truncateTitle = (title) => {

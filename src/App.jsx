@@ -80,26 +80,149 @@ class RouteErrorBoundary extends React.Component {
   }
 }
 
+const CANONICAL_GA4_ID = 'G-CQ744XW1WD';
+
+function getSessionAttribution() {
+  if (typeof window === 'undefined') return { source: 'Direct' };
+
+  try {
+    const cached = sessionStorage.getItem('log_session_attribution');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch {}
+
+  let utm_source = '';
+  let utm_medium = '';
+  let utm_campaign = '';
+  let utm_content = '';
+  let utm_term = '';
+  let gclid = '';
+  let fbclid = '';
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    utm_source = (params.get('utm_source') || '').trim();
+    utm_medium = (params.get('utm_medium') || '').trim();
+    utm_campaign = (params.get('utm_campaign') || '').trim();
+    utm_content = (params.get('utm_content') || '').trim();
+    utm_term = (params.get('utm_term') || '').trim();
+    gclid = (params.get('gclid') || '').trim();
+    fbclid = (params.get('fbclid') || '').trim();
+  } catch {}
+
+  const referrer = typeof document !== 'undefined' ? (document.referrer || '').trim() : '';
+  let referrerHost = '';
+  try {
+    if (referrer) {
+      referrerHost = new URL(referrer).hostname.toLowerCase();
+    }
+  } catch {}
+
+  let source = 'Direct';
+
+  if (gclid) {
+    source = 'Google Ads';
+  } else if (fbclid) {
+    source = 'Facebook Ads';
+  } else if (utm_source || utm_medium) {
+    const sLower = utm_source.toLowerCase();
+    const mLower = utm_medium.toLowerCase();
+    const isPaid = /^(cpc|ppc|paid|ads|cpm)$/i.test(mLower);
+
+    if (sLower.includes('google')) {
+      source = isPaid ? 'Google Ads' : 'Google (Organic)';
+    } else if (sLower.includes('facebook') || sLower.includes('meta')) {
+      source = isPaid ? 'Facebook Ads' : 'Facebook';
+    } else if (sLower.includes('instagram') || sLower === 'ig') {
+      source = isPaid ? 'Facebook Ads' : 'Instagram (Organic)';
+    } else {
+      source = utm_source || 'Referral';
+    }
+  } else if (referrerHost) {
+    if (/(^|\.)instagram\.com$/i.test(referrerHost) || referrerHost === 'l.instagram.com') {
+      source = 'Instagram (Organic)';
+    } else if (/(^|\.)google\.[a-z.]+$/i.test(referrerHost)) {
+      source = 'Google (Organic)';
+    } else if (/(^|\.)facebook\.com$/i.test(referrerHost) || referrerHost === 'fb.me' || referrerHost === 'l.facebook.com') {
+      source = 'Facebook';
+    } else if (!referrerHost.includes('logcloth.com') && referrerHost !== window.location.hostname) {
+      source = 'Referral';
+    } else {
+      source = 'Direct';
+    }
+  }
+
+  const attribution = {
+    source,
+    utm_source,
+    utm_medium,
+    utm_campaign,
+    utm_content,
+    utm_term,
+    gclid,
+    fbclid,
+    referrer
+  };
+
+  try {
+    sessionStorage.setItem('log_session_attribution', JSON.stringify(attribution));
+  } catch {}
+
+  return attribution;
+}
+
 // Page Tracker Wrapper to track sessions & page views
 function PageTracker() {
   const location = useLocation();
-  
+
   useEffect(() => {
     if (location.pathname.startsWith('/admin')) return undefined;
 
-    let sessionId = localStorage.getItem('log_session_id');
-    if (!sessionId) {
-      sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
-      localStorage.setItem('log_session_id', sessionId);
+    let sessionId = '';
+    try {
+      sessionId = sessionStorage.getItem('log_session_id') || localStorage.getItem('log_session_id') || '';
+      if (!sessionId) {
+        sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        sessionStorage.setItem('log_session_id', sessionId);
+        localStorage.setItem('log_session_id', sessionId);
+      } else {
+        sessionStorage.setItem('log_session_id', sessionId);
+        localStorage.setItem('log_session_id', sessionId);
+      }
+    } catch {
+      sessionId = 'session_' + Date.now();
     }
+
+    let visitorId = '';
+    try {
+      visitorId = localStorage.getItem('log_visitor_id') || '';
+      if (!visitorId) {
+        visitorId = 'visitor_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        localStorage.setItem('log_visitor_id', visitorId);
+      }
+    } catch {}
+
+    const attribution = getSessionAttribution();
+    const fullUrl = `${location.pathname}${location.search}${location.hash}`;
 
     const track = () => {
       fetch('/api/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: location.pathname + location.hash,
-          sessionId
+          url: fullUrl,
+          sessionId,
+          visitorId,
+          source: attribution?.source || 'Direct',
+          utm_source: attribution?.utm_source || '',
+          utm_medium: attribution?.utm_medium || '',
+          utm_campaign: attribution?.utm_campaign || '',
+          utm_content: attribution?.utm_content || '',
+          utm_term: attribution?.utm_term || '',
+          gclid: attribution?.gclid || '',
+          fbclid: attribution?.fbclid || '',
+          referrer: attribution?.referrer || ''
         })
       }).catch(() => {});
     };
@@ -383,32 +506,29 @@ function AnalyticsTags() {
       document.head.appendChild(meta);
     }
 
-    // F33: the tags are also hardcoded in index.html. Those are the source of
-    // truth - if one is installed statically, never inject a second. Without
-    // this, a different id typed into the admin panel would run alongside the
-    // static one and double-count every pageview and conversion.
-    const staticGa4Id = String(window.__LOG_STATIC_GA4_ID || '').trim();
+    // F33: index.html statically installs CANONICAL_GA4_ID ('G-CQ744XW1WD').
+    // That is the single source of truth - ignore outdated admin GA4 IDs (like G-R3R2YRXWJS)
+    // and never inject a second GA4 tag.
+    const staticGa4Id = String(window.__LOG_STATIC_GA4_ID || CANONICAL_GA4_ID).trim();
     const staticGtmId = String(window.__LOG_STATIC_GTM_ID || '').trim();
 
-    const ga4Id = staticGa4Id ? '' : String(config.googleAnalyticsId || '').trim();
-    if (staticGa4Id && String(config.googleAnalyticsId || '').trim() && String(config.googleAnalyticsId || '').trim() !== staticGa4Id) {
-      console.warn(`Ignoring admin GA4 id - ${staticGa4Id} is installed in index.html. Remove one of the two.`);
+    if (String(config.googleAnalyticsId || '').trim() && String(config.googleAnalyticsId || '').trim() !== staticGa4Id) {
+      console.warn(`Ignoring admin GA4 id (${config.googleAnalyticsId}) - ${staticGa4Id} is canonical source of truth.`);
     }
-    if (ga4Id) {
+
+    if (!hasScriptWithSrc(`googletagmanager.com/gtag/js?id=${encodeURIComponent(staticGa4Id)}`)) {
       window.dataLayer = window.dataLayer || [];
       window.gtag = window.gtag || function gtag() {
         window.dataLayer.push(arguments);
       };
-      if (!hasScriptWithSrc(`googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`)) {
-        window.gtag('js', new Date());
-        window.gtag('config', ga4Id, { send_page_view: false });
+      window.gtag('js', new Date());
+      window.gtag('config', staticGa4Id, { send_page_view: false });
 
-        const ga4Script = document.createElement('script');
-        ga4Script.id = 'log-ga4-script';
-        ga4Script.async = true;
-        ga4Script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`;
-        document.head.appendChild(ga4Script);
-      }
+      const ga4Script = document.createElement('script');
+      ga4Script.id = 'log-ga4-script';
+      ga4Script.async = true;
+      ga4Script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(staticGa4Id)}`;
+      document.head.appendChild(ga4Script);
     }
 
     const gtmId = staticGtmId ? '' : String(config.googleTagManagerId || '').trim();
@@ -433,19 +553,13 @@ function AnalyticsTags() {
   useEffect(() => {
     if (!config || isAdmin || !isAnalyticsHost) return;
     const pagePath = `${location.pathname}${location.search}${location.hash}`;
-    if (window.gtag && window.__LOG_STATIC_GA4_ID) {
+    const ga4MeasurementId = String(window.__LOG_STATIC_GA4_ID || CANONICAL_GA4_ID).trim();
+    if (window.gtag && ga4MeasurementId) {
       window.gtag('event', 'page_view', {
-        send_to: window.__LOG_STATIC_GA4_ID,
+        send_to: ga4MeasurementId,
         page_path: pagePath,
         page_location: window.location.href,
         page_title: document.title
-      });
-    }
-    const ga4Id = String(config.googleAnalyticsId || '').trim();
-    if (ga4Id && window.gtag) {
-      window.gtag('config', ga4Id, {
-        page_path: pagePath,
-        page_location: window.location.href
       });
     }
     if (String(config.googleTagManagerId || '').trim() && window.dataLayer) {
