@@ -36,8 +36,8 @@ const STATIC_PAGES = {
   '/make-return': ['Make a Return or Exchange | logcloth', 'Request a logcloth return, refund, or size exchange for eligible orders within the return window. Free doorstep pickup and exchange across India.'],
   '/shipping-policy': ['Shipping Policy | logcloth', 'Read logcloth shipping timelines, delivery details, order dispatch estimates, and customer support information for streetwear orders across India.'],
   '/faqs': ['FAQs - Questions & Answers | logcloth', 'Answers to common logcloth questions about orders, sizing, shipping timelines, returns, exchanges, and the Rs. 23 charity donation on every item.'],
-  '/terms': ['Terms & Conditions | logcloth', 'Read the official logcloth terms and conditions for streetwear shopping, payments, doorstep returns, deliveries, and use of logcloth.com.'],
-  '/privacy-policy': ['Privacy Policy | logcloth', 'Read how logcloth collects, uses, protects, and retains customer information for streetwear orders, newsletter subscriptions, and customer support.']
+  '/terms': ['Terms & Conditions | logcloth', 'Read the official logcloth terms and conditions for streetwear orders, payments, promotional offers, returns, deliveries, and use of logcloth.com.'],
+  '/privacy-policy': ['Privacy Policy | logcloth', 'Read how logcloth collects, uses, protects, and retains customer information for streetwear orders, deliveries, returns, and customer support.']
 };
 
 const BLOGS_API_URL = 'https://api.logcloth.com/api/blogs';
