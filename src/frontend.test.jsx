@@ -991,6 +991,102 @@ describe('ConsentBanner and Consent Management', () => {
 
     unmount();
   });
+
+  it('ViewContent fires when consent is granted AFTER the product page is already mounted', async () => {
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    delete window.__LOG_META_CONSENT_GRANTED__;
+
+    const mockProduct = { id: 'prod-late-consent', name: 'Late Consent Tee', price: 1999, stock: 10, sizes: { M: 10 } };
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/product/prod-late-consent']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={vi.fn()} onBuyNow={vi.fn()} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await screen.findByText('Late Consent Tee');
+    // Before consent, ViewContent must not have fired
+    const beforeCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(beforeCalls.length).toBe(0);
+
+    // Now grant consent via saveConsent (which updates flags and dispatches cookieyes_consent_update)
+    const { saveConsent } = await import('./lib/analytics');
+    saveConsent({ analytics: true, marketing: true });
+
+    // After consent update, ViewContent must fire exactly once
+    const afterCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(afterCalls.length).toBe(1);
+    expect(afterCalls[0][2]).toEqual(expect.objectContaining({
+      content_ids: ['prod-late-consent'],
+      content_type: 'product',
+      value: 1999,
+      currency: 'INR'
+    }));
+
+    // Triggering another consent update must NOT re-fire ViewContent
+    saveConsent({ analytics: true, marketing: true });
+    const duplicateCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(duplicateCalls.length).toBe(1);
+
+    unmount();
+  });
+
+  it('one Add to bag click fires AddToCart exactly once with expected parameters and deduplicates rapid clicks', async () => {
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+
+    const mockProduct = { id: 'prod-atc-test', name: 'Drop Tee', price: 1299, stock: 5, sizes: { L: 5 } };
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
+
+    // Test clicking Add to bag on ProductDetail
+    const onAddToCart = vi.fn();
+    const { unmount: unmountPD } = render(
+      <MemoryRouter initialEntries={['/product/prod-atc-test']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={onAddToCart} onBuyNow={vi.fn()} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await screen.findByText('Drop Tee');
+    const sizeBtn = (await screen.findAllByRole('button')).find(b => b.textContent && b.textContent.includes('L'));
+    expect(sizeBtn).toBeDefined();
+    fireEvent.click(sizeBtn);
+
+    const addBtn = screen.getByRole('button', { name: /add to bag/i });
+    expect(addBtn).toBeDefined();
+
+    // Click Add to bag once
+    fireEvent.click(addBtn);
+    expect(onAddToCart).toHaveBeenCalledTimes(1);
+    expect(onAddToCart).toHaveBeenCalledWith(expect.objectContaining({ id: 'prod-atc-test' }), 'L');
+
+    // Test trackMetaEvent AddToCart parameters
+    const { trackMetaEvent } = await import('./lib/analytics');
+    trackMetaEvent('AddToCart', {
+      content_ids: ['prod-atc-test'],
+      content_type: 'product',
+      value: 1299,
+      currency: 'INR',
+      contents: [{ id: 'prod-atc-test', quantity: 1 }]
+    });
+
+    const atcCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'AddToCart');
+    expect(atcCalls.length).toBe(1);
+    expect(atcCalls[0][2]).toEqual(expect.objectContaining({
+      content_ids: ['prod-atc-test'],
+      content_type: 'product',
+      value: 1299,
+      currency: 'INR'
+    }));
+
+    unmountPD();
+  });
 });
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
@@ -886,6 +886,8 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [cartOpen, setCartOpen] = useState(false);
   const [sizePopupProduct, setSizePopupProduct] = useState(null);
+  const lastAddToCartRef = useRef({ key: '', time: 0 });
+  const lastBuyNowRef = useRef({ key: '', time: 0 });
 
   // Load cart on mount
   useEffect(() => {
@@ -916,6 +918,13 @@ export default function App() {
 
     const finalSize = isBogo ? `${size}, ${secondSize}` : size;
     const cartItemId = isBogo ? `${product.id}-${size}-${secondSize}` : `${product.id}-${size}`;
+
+    const now = Date.now();
+    if (lastAddToCartRef.current.key === cartItemId && now - lastAddToCartRef.current.time < 600) {
+      return;
+    }
+    lastAddToCartRef.current = { key: cartItemId, time: now };
+
     const existing = cart.find(item => item.cartItemId === cartItemId);
     const sizeStock = product.sizes && typeof product.sizes === 'object' && !Array.isArray(product.sizes)
       ? (product.sizes[size] !== undefined ? Number(product.sizes[size]) : Infinity)
@@ -978,6 +987,13 @@ export default function App() {
 
     const finalSize = isBogo ? `${size}, ${secondSize}` : size;
     const cartItemId = isBogo ? `${product.id}-${size}-${secondSize}` : `${product.id}-${size}`;
+
+    const now = Date.now();
+    if (lastBuyNowRef.current.key === cartItemId && now - lastBuyNowRef.current.time < 600) {
+      return;
+    }
+    lastBuyNowRef.current = { key: cartItemId, time: now };
+
     const existing = cart.find(item => item.cartItemId === cartItemId);
     let updated;
     if (existing) {

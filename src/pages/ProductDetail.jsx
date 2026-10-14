@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import SizeChartModal from '../components/SizeChartModal';
 import SEO, { SITE_URL } from '../components/SEO';
@@ -8,7 +8,7 @@ import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts, getCachedProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
 import { scrollToTopInstant } from '../lib/scrollRestoration';
-import { trackGA4Event, trackMetaEvent } from '../lib/analytics';
+import { trackGA4Event, trackMetaEvent, canTrackGA4, canTrackMeta } from '../lib/analytics';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -99,36 +99,67 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     };
   }, [id]);
 
-  const viewedProductIdRef = useRef(null);
+  const viewedMetaProductIdRef = useRef(null);
+  const viewedGA4ProductIdRef = useRef(null);
+
+  const sendViewContentEvents = useCallback((currentProduct) => {
+    if (!currentProduct || !currentProduct.id) return;
+    const prodId = String(currentProduct.id);
+    const variant = selectedSize || (productSizes(currentProduct)[0] || '');
+    const price = Number(
+      currentProduct.preorderPrice !== null && currentProduct.preorderPrice !== undefined
+        ? currentProduct.preorderPrice
+        : (currentProduct.price || 0)
+    );
+
+    if (viewedGA4ProductIdRef.current !== prodId && canTrackGA4()) {
+      trackGA4Event('view_item', {
+        currency: 'INR',
+        value: price,
+        items: [{
+          item_id: prodId,
+          item_name: currentProduct.name,
+          price: price,
+          quantity: 1,
+          item_variant: variant
+        }]
+      });
+      viewedGA4ProductIdRef.current = prodId;
+    }
+
+    if (viewedMetaProductIdRef.current !== prodId && canTrackMeta()) {
+      try {
+        const sent = trackMetaEvent('ViewContent', {
+          content_ids: [prodId],
+          content_type: 'product',
+          content_name: currentProduct.name,
+          value: price,
+          currency: 'INR'
+        });
+        if (sent) {
+          viewedMetaProductIdRef.current = prodId;
+        }
+      } catch {}
+    }
+  }, [selectedSize]);
 
   useEffect(() => {
-    if (!product || !product.id) return;
-    const prodId = String(product.id);
-    if (viewedProductIdRef.current === prodId) return;
-    viewedProductIdRef.current = prodId;
+    if (product?.id) {
+      sendViewContentEvents(product);
+    }
+  }, [product?.id, sendViewContentEvents]);
 
-    const variant = selectedSize || (productSizes(product)[0] || '');
-    trackGA4Event('view_item', {
-      currency: 'INR',
-      value: Number(product.price || 0),
-      items: [{
-        item_id: prodId,
-        item_name: product.name,
-        price: Number(product.price || 0),
-        quantity: 1,
-        item_variant: variant
-      }]
-    });
-    try {
-      trackMetaEvent('ViewContent', {
-        content_ids: [prodId],
-        content_type: 'product',
-        content_name: product.name,
-        value: Number(product.price || 0),
-        currency: 'INR'
-      });
-    } catch {}
-  }, [product?.id]);
+  useEffect(() => {
+    const handleConsentUpdate = () => {
+      if (product?.id) {
+        sendViewContentEvents(product);
+      }
+    };
+    document.addEventListener('cookieyes_consent_update', handleConsentUpdate);
+    return () => {
+      document.removeEventListener('cookieyes_consent_update', handleConsentUpdate);
+    };
+  }, [product, sendViewContentEvents]);
 
   useEffect(() => {
     setSlideIdx(0);

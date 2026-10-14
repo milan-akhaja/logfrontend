@@ -119,22 +119,26 @@ export function canTrackMeta() {
 }
 
 export function trackGA4Event(name, payload = {}) {
-  if (!canTrackGA4()) return;
+  if (!canTrackGA4()) return false;
   window.gtag('event', name, {
     send_to: window.__LOG_STATIC_GA4_ID,
     ...payload
   });
+  return true;
 }
 
 export function trackMetaEvent(name, params = {}, eventId = null) {
   try {
-    if (!canTrackMeta()) return;
+    if (!canTrackMeta()) return false;
     if (eventId) {
       window.fbq('track', name, params, { eventID: String(eventId) });
     } else {
       window.fbq('track', name, params);
     }
-  } catch {}
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function trackPurchase(order) {

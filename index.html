@@ -67,6 +67,7 @@
       // CookieYes reports consent. Events fired while revoked are queued by
       // the pixel and sent after the grant, so nothing is lost.
       fbq('consent', 'revoke');
+      fbq('set', 'autoConfig', false, '1398026158457517');
       fbq('init', '1398026158457517');
       fbq('track', 'PageView');
 
