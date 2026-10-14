@@ -20,6 +20,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import SizePopup from './components/SizePopup';
+import ConsentBanner from './components/ConsentBanner';
 import SEO from './components/SEO';
 
 // Pages (Core & Code-Split)
@@ -722,6 +723,7 @@ function AppContent({
   const isAdmin = location.pathname.startsWith('/admin');
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [showCookieSettings, setShowCookieSettings] = useState(false);
 
   // Handle PayU payment return redirect
   useEffect(() => {
@@ -837,7 +839,14 @@ function AppContent({
       {isAdmin ? routeContent : <main id="main-content" tabIndex={-1}>{routeContent}</main>}
 
       {!isAdmin && (
-        <Footer onToast={showToast} />
+        <Footer onToast={showToast} onOpenCookieSettings={() => setShowCookieSettings(true)} />
+      )}
+
+      {!isAdmin && (
+        <ConsentBanner
+          forceOpen={showCookieSettings}
+          onClose={() => setShowCookieSettings(false)}
+        />
       )}
 
       <CartDrawer 

@@ -1,3 +1,66 @@
+export function getSavedConsent() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = decodeURIComponent(document?.cookie || '');
+    const match = raw.match(/cookieyes-consent=([^;]+)/);
+    if (!match) return null;
+    const val = match[1];
+    return {
+      analytics: /analytics:yes/.test(val),
+      marketing: /advertisement:yes/.test(val)
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveConsent({ analytics, marketing }) {
+  if (typeof window === 'undefined') return;
+  const isAnalytics = Boolean(analytics);
+  const isMarketing = Boolean(marketing);
+  const cookieVal = `consentid:${Date.now()},consent:yes,action:yes,necessary:yes,functional:yes,analytics:${isAnalytics ? 'yes' : 'no'},performance:yes,advertisement:${isMarketing ? 'yes' : 'no'}`;
+  const maxAge = 365 * 24 * 60 * 60; // 12 months
+  document.cookie = `cookieyes-consent=${cookieVal}; path=/; max-age=${maxAge}; SameSite=Lax`;
+
+  window.__LOG_GA4_CONSENT_GRANTED__ = isAnalytics;
+  window.__LOG_META_CONSENT_GRANTED__ = isMarketing;
+
+  if (typeof window.gtag === 'function') {
+    window.gtag('consent', 'update', {
+      analytics_storage: isAnalytics ? 'granted' : 'denied',
+      ad_storage: isMarketing ? 'granted' : 'denied',
+      ad_user_data: isMarketing ? 'granted' : 'denied',
+      ad_personalization: isMarketing ? 'granted' : 'denied'
+    });
+  }
+
+  if (typeof window.fbq === 'function') {
+    if (isMarketing) {
+      window.fbq('consent', 'grant');
+    } else {
+      window.fbq('consent', 'revoke');
+    }
+  }
+
+  try {
+    document.dispatchEvent(new CustomEvent('cookieyes_consent_update', {
+      detail: {
+        accepted: [
+          'necessary',
+          ...(isAnalytics ? ['analytics'] : []),
+          ...(isMarketing ? ['advertisement'] : [])
+        ],
+        rejected: [
+          ...(!isAnalytics ? ['analytics'] : []),
+          ...(!isMarketing ? ['advertisement'] : [])
+        ],
+        analytics: isAnalytics ? 'yes' : 'no',
+        advertisement: isMarketing ? 'yes' : 'no'
+      }
+    }));
+  } catch {}
+}
+
 export function hasGA4Consent() {
   if (typeof window === 'undefined') return false;
   if (window.__LOG_GA4_CONSENT_GRANTED__ === true) return true;

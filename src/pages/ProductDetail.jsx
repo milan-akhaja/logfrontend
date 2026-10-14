@@ -128,7 +128,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
         currency: 'INR'
       });
     } catch {}
-  }, [product?.id, selectedSize]);
+  }, [product?.id]);
 
   useEffect(() => {
     setSlideIdx(0);

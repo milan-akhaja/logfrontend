@@ -5,7 +5,7 @@ import ContentBlockLines from './ContentBlockLines';
 import useContentBlocks from '../hooks/useContentBlocks';
 import { getProducts } from '../lib/products';
 
-export default function Footer({ onToast }) {
+export default function Footer({ onToast, onOpenCookieSettings }) {
   const [openSection, setOpenSection] = useState(null);
   const [subCategories, setSubCategories] = useState([]);
   const [colors, setColors] = useState([]);
@@ -183,6 +183,25 @@ export default function Footer({ onToast }) {
               <li><Link to="/privacy-policy">Privacy Policy</Link></li>
               <li><Link to="/terms">Terms & Conditions</Link></li>
               <li><Link to="/faqs">FAQ's</Link></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={onOpenCookieSettings}
+                  className="footer-cookie-settings-btn"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'inherit',
+                    font: 'inherit',
+                    fontSize: 'inherit',
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  Cookie settings
+                </button>
+              </li>
             </ul>
           </div>
 

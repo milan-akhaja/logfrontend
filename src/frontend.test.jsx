@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 import { priceNumber, formatPrice, getPriceDisplay } from './lib/pricing';
 import ProductPrice from './components/ProductPrice';
@@ -799,6 +799,196 @@ describe('Admin Analytics Dashboard', () => {
     expect(await screen.findByText('Live Shop Analytics')).toBeDefined();
     expect(await screen.findByText(/Analytics could not load\. Press Refresh\. \(HTTP 500\)/i)).toBeDefined();
     expect(onToast).toHaveBeenCalledWith(expect.stringContaining('HTTP 500'));
+    unmount();
+  });
+});
+
+describe('ConsentBanner and Consent Management', () => {
+  beforeEach(() => {
+    cleanup();
+    document.cookie = 'cookieyes-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    delete window.__LOG_GA4_CONSENT_GRANTED__;
+    delete window.__LOG_META_CONSENT_GRANTED__;
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.__LOG_STATIC_META_PIXEL_ID = '1398026158457517';
+    window.gtag = vi.fn();
+    window.fbq = vi.fn();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('banner shows when no saved choice exists', async () => {
+    const ConsentBanner = (await import('./components/ConsentBanner')).default;
+    const { getSavedConsent } = await import('./lib/analytics');
+    expect(getSavedConsent()).toBeNull();
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <ConsentBanner />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('region', { name: /cookie consent banner/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /accept all/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /reject non-essential/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /customize/i })).toBeDefined();
+    unmount();
+  });
+
+  it('Accept all saves analytics+marketing and grants consent', async () => {
+    const ConsentBanner = (await import('./components/ConsentBanner')).default;
+    const { getSavedConsent, hasGA4Consent, hasMetaConsent, canTrackGA4, canTrackMeta } = await import('./lib/analytics');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <ConsentBanner />
+      </MemoryRouter>
+    );
+
+    const acceptBtn = screen.getByRole('button', { name: /accept all/i });
+    fireEvent.click(acceptBtn);
+
+    const saved = getSavedConsent();
+    expect(saved).toEqual({ analytics: true, marketing: true });
+    expect(hasGA4Consent()).toBe(true);
+    expect(hasMetaConsent()).toBe(true);
+    expect(canTrackGA4()).toBe(true);
+    expect(canTrackMeta()).toBe(true);
+    expect(window.fbq).toHaveBeenCalledWith('consent', 'grant');
+    expect(window.gtag).toHaveBeenCalledWith('consent', 'update', expect.objectContaining({
+      analytics_storage: 'granted',
+      ad_storage: 'granted'
+    }));
+    unmount();
+  });
+
+  it('Reject non-essential saves nothing granted and trackMetaEvent/GA4 stay off', async () => {
+    const ConsentBanner = (await import('./components/ConsentBanner')).default;
+    const { getSavedConsent, hasGA4Consent, hasMetaConsent, canTrackGA4, canTrackMeta, trackMetaEvent, trackGA4Event } = await import('./lib/analytics');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <ConsentBanner />
+      </MemoryRouter>
+    );
+
+    const rejectBtn = screen.getByRole('button', { name: /reject non-essential/i });
+    fireEvent.click(rejectBtn);
+
+    const saved = getSavedConsent();
+    expect(saved).toEqual({ analytics: false, marketing: false });
+    expect(hasGA4Consent()).toBe(false);
+    expect(hasMetaConsent()).toBe(false);
+    expect(canTrackGA4()).toBe(false);
+    expect(canTrackMeta()).toBe(false);
+    expect(window.fbq).toHaveBeenCalledWith('consent', 'revoke');
+
+    trackMetaEvent('AddToCart', { content_ids: ['prod-1'] });
+    trackGA4Event('view_item', { items: [] });
+    expect(window.fbq).not.toHaveBeenCalledWith('track', expect.anything(), expect.anything());
+    expect(window.gtag).not.toHaveBeenCalledWith('event', expect.anything(), expect.anything());
+    unmount();
+  });
+
+  it('Customize with only analytics on keeps Meta off', async () => {
+    const ConsentBanner = (await import('./components/ConsentBanner')).default;
+    const { getSavedConsent, hasGA4Consent, hasMetaConsent, canTrackGA4, canTrackMeta, trackMetaEvent, trackGA4Event } = await import('./lib/analytics');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <ConsentBanner />
+      </MemoryRouter>
+    );
+
+    const customizeBtn = screen.getByRole('button', { name: /customize/i });
+    fireEvent.click(customizeBtn);
+
+    const analyticsCheckbox = await screen.findByLabelText(/analytics/i);
+    const marketingCheckbox = await screen.findByLabelText(/marketing/i);
+    expect(analyticsCheckbox.checked).toBe(false);
+    expect(marketingCheckbox.checked).toBe(false);
+
+    fireEvent.click(analyticsCheckbox);
+    expect(analyticsCheckbox.checked).toBe(true);
+
+    const saveBtn = screen.getByRole('button', { name: /save preferences/i });
+    fireEvent.click(saveBtn);
+
+    const saved = getSavedConsent();
+    expect(saved).toEqual({ analytics: true, marketing: false });
+    expect(hasGA4Consent()).toBe(true);
+    expect(hasMetaConsent()).toBe(false);
+    expect(canTrackGA4()).toBe(true);
+    expect(canTrackMeta()).toBe(false);
+
+    trackMetaEvent('AddToCart', { content_ids: ['prod-1'] });
+    expect(window.fbq).not.toHaveBeenCalledWith('track', expect.anything(), expect.anything());
+    expect(window.fbq).toHaveBeenCalledWith('consent', 'revoke');
+
+    trackGA4Event('view_item', { currency: 'INR' });
+    expect(window.gtag).toHaveBeenCalledWith('event', 'view_item', expect.objectContaining({ currency: 'INR' }));
+    unmount();
+  });
+
+  it('Cookie settings link reopens the banner', async () => {
+    const ConsentBanner = (await import('./components/ConsentBanner')).default;
+    document.cookie = 'cookieyes-consent=consentid:1,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes; path=/;';
+
+    const onOpenCookieSettings = vi.fn();
+    const { unmount: unmountFooter } = render(
+      <MemoryRouter>
+        <Footer onToast={vi.fn()} onOpenCookieSettings={onOpenCookieSettings} />
+      </MemoryRouter>
+    );
+
+    const cookieSettingsBtn = screen.getByRole('button', { name: /cookie settings/i });
+    expect(cookieSettingsBtn).toBeDefined();
+    fireEvent.click(cookieSettingsBtn);
+    expect(onOpenCookieSettings).toHaveBeenCalledTimes(1);
+    unmountFooter();
+    cleanup();
+
+    const { unmount: unmountBanner } = render(
+      <MemoryRouter>
+        <ConsentBanner forceOpen={true} />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('region', { name: /cookie consent banner/i })).toBeDefined();
+    unmountBanner();
+  });
+
+  it('ViewContent fires once when size changes', async () => {
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+
+    const mockProduct = { id: 'prod-vc-test', name: 'Vintage Tee', price: 1499, stock: 10, sizes: { S: 5, M: 5 } };
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/product/prod-vc-test']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={vi.fn()} onBuyNow={vi.fn()} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await screen.findByText('Vintage Tee');
+    const initialViewContentCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(initialViewContentCalls.length).toBe(1);
+
+    const sizeButtons = await screen.findAllByRole('button');
+    const sizeBtn = sizeButtons.find(b => b.textContent && b.textContent.includes('M'));
+    if (sizeBtn) {
+      fireEvent.click(sizeBtn);
+    }
+
+    const postChangeViewContentCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(postChangeViewContentCalls.length).toBe(1);
+
     unmount();
   });
 });
