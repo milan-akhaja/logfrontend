@@ -10,12 +10,25 @@ export function hasGA4Consent() {
   }
 }
 
+export function isAdminUser() {
+  if (typeof window === 'undefined') return false;
+  if (window.location.pathname.startsWith('/admin')) return true;
+  try {
+    return Boolean(
+      sessionStorage.getItem('admin_token') ||
+      localStorage.getItem('admin_token')
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function canTrackGA4() {
   if (typeof window === 'undefined') return false;
   const isAnalyticsHost = Boolean(
     window.__LOG_ANALYTICS_HOST__ || /(^|\.)logcloth\.com$/i.test(window.location.hostname)
   );
-  const isAdmin = window.location.pathname.startsWith('/admin');
+  const isAdmin = isAdminUser();
   return !isAdmin && isAnalyticsHost && Boolean(window.gtag) && Boolean(window.__LOG_STATIC_GA4_ID) && hasGA4Consent();
 }
 
@@ -36,7 +49,7 @@ export function canTrackMeta() {
   const isAnalyticsHost = Boolean(
     window.__LOG_ANALYTICS_HOST__ || /(^|\.)logcloth\.com$/i.test(window.location.hostname)
   );
-  const isAdmin = window.location.pathname.startsWith('/admin');
+  const isAdmin = isAdminUser();
   const hasPixelId = Boolean(window.__LOG_STATIC_META_PIXEL_ID || '1398026158457517');
   const hasFbq = typeof window.fbq === 'function';
   return !isAdmin && isAnalyticsHost && hasFbq && hasPixelId && hasMetaConsent();

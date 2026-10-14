@@ -4,7 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
 import { getProducts } from './lib/products';
-import { trackGA4Event, trackPurchase, trackMetaEvent } from './lib/analytics';
+import { trackGA4Event, trackPurchase, trackMetaEvent, isAdminUser } from './lib/analytics';
 import {
   initScrollRestoration,
   saveScrollPosition,
@@ -177,7 +177,7 @@ function PageTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.pathname.startsWith('/admin')) return undefined;
+    if (isAdminUser()) return undefined;
 
     let sessionId = '';
     try {
@@ -240,7 +240,7 @@ function PageTracker() {
 }
 
 function sendGoogleEvent(eventName, payload = {}) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || isAdminUser()) return;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: eventName, ...payload });
   trackGA4Event(eventName, payload);
@@ -458,7 +458,7 @@ function RevealOnScroll() {
 function AnalyticsTags() {
   const location = useLocation();
   const [config, setConfig] = useState(null);
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isAdmin = isAdminUser();
   const isAnalyticsHost = typeof window !== 'undefined'
     && /(^|\.)logcloth\.com$/i.test(window.location.hostname);
 

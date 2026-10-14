@@ -2224,10 +2224,12 @@ export default function Admin({ onToast }) {
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: 'Not measured yet', key: 'uniqueVisitors', desc: 'Distinct persistent visitors across browsing sessions. Currently not stored separately from sessions on the backend.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: analytics.metricsMeasured?.uniqueVisitors ? analytics.uniqueVisitors : 'Not measured yet', key: 'uniqueVisitors', desc: 'Distinct persistent visitors across browsing sessions tracked via visitor identifier.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Unique visitors</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--admin-text-muted)' }}>Not measured yet</div>
+                      <div className="admin-metric-value" style={{ fontSize: analytics.metricsMeasured?.uniqueVisitors ? '28px' : '20px', fontWeight: '800', color: analytics.metricsMeasured?.uniqueVisitors ? 'inherit' : 'var(--admin-text-muted)' }}>
+                        {analytics.metricsMeasured?.uniqueVisitors ? analytics.uniqueVisitors : 'Not measured yet'}
+                      </div>
                     </div>
                   </div>
 
@@ -2358,6 +2360,38 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-card" style={{ gridColumn: 'span 2', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }}>
+                  <h3 style={{ marginBottom: '15px', fontWeight: '700' }}>Launch Campaigns</h3>
+                  <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ textAlign: 'left', borderBottom: '2px solid var(--admin-border)' }}>
+                        <th style={{ padding: '10px 0' }}>Source</th>
+                        <th style={{ padding: '10px 0' }}>Campaign</th>
+                        <th style={{ padding: '10px 0' }}>Content</th>
+                        <th style={{ padding: '10px 0', textAlign: 'right' }}>Sessions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.campaigns && analytics.campaigns.length > 0 ? (
+                        analytics.campaigns.map((c, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                            <td style={{ padding: '10px 0', fontWeight: '600' }}>{c.source || '—'}</td>
+                            <td style={{ padding: '10px 0' }}>{c.campaign || '—'}</td>
+                            <td style={{ padding: '10px 0', color: 'var(--admin-text-muted)' }}>{c.content || '—'}</td>
+                            <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: '700' }}>{c.sessions}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="4" style={{ padding: '16px 0', textAlign: 'center', color: 'var(--admin-text-muted)' }}>
+                            No campaign sessions recorded yet. Launch links using <code>?utm_source=...&amp;utm_campaign=...</code> will appear here.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="admin-card" style={{ gridColumn: 'span 2', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }}>
                   <h3 style={{ marginBottom: '15px', fontWeight: '700' }}>Traffic Location Breakdown</h3>
                   <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse' }}>
                     <thead>
@@ -2395,7 +2429,9 @@ export default function Admin({ onToast }) {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Bounce Rate</div>
-                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--admin-text-muted)' }}>Not measured yet</div>
+                      <div style={{ fontSize: analytics.metricsMeasured?.bounceRate ? '20px' : '16px', fontWeight: '800', color: analytics.metricsMeasured?.bounceRate ? 'inherit' : 'var(--admin-text-muted)' }}>
+                        {analytics.metricsMeasured?.bounceRate ? `${Number(analytics.bounceRate || 0).toFixed(1)}%` : 'Not measured yet'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2467,10 +2503,14 @@ export default function Admin({ onToast }) {
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
                         <td style={{ padding: '12px 0' }}>Bounce Rate</td>
-                        <td style={{ padding: '12px 0', fontWeight: '700', color: 'var(--admin-text-muted)' }}>Not measured yet</td>
+                        <td style={{ padding: '12px 0', fontWeight: '700', color: analytics.metricsMeasured?.bounceRate ? 'inherit' : 'var(--admin-text-muted)' }}>
+                          {analytics.metricsMeasured?.bounceRate ? `${Number(analytics.bounceRate || 0).toFixed(1)}%` : 'Not measured yet'}
+                        </td>
                         <td style={{ padding: '12px 0' }}>50.0%</td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', color: 'var(--admin-text-muted)', fontWeight: '700' }}>
-                          Pending backend calculation
+                        <td style={{ padding: '12px 0', textAlign: 'right', color: !analytics.metricsMeasured?.bounceRate ? 'var(--admin-text-muted)' : (Number(analytics.bounceRate || 0) <= 50.0 ? 'green' : 'orange'), fontWeight: '700' }}>
+                          {!analytics.metricsMeasured?.bounceRate
+                            ? 'Pending backend calculation'
+                            : (Number(analytics.bounceRate || 0) <= 50.0 ? 'Optimal (<= 50%)' : 'High Bounce (> 50%)')}
                         </td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
