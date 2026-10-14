@@ -161,6 +161,7 @@ const emptyProductDraft = {
   colors: [],
   imageUrl: '',
   imageUrls: [],
+  images: [],
   sizes: { S: 10, M: 10, L: 10, XL: 10 },
   specifications: [],
   details: DEFAULT_DETAILS,
@@ -1439,7 +1440,7 @@ export default function Admin({ onToast }) {
     const sizes = productData.sizes || {};
     productData.stock = Object.values(sizes).reduce((sum, qty) => sum + parseInt(qty || 0), 0);
 
-    // Sync imageUrl with first item in imageUrls array
+    // Sync imageUrl and images with imageUrls array
     if (productData.imageUrls && productData.imageUrls.length > 0) {
       productData.imageUrl = productData.imageUrls[0];
     } else if (productData.imageUrl) {
@@ -1448,6 +1449,7 @@ export default function Admin({ onToast }) {
       productData.imageUrls = [];
       productData.imageUrl = '';
     }
+    productData.images = [...productData.imageUrls];
 
     try {
       setSavingProduct(true);
@@ -1666,11 +1668,11 @@ export default function Admin({ onToast }) {
 
   const handleMoveProductImage = (index, direction) => {
     const source = editingProduct || newProduct;
-    const imageUrls = source.imageUrls || [];
+    const imageUrls = source.imageUrls || source.images || [];
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= imageUrls.length) return;
     const updated = moveArrayItem(imageUrls, index, targetIndex);
-    const updater = prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' });
+    const updater = prev => ({ ...prev, imageUrls: updated, images: updated, imageUrl: updated[0] || '' });
     if (editingProduct) setEditingProduct(updater);
     else setNewProduct(updater);
   };
@@ -3241,11 +3243,13 @@ export default function Admin({ onToast }) {
                           <button
                             className="admin-icon-btn"
                             onClick={() => {
+                              const initialImageUrls = product.imageUrls && product.imageUrls.length > 0
+                                ? product.imageUrls
+                                : (product.images && product.images.length > 0 ? product.images : (product.imageUrl ? [product.imageUrl] : []));
                               setEditingProduct({
                                 ...product,
-                                imageUrls: product.imageUrls && product.imageUrls.length > 0
-                                  ? product.imageUrls
-                                  : (product.imageUrl ? [product.imageUrl] : []),
+                                imageUrls: initialImageUrls,
+                                images: initialImageUrls,
                                 discountedPrice: product.discountedPrice || '',
                                 discountPercentage: product.discountPercentage || '',
                                 priceDisplayOptions: normalizedPriceDisplayOptions(product),
@@ -4791,10 +4795,10 @@ export default function Admin({ onToast }) {
                       <button
                         type="button"
                         onClick={() => {
-                          const list = (editingProduct ? editingProduct.imageUrls : newProduct.imageUrls) || [];
+                          const list = (editingProduct ? (editingProduct.imageUrls || editingProduct.images) : (newProduct.imageUrls || newProduct.images)) || [];
                           const updated = list.filter((_, i) => i !== idx);
-                          if (editingProduct) setEditingProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
-                          else setNewProduct(prev => ({ ...prev, imageUrls: updated, imageUrl: updated[0] || '' }));
+                          if (editingProduct) setEditingProduct(prev => ({ ...prev, imageUrls: updated, images: updated, imageUrl: updated[0] || '' }));
+                          else setNewProduct(prev => ({ ...prev, imageUrls: updated, images: updated, imageUrl: updated[0] || '' }));
                         }}
                         style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239, 68, 68, 0.9)', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}
                       >
@@ -4822,15 +4826,15 @@ export default function Admin({ onToast }) {
                           handleDirectUpload(e, (url) => {
                             if (editingProduct) {
                               setEditingProduct(prev => {
-                                const list = prev?.imageUrls || [];
+                                const list = prev?.imageUrls || prev?.images || [];
                                 const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
-                                return { ...prev, imageUrls: updated, imageUrl: updated[0] || '' };
+                                return { ...prev, imageUrls: updated, images: updated, imageUrl: updated[0] || '' };
                               });
                             } else {
                               setNewProduct(prev => {
-                                const list = prev?.imageUrls || [];
+                                const list = prev?.imageUrls || prev?.images || [];
                                 const updated = [...list, url].slice(0, PRODUCT_IMAGE_LIMIT);
-                                return { ...prev, imageUrls: updated, imageUrl: updated[0] || '' };
+                                return { ...prev, imageUrls: updated, images: updated, imageUrl: updated[0] || '' };
                               });
                             }
                           }, { allowVideo: false });
