@@ -434,6 +434,14 @@ function AnalyticsTags() {
   useEffect(() => {
     if (!config || isAdmin || !isAnalyticsHost) return;
     const pagePath = `${location.pathname}${location.search}${location.hash}`;
+    if (window.gtag && window.__LOG_STATIC_GA4_ID) {
+      window.gtag('event', 'page_view', {
+        send_to: window.__LOG_STATIC_GA4_ID,
+        page_path: pagePath,
+        page_location: window.location.href,
+        page_title: document.title
+      });
+    }
     const ga4Id = String(config.googleAnalyticsId || '').trim();
     if (ga4Id && window.gtag) {
       window.gtag('config', ga4Id, {
