@@ -642,6 +642,7 @@ export default function Admin({ onToast }) {
 
   // Data states
   const [analytics, setAnalytics] = useState(null);
+  const [analyticsError, setAnalyticsError] = useState(null);
   const [analyticsConfig, setAnalyticsConfig] = useState(DEFAULT_ANALYTICS_CONFIG);
   const [orders, setOrders] = useState([]);
   const [returns, setReturns] = useState([]);
@@ -811,8 +812,26 @@ export default function Admin({ onToast }) {
         fetch('/api/content-blocks-config')
       ]);
 
-      const results = await Promise.all(
-        [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes].map(async (res) => {
+      if (!analyticsRes.ok) {
+        const errorMsg = `Analytics could not load. Press Refresh. (HTTP ${analyticsRes.status})`;
+        setAnalyticsError(errorMsg);
+        onToast?.(errorMsg);
+      } else {
+        try {
+          const analyticsData = await analyticsRes.json();
+          if (analyticsData) {
+            setAnalytics(analyticsData);
+            setAnalyticsError(null);
+          }
+        } catch {
+          const errorMsg = 'Analytics could not load. Press Refresh. (Invalid JSON)';
+          setAnalyticsError(errorMsg);
+          onToast?.(errorMsg);
+        }
+      }
+
+      const otherResults = await Promise.all(
+        [analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes].map(async (res) => {
           if (!res.ok) return null;
           try {
             return await res.json();
@@ -822,9 +841,8 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsData, analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData, contentBlocksData] = results;
+      const [analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData, contentBlocksData] = otherResults;
 
-      if (analyticsData) setAnalytics(analyticsData);
       setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(analyticsConfigData || {}) });
       if (ordersData) setOrders(ordersData);
       if (productsData) setProducts(productsData);
@@ -857,6 +875,8 @@ export default function Admin({ onToast }) {
       });
     } catch (err) {
       console.error(err);
+      const errorMsg = 'Analytics could not load. Press Refresh.';
+      setAnalyticsError(errorMsg);
       onToast('Error loading admin panel data.');
     }
   };
@@ -2113,6 +2133,47 @@ export default function Admin({ onToast }) {
           ))}
         </div>
 
+        {activeTab === 'dashboard' && analyticsError && !analytics && (
+          <div
+            className="admin-card"
+            style={{
+              padding: '24px',
+              borderRadius: '8px',
+              border: '1px solid #FCA5A5',
+              background: '#FEF2F2',
+              color: '#991B1B',
+              marginBottom: '25px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px'
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: '700', fontSize: '15px', marginBottom: '4px' }}>
+                {analyticsError}
+              </div>
+              <div style={{ fontSize: '13px', color: '#B91C1C' }}>
+                The server could not provide analytics data. Please check connection and click Refresh.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={fetchData}
+              style={{ background: '#DC2626', color: '#fff', border: 'none', cursor: 'pointer' }}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'dashboard' && !analytics && !analyticsError && (
+          <div className="admin-card" style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--admin-text-muted)' }}>
+            Loading analytics...
+          </div>
+        )}
+
         {activeTab === 'dashboard' && analytics && (
           <div>
             {/* Dashboard Tabs Selector */}
@@ -2203,82 +2264,82 @@ export default function Admin({ onToast }) {
                 </div>
                 <div className="admin-metrics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Site Sessions', value: analytics.siteSessions, key: 'siteSessions', desc: 'Number of active browsing sessions on the website.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Site Sessions', value: analytics.siteSessions ?? 0, key: 'siteSessions', desc: 'Number of active browsing sessions on the website.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Site sessions</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.siteSessions}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.siteSessions ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Total Sales', value: `₹${analytics.totalSales.toLocaleString('en-IN')}`, key: 'totalSales', desc: 'Total gross sales generated by client checkouts before deductions.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Total Sales', value: `₹${Number(analytics.totalSales || 0).toLocaleString('en-IN')}`, key: 'totalSales', desc: 'Total gross sales generated by client checkouts before deductions.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Total sales</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>₹{analytics.totalSales.toLocaleString('en-IN')}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>₹{Number(analytics.totalSales || 0).toLocaleString('en-IN')}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Total Orders', value: analytics.totalOrders, key: 'totalOrders', desc: 'Number of successfully registered customer orders.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Total Orders', value: analytics.totalOrders ?? 0, key: 'totalOrders', desc: 'Number of successfully registered customer orders.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Total orders</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.totalOrders}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.totalOrders ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: analytics.metricsMeasured?.uniqueVisitors ? analytics.uniqueVisitors : 'Not measured yet', key: 'uniqueVisitors', desc: 'Distinct persistent visitors across browsing sessions tracked via visitor identifier.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: (analytics.metricsMeasured?.uniqueVisitors && analytics.uniqueVisitors !== undefined && analytics.uniqueVisitors !== null) ? analytics.uniqueVisitors : 'Not measured yet', key: 'uniqueVisitors', desc: 'Distinct persistent visitors across browsing sessions tracked via visitor identifier.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Unique visitors</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: analytics.metricsMeasured?.uniqueVisitors ? '28px' : '20px', fontWeight: '800', color: analytics.metricsMeasured?.uniqueVisitors ? 'inherit' : 'var(--admin-text-muted)' }}>
-                        {analytics.metricsMeasured?.uniqueVisitors ? analytics.uniqueVisitors : 'Not measured yet'}
+                      <div className="admin-metric-value" style={{ fontSize: (analytics.metricsMeasured?.uniqueVisitors && analytics.uniqueVisitors !== undefined && analytics.uniqueVisitors !== null) ? '28px' : '20px', fontWeight: '800', color: (analytics.metricsMeasured?.uniqueVisitors && analytics.uniqueVisitors !== undefined && analytics.uniqueVisitors !== null) ? 'inherit' : 'var(--admin-text-muted)' }}>
+                        {(analytics.metricsMeasured?.uniqueVisitors && analytics.uniqueVisitors !== undefined && analytics.uniqueVisitors !== null) ? analytics.uniqueVisitors : 'Not measured yet'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Form Submissions', value: analytics.formSubmissions, key: 'formSubmissions', desc: 'Newsletter or popup newsletter form registrations.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Form Submissions', value: analytics.formSubmissions ?? 0, key: 'formSubmissions', desc: 'Newsletter or popup newsletter form registrations.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Form submissions</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.formSubmissions}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.formSubmissions ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Clicks to Contact', value: analytics.clicksToContact, key: 'clicksToContact', desc: 'Number of times users clicked phone, whatsapp, or email contact buttons.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Clicks to Contact', value: analytics.clicksToContact ?? 0, key: 'clicksToContact', desc: 'Number of times users clicked phone, whatsapp, or email contact buttons.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Clicks to contact</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.clicksToContact}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.clicksToContact ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Page Views', value: analytics.pageViews, key: 'pageViews', desc: 'Total pages navigated/viewed across all active users.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Page Views', value: analytics.pageViews ?? 0, key: 'pageViews', desc: 'Total pages navigated/viewed across all active users.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Page Views</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.pageViews}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.pageViews ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Successful Payments', value: analytics.successfulPayments, key: 'successfulPayments', desc: 'Completed online checkouts excluding refunds and cancellations.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Successful Payments', value: analytics.successfulPayments ?? 0, key: 'successfulPayments', desc: 'Completed online checkouts excluding refunds and cancellations.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Successful Payments</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.successfulPayments}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.successfulPayments ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Amount Paid', value: `₹${analytics.amountPaid.toLocaleString('en-IN')}`, key: 'amountPaid', desc: 'Net revenue paid including shipping and taxes.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Amount Paid', value: `₹${Number(analytics.amountPaid || 0).toLocaleString('en-IN')}`, key: 'amountPaid', desc: 'Net revenue paid including shipping and taxes.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Amount Paid</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>₹{analytics.amountPaid.toLocaleString('en-IN')}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>₹{Number(analytics.amountPaid || 0).toLocaleString('en-IN')}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Customers Count', value: analytics.customers, key: 'customers', desc: 'Number of unique customer email accounts checked out.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Customers Count', value: analytics.customers ?? 0, key: 'customers', desc: 'Number of unique customer email accounts checked out.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Customers</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.customers}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.customers ?? 0}</div>
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Conversion Rate', value: `${analytics.conversionRate?.toFixed(2)}%`, key: 'conversionRate', desc: 'Ratio of checkouts per session visit expressed in percentage.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Conversion Rate', value: `${typeof analytics.conversionRate === 'number' ? analytics.conversionRate.toFixed(2) : '0.00'}%`, key: 'conversionRate', desc: 'Ratio of checkouts per session visit expressed in percentage.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Conversion Rate</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.conversionRate?.toFixed(1)}%</div>
+                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{typeof analytics.conversionRate === 'number' ? `${analytics.conversionRate.toFixed(1)}%` : '0.0%'}</div>
                     </div>
                   </div>
 
@@ -2298,15 +2359,13 @@ export default function Admin({ onToast }) {
                         fill="none"
                         stroke="var(--admin-primary)"
                         strokeWidth="3"
-                        points={analytics.trends?.siteSessions ? analytics.trends.siteSessions.map((v, i) => {
-                          const x = (i * 15) + '%';
+                        points={(Array.isArray(analytics.trends?.siteSessions) && analytics.trends.siteSessions.length > 0) ? analytics.trends.siteSessions.map((v, i) => {
                           const max = Math.max(...analytics.trends.siteSessions) || 1;
-                          const y = (100 - (v / max) * 85) + '%';
                           return `${i * 65 + 10},${180 - (v / max) * 150}`;
                         }).join(' ') : ''}
                       />
                       {/* Dots */}
-                      {analytics.trends?.siteSessions?.map((v, i) => {
+                      {(Array.isArray(analytics.trends?.siteSessions) ? analytics.trends.siteSessions : []).map((v, i) => {
                         const max = Math.max(...analytics.trends.siteSessions) || 1;
                         const cx = i * 65 + 10;
                         const cy = 180 - (v / max) * 150;
@@ -2371,7 +2430,7 @@ export default function Admin({ onToast }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {analytics.campaigns && analytics.campaigns.length > 0 ? (
+                      {Array.isArray(analytics.campaigns) && analytics.campaigns.length > 0 ? (
                         analytics.campaigns.map((c, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid var(--admin-border)' }}>
                             <td style={{ padding: '10px 0', fontWeight: '600' }}>{c.source || '—'}</td>
@@ -2429,9 +2488,15 @@ export default function Admin({ onToast }) {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Bounce Rate</div>
-                      <div style={{ fontSize: analytics.metricsMeasured?.bounceRate ? '20px' : '16px', fontWeight: '800', color: analytics.metricsMeasured?.bounceRate ? 'inherit' : 'var(--admin-text-muted)' }}>
-                        {analytics.metricsMeasured?.bounceRate ? `${Number(analytics.bounceRate || 0).toFixed(1)}%` : 'Not measured yet'}
-                      </div>
+                      {(() => {
+                        const parsed = parseFloat(String(analytics.bounceRate || '').replace('%', ''));
+                        const hasBounce = analytics.metricsMeasured?.bounceRate && Number.isFinite(parsed);
+                        return (
+                          <div style={{ fontSize: hasBounce ? '20px' : '16px', fontWeight: '800', color: hasBounce ? 'inherit' : 'var(--admin-text-muted)' }}>
+                            {hasBounce ? `${parsed.toFixed(1)}%` : 'Not measured yet'}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -2501,18 +2566,24 @@ export default function Admin({ onToast }) {
                           {analytics.conversionRate >= 2.0 ? 'Optimal (>= 2%)' : 'Needs Optimization (< 2%)'}
                         </td>
                       </tr>
-                      <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
-                        <td style={{ padding: '12px 0' }}>Bounce Rate</td>
-                        <td style={{ padding: '12px 0', fontWeight: '700', color: analytics.metricsMeasured?.bounceRate ? 'inherit' : 'var(--admin-text-muted)' }}>
-                          {analytics.metricsMeasured?.bounceRate ? `${Number(analytics.bounceRate || 0).toFixed(1)}%` : 'Not measured yet'}
-                        </td>
-                        <td style={{ padding: '12px 0' }}>50.0%</td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', color: !analytics.metricsMeasured?.bounceRate ? 'var(--admin-text-muted)' : (Number(analytics.bounceRate || 0) <= 50.0 ? 'green' : 'orange'), fontWeight: '700' }}>
-                          {!analytics.metricsMeasured?.bounceRate
-                            ? 'Pending backend calculation'
-                            : (Number(analytics.bounceRate || 0) <= 50.0 ? 'Optimal (<= 50%)' : 'High Bounce (> 50%)')}
-                        </td>
-                      </tr>
+                      {(() => {
+                        const parsed = parseFloat(String(analytics.bounceRate || '').replace('%', ''));
+                        const hasBounce = analytics.metricsMeasured?.bounceRate && Number.isFinite(parsed);
+                        return (
+                          <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
+                            <td style={{ padding: '12px 0' }}>Bounce Rate</td>
+                            <td style={{ padding: '12px 0', fontWeight: '700', color: hasBounce ? 'inherit' : 'var(--admin-text-muted)' }}>
+                              {hasBounce ? `${parsed.toFixed(1)}%` : 'Not measured yet'}
+                            </td>
+                            <td style={{ padding: '12px 0' }}>50.0%</td>
+                            <td style={{ padding: '12px 0', textAlign: 'right', color: !hasBounce ? 'var(--admin-text-muted)' : (parsed <= 50.0 ? 'green' : 'orange'), fontWeight: '700' }}>
+                              {!hasBounce
+                                ? 'Pending backend calculation'
+                                : (parsed <= 50.0 ? 'Optimal (<= 50%)' : 'High Bounce (> 50%)')}
+                            </td>
+                          </tr>
+                        );
+                      })()}
                       <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
                         <td style={{ padding: '12px 0' }}>Pages per Session</td>
                         <td style={{ padding: '12px 0', fontWeight: '700' }}>{analytics.avgPagesPerSession}</td>

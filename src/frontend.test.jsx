@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -14,6 +14,7 @@ import NewIn from './pages/NewIn';
 import ProductDetail from './pages/ProductDetail';
 import * as productsModule from './lib/products';
 import { ProductGridCard } from './pages/Shop';
+import Admin from './pages/Admin';
 
 describe('Pricing Helper Functions', () => {
   it('priceNumber parses string values correctly', () => {
@@ -669,6 +670,136 @@ describe('ONE OF ONE badge', () => {
 
     expect(screen.getByText(/LOW STOCK/i)).toBeDefined();
     expect(screen.queryByText('ONE OF ONE')).toBeNull();
+  });
+});
+
+describe('Admin Analytics Dashboard', () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    sessionStorage.setItem('admin_token', 'test_admin_token');
+    localStorage.setItem('log_admin_active_tab', 'dashboard');
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    global.fetch = originalFetch;
+  });
+
+  it('renders safely with missing new fields (campaigns, metricsMeasured, sources) without crashing', async () => {
+    global.fetch = vi.fn().mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes('/api/analytics-config')) {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      if (u.includes('/api/analytics')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            siteSessions: 100,
+            totalSales: 45000,
+            totalOrders: 20,
+            pageViews: 300,
+            formSubmissions: 5,
+            clicksToContact: 8,
+            successfulPayments: 20,
+            amountPaid: 45000,
+            customers: 18,
+            conversionRate: 20.0
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Live Shop Analytics')).toBeDefined();
+    expect(await screen.findByText('Not measured yet')).toBeDefined();
+    expect(screen.getByText('100')).toBeDefined();
+    unmount();
+  });
+
+  it('renders full new analytics shape (campaigns, metricsMeasured, real bounce and visitors)', async () => {
+    global.fetch = vi.fn().mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes('/api/analytics-config')) {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      if (u.includes('/api/analytics')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({
+            siteSessions: 250,
+            totalSales: 95000,
+            totalOrders: 35,
+            pageViews: 750,
+            formSubmissions: 12,
+            clicksToContact: 15,
+            successfulPayments: 35,
+            amountPaid: 92000,
+            customers: 30,
+            conversionRate: 14.0,
+            uniqueVisitors: 210,
+            bounceRate: '42.5%',
+            metricsMeasured: {
+              bounceRate: true,
+              uniqueVisitors: true,
+              avgSessionDuration: false
+            },
+            sources: { Direct: 150, Instagram: 100 },
+            campaigns: [
+              { source: 'Instagram', campaign: 'Spring2026', content: 'StoryAd', sessions: 85 }
+            ]
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Live Shop Analytics')).toBeDefined();
+    expect(await screen.findByText('210')).toBeDefined();
+    unmount();
+  });
+
+  it('shows a visible error box with HTTP status when the analytics request fails', async () => {
+    const onToast = vi.fn();
+    global.fetch = vi.fn().mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes('/api/analytics')) {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: 'Internal Server Error' })
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={onToast} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Live Shop Analytics')).toBeDefined();
+    expect(await screen.findByText(/Analytics could not load\. Press Refresh\. \(HTTP 500\)/i)).toBeDefined();
+    expect(onToast).toHaveBeenCalledWith(expect.stringContaining('HTTP 500'));
+    unmount();
   });
 });
 
