@@ -4,6 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
 import { getProducts } from './lib/products';
+import { trackGA4Event, trackPurchase } from './lib/analytics';
 import {
   initScrollRestoration,
   saveScrollPosition,
@@ -119,9 +120,7 @@ function sendGoogleEvent(eventName, payload = {}) {
   if (typeof window === 'undefined') return;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push({ event: eventName, ...payload });
-  if (window.gtag) {
-    window.gtag('event', eventName, payload);
-  }
+  trackGA4Event(eventName, payload);
 }
 
 function formatCurrency(value) {
@@ -627,6 +626,7 @@ function AppContent({
         .then((data) => {
           if (data && data.order) {
             setCompletedOrder(data.order);
+            trackPurchase(data.order);
           }
           onClearCart?.();
           localStorage.removeItem('log_checkout_client_order_id');
@@ -733,7 +733,7 @@ function AppContent({
         onQtyChange={onQtyChange}
         onRemove={onRemove}
         onClearCart={onClearCart}
-        onPurchase={(order) => sendGoogleEvent('purchase', order)}
+        onPurchase={(order) => trackPurchase(order)}
         onToast={showToast}
       />
 
@@ -826,7 +826,7 @@ export default function App() {
       currency: 'INR',
       value: Number(product.price || 0),
       items: [{
-        item_id: product.id,
+        item_id: String(product.id || ''),
         item_name: product.name,
         item_variant: finalSize,
         price: Number(product.price || 0),
@@ -864,6 +864,17 @@ export default function App() {
       ];
     }
     saveCartState(updated);
+    sendGoogleEvent('add_to_cart', {
+      currency: 'INR',
+      value: Number(product.price || 0),
+      items: [{
+        item_id: String(product.id || ''),
+        item_name: product.name,
+        item_variant: finalSize,
+        price: Number(product.price || 0),
+        quantity: isBogo ? 2 : 1
+      }]
+    });
     setCartOpen(true);
   };
 

@@ -3,6 +3,7 @@ import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 import { getProducts } from '../lib/products';
+import { canTrackGA4, trackGA4Event } from '../lib/analytics';
 
 const WALL_TEXT_MAX = 20;
 
@@ -999,7 +1000,29 @@ export default function CartDrawer({
             )}
             <button
               className="checkout-btn"
-              onClick={() => setShowCheckoutForm(true)}
+              onClick={() => {
+                setShowCheckoutForm(true);
+                const items = cart.map((item) => ({
+                  item_id: String(item.id || ''),
+                  item_name: item.name,
+                  price: Number(item.price || 0),
+                  quantity: Number(item.quantity || 1),
+                  item_variant: String(item.selectedSize || item.selectedSize1 || '')
+                }));
+                if (canTrackGA4() && window.dataLayer) {
+                  window.dataLayer.push({
+                    event: 'begin_checkout',
+                    currency: 'INR',
+                    value: Number(total || 0),
+                    items
+                  });
+                }
+                trackGA4Event('begin_checkout', {
+                  currency: 'INR',
+                  value: Number(total || 0),
+                  items
+                });
+              }}
             >
               Proceed to Checkout
             </button>

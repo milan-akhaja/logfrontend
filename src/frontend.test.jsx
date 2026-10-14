@@ -250,3 +250,96 @@ describe('ProductDetail Component', () => {
   });
 });
 
+describe('GA4 Ecommerce Analytics', () => {
+  it('canTrackGA4 respects admin, host, and static ID guards', async () => {
+    const { canTrackGA4 } = await import('./lib/analytics');
+
+    window.__LOG_ANALYTICS_HOST__ = false;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.gtag = vi.fn();
+
+    // False on non-analytics host
+    expect(canTrackGA4()).toBe(false);
+
+    // True on analytics host when not admin
+    window.__LOG_ANALYTICS_HOST__ = true;
+    expect(canTrackGA4()).toBe(true);
+
+    // False when static GA4 ID is missing
+    window.__LOG_STATIC_GA4_ID = '';
+    expect(canTrackGA4()).toBe(false);
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+
+    // False when gtag is missing
+    delete window.gtag;
+    expect(canTrackGA4()).toBe(false);
+  });
+
+  it('trackGA4Event sends with send_to: window.__LOG_STATIC_GA4_ID', async () => {
+    const { trackGA4Event } = await import('./lib/analytics');
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    const mockGtag = vi.fn();
+    window.gtag = mockGtag;
+
+    trackGA4Event('view_item', {
+      currency: 'INR',
+      value: 999,
+      items: [{ item_id: 'item-1', item_name: 'item-1', price: 999, quantity: 1, item_variant: 'M' }]
+    });
+
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockGtag).toHaveBeenCalledWith('event', 'view_item', {
+      send_to: 'G-CQ744XW1WD',
+      currency: 'INR',
+      value: 999,
+      items: [{ item_id: 'item-1', item_name: 'item-1', price: 999, quantity: 1, item_variant: 'M' }]
+    });
+  });
+
+  it('trackPurchase dedupes with sessionStorage and excludes personal info', async () => {
+    const { trackPurchase } = await import('./lib/analytics');
+    sessionStorage.clear();
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    const mockGtag = vi.fn();
+    window.gtag = mockGtag;
+
+    const mockOrder = {
+      id: 'LOG-TEST-001',
+      total: 1999,
+      customerInfo: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: ''
+      },
+      items: [
+        { id: 'item-1', name: 'item-1', price: 1999, quantity: 1, selectedSize: 'L' }
+      ]
+    };
+
+    // First call: should fire
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockGtag).toHaveBeenCalledWith('event', 'purchase', {
+      send_to: 'G-CQ744XW1WD',
+      transaction_id: 'LOG-TEST-001',
+      value: 1999,
+      currency: 'INR',
+      items: [
+        { item_id: 'item-1', item_name: 'item-1', price: 1999, quantity: 1, item_variant: 'L' }
+      ]
+    });
+
+    const payload = mockGtag.mock.calls[0][2];
+    expect(Object.keys(payload)).toEqual(['send_to', 'transaction_id', 'value', 'currency', 'items']);
+
+    // Second call with same order id: deduplicated, should NOT fire again
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+  });
+});
+
+

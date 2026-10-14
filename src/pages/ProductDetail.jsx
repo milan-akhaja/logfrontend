@@ -8,6 +8,7 @@ import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts, getCachedProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
 import { scrollToTopInstant } from '../lib/scrollRestoration';
+import { trackGA4Event } from '../lib/analytics';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -97,6 +98,28 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
       active = false;
     };
   }, [id]);
+
+  const viewedProductIdRef = useRef(null);
+
+  useEffect(() => {
+    if (!product || !product.id) return;
+    const prodId = String(product.id);
+    if (viewedProductIdRef.current === prodId) return;
+    viewedProductIdRef.current = prodId;
+
+    const variant = selectedSize || (productSizes(product)[0] || '');
+    trackGA4Event('view_item', {
+      currency: 'INR',
+      value: Number(product.price || 0),
+      items: [{
+        item_id: prodId,
+        item_name: product.name,
+        price: Number(product.price || 0),
+        quantity: 1,
+        item_variant: variant
+      }]
+    });
+  }, [product?.id, selectedSize]);
 
   useEffect(() => {
     setSlideIdx(0);
