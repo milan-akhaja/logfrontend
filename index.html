@@ -82,6 +82,7 @@
         function grant() {
           if (granted) return;
           granted = true;
+          window.__LOG_META_CONSENT_GRANTED__ = true;
           fbq('consent', 'grant');
         }
         function hasStoredConsent() {
@@ -101,6 +102,10 @@
             var accepted = detail.accepted || [];
             if (detail.advertisement === 'yes' || (accepted.indexOf && accepted.indexOf('advertisement') > -1)) {
               grant();
+            } else if (detail.advertisement === 'no' || (detail.rejected && detail.rejected.indexOf && detail.rejected.indexOf('advertisement') > -1)) {
+              granted = false;
+              window.__LOG_META_CONSENT_GRANTED__ = false;
+              fbq('consent', 'revoke');
             }
           });
         }

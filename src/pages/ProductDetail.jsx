@@ -8,7 +8,7 @@ import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts, getCachedProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
 import { scrollToTopInstant } from '../lib/scrollRestoration';
-import { trackGA4Event } from '../lib/analytics';
+import { trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
 export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const { id } = useParams();
@@ -119,6 +119,15 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
         item_variant: variant
       }]
     });
+    try {
+      trackMetaEvent('ViewContent', {
+        content_ids: [prodId],
+        content_type: 'product',
+        content_name: product.name,
+        value: Number(product.price || 0),
+        currency: 'INR'
+      });
+    } catch {}
   }, [product?.id, selectedSize]);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { routerBasename } from './lib/urls';
 import { apiJson } from './lib/apiClient';
 import { getProducts } from './lib/products';
-import { trackGA4Event, trackPurchase } from './lib/analytics';
+import { trackGA4Event, trackPurchase, trackMetaEvent } from './lib/analytics';
 import {
   initScrollRestoration,
   saveScrollPosition,
@@ -833,6 +833,18 @@ export default function App() {
         quantity: isBogo ? 2 : 1
       }]
     });
+    try {
+      trackMetaEvent('AddToCart', {
+        content_ids: [String(product.id || '')],
+        content_type: 'product',
+        value: Number(product.price || 0),
+        currency: 'INR',
+        contents: [{
+          id: String(product.id || ''),
+          quantity: isBogo ? 2 : 1
+        }]
+      });
+    } catch {}
     showToast(`${product.name} (${finalSize}) added to Bag`);
   };
 
@@ -875,6 +887,18 @@ export default function App() {
         quantity: isBogo ? 2 : 1
       }]
     });
+    try {
+      trackMetaEvent('AddToCart', {
+        content_ids: [String(product.id || '')],
+        content_type: 'product',
+        value: Number(product.price || 0),
+        currency: 'INR',
+        contents: [{
+          id: String(product.id || ''),
+          quantity: isBogo ? 2 : 1
+        }]
+      });
+    } catch {}
     setCartOpen(true);
   };
 

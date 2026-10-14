@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
@@ -340,6 +340,154 @@ describe('GA4 Ecommerce Analytics', () => {
     // Second call with same order id: deduplicated, should NOT fire again
     trackPurchase(mockOrder);
     expect(mockGtag).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Meta Pixel Analytics', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    delete window.fbq;
+    delete window.__LOG_META_CONSENT_GRANTED__;
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_META_PIXEL_ID = '1398026158457517';
+    document.cookie = 'cookieyes-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  });
+
+  it('with consent denied or fbq missing nothing throws and nothing is sent', async () => {
+    const { canTrackMeta, hasMetaConsent, trackMetaEvent, trackPurchase } = await import('./lib/analytics');
+
+    // Case 1: fbq missing
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+    expect(canTrackMeta()).toBe(false);
+    expect(() => trackMetaEvent('ViewContent', { content_ids: ['prod-1'] })).not.toThrow();
+
+    // Case 2: fbq present but consent denied via window flag
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    window.__LOG_META_CONSENT_GRANTED__ = false;
+    expect(canTrackMeta()).toBe(false);
+    expect(() => trackMetaEvent('ViewContent', { content_ids: ['prod-1'] })).not.toThrow();
+    expect(mockFbq).not.toHaveBeenCalled();
+
+    // Case 3: fbq present but consent denied via cookie
+    delete window.__LOG_META_CONSENT_GRANTED__;
+    document.cookie = 'cookieyes-consent=consentid:123,action:yes,necessary:yes,advertisement:no; path=/;';
+    expect(hasMetaConsent()).toBe(false);
+    expect(canTrackMeta()).toBe(false);
+    expect(() => trackMetaEvent('AddToCart', { content_ids: ['prod-1'] })).not.toThrow();
+    expect(mockFbq).not.toHaveBeenCalled();
+
+    // Case 4: trackPurchase when Meta consent denied and GA4 missing does not throw and sends nothing
+    delete window.gtag;
+    expect(() => trackPurchase({ id: 'ORD-DENIED', total: 1000, items: [] })).not.toThrow();
+    expect(mockFbq).not.toHaveBeenCalled();
+
+    // Case 5: fbq internal failure never throws
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+    window.fbq = vi.fn(() => {
+      throw new Error('Meta Pixel script failure');
+    });
+    expect(() => trackMetaEvent('InitiateCheckout', { content_ids: ['prod-1'] })).not.toThrow();
+    expect(() => trackPurchase({ id: 'ORD-ERR', total: 1000, items: [] })).not.toThrow();
+  });
+
+  it('with consent granted each event is sent once with the exact key set', async () => {
+    const { trackMetaEvent } = await import('./lib/analytics');
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+
+    // 1. ViewContent
+    const viewContentParams = {
+      content_ids: ['prod-1'],
+      content_type: 'product',
+      content_name: 'prod-1',
+      value: 1499,
+      currency: 'INR'
+    };
+    trackMetaEvent('ViewContent', viewContentParams);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+    expect(mockFbq).toHaveBeenCalledWith('track', 'ViewContent', viewContentParams);
+    expect(Object.keys(mockFbq.mock.calls[0][2]).sort()).toEqual(
+      ['content_ids', 'content_type', 'content_name', 'value', 'currency'].sort()
+    );
+
+    // 2. AddToCart
+    const addToCartParams = {
+      content_ids: ['prod-1'],
+      content_type: 'product',
+      value: 1499,
+      currency: 'INR',
+      contents: [{ id: 'prod-1', quantity: 1 }]
+    };
+    trackMetaEvent('AddToCart', addToCartParams);
+    expect(mockFbq).toHaveBeenCalledTimes(2);
+    expect(mockFbq).toHaveBeenCalledWith('track', 'AddToCart', addToCartParams);
+    expect(Object.keys(mockFbq.mock.calls[1][2]).sort()).toEqual(
+      ['content_ids', 'content_type', 'value', 'currency', 'contents'].sort()
+    );
+
+    // 3. InitiateCheckout
+    const initiateCheckoutParams = {
+      content_ids: ['prod-1', 'prod-2'],
+      num_items: 2,
+      value: 2998,
+      currency: 'INR'
+    };
+    trackMetaEvent('InitiateCheckout', initiateCheckoutParams);
+    expect(mockFbq).toHaveBeenCalledTimes(3);
+    expect(mockFbq).toHaveBeenCalledWith('track', 'InitiateCheckout', initiateCheckoutParams);
+    expect(Object.keys(mockFbq.mock.calls[2][2]).sort()).toEqual(
+      ['content_ids', 'num_items', 'value', 'currency'].sort()
+    );
+  });
+
+  it('purchase is deduped per order id, carries eventID, and sends exact key set with no personal data', async () => {
+    const { trackPurchase } = await import('./lib/analytics');
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+
+    const mockOrder = {
+      id: 'LOG-ORDER-777',
+      total: 2499,
+      customerInfo: {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        address: ''
+      },
+      items: [
+        { id: 'prod-1', name: 'prod-1', price: 1499, quantity: 1 },
+        { id: 'prod-2', name: 'prod-2', price: 1000, quantity: 1 }
+      ]
+    };
+
+    // First purchase call: sends event with exact keys and 4th argument eventID
+    trackPurchase(mockOrder);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+    expect(mockFbq).toHaveBeenCalledWith(
+      'track',
+      'Purchase',
+      {
+        value: 2499,
+        currency: 'INR',
+        content_ids: ['prod-1', 'prod-2'],
+        content_type: 'product',
+        num_items: 2
+      },
+      { eventID: 'LOG-ORDER-777' }
+    );
+
+    const payload = mockFbq.mock.calls[0][2];
+    expect(Object.keys(payload).sort()).toEqual(
+      ['value', 'currency', 'content_ids', 'content_type', 'num_items'].sort()
+    );
+
+    // Second purchase call with same order id: deduped via sessionStorage, must NOT call fbq again
+    trackPurchase(mockOrder);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -3,7 +3,7 @@ import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 import { getProducts } from '../lib/products';
-import { canTrackGA4, trackGA4Event } from '../lib/analytics';
+import { canTrackGA4, trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
 const WALL_TEXT_MAX = 20;
 
@@ -1023,6 +1023,16 @@ export default function CartDrawer({
                   value: Number(total || 0),
                   items
                 });
+                try {
+                  const contentIds = cart.map((item) => String(item.id || '')).filter(Boolean);
+                  const numItems = cart.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+                  trackMetaEvent('InitiateCheckout', {
+                    content_ids: contentIds,
+                    num_items: numItems,
+                    value: Number(total || 0),
+                    currency: 'INR'
+                  });
+                } catch {}
               }}
             >
               Proceed to Checkout
