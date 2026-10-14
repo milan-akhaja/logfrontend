@@ -1087,6 +1087,26 @@ describe('ConsentBanner and Consent Management', () => {
 
     unmountPD();
   });
+
+  it('renders scarcity stat 40 Pieces Per Design and clean Shop Now CTA without starting price', async () => {
+    const Shop = (await import('./pages/Shop')).default;
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Shop onAddToCart={() => {}} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('40')).toBeDefined();
+    expect(screen.getByText('Pieces Per Design')).toBeDefined();
+    expect(screen.queryByText(/Starting Price/i)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Shop Now' })).toBeDefined();
+    expect(screen.queryByText(/From ₹/i)).toBeNull();
+
+    unmount();
+  });
 });
 
 
