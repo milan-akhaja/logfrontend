@@ -2224,10 +2224,10 @@ export default function Admin({ onToast }) {
                     </div>
                   </div>
 
-                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: analytics.uniqueVisitors, key: 'uniqueVisitors', desc: 'Number of unique user session identifiers tracked.' })}>
+                  <div className="admin-metric-card" style={{ cursor: 'pointer', border: '1px solid var(--admin-border)', padding: '20px', borderRadius: '8px' }} onClick={() => setSelectedMetric({ title: 'Unique Visitors', value: 'Not measured yet', key: 'uniqueVisitors', desc: 'Distinct persistent visitors across browsing sessions. Currently not stored separately from sessions on the backend.' })}>
                     <div className="admin-metric-header" style={{ fontWeight: '600', color: 'var(--admin-text-muted)', textTransform: 'uppercase', fontSize: '11px', marginBottom: '8px' }}>Unique visitors</div>
                     <div className="admin-metric-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="admin-metric-value" style={{ fontSize: '28px', fontWeight: '800' }}>{analytics.uniqueVisitors}</div>
+                      <div className="admin-metric-value" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--admin-text-muted)' }}>Not measured yet</div>
                     </div>
                   </div>
 
@@ -2387,7 +2387,7 @@ export default function Admin({ onToast }) {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
                     <div style={{ textAlign: 'center', borderRight: '1px solid var(--admin-border)' }}>
                       <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Avg Page Duration</div>
-                      <div style={{ fontSize: '20px', fontWeight: '800' }}>{analytics.avgSessionDuration}</div>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--admin-text-muted)' }}>Not measured yet</div>
                     </div>
                     <div style={{ textAlign: 'center', borderRight: '1px solid var(--admin-border)' }}>
                       <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Pages / Session</div>
@@ -2395,7 +2395,7 @@ export default function Admin({ onToast }) {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>Bounce Rate</div>
-                      <div style={{ fontSize: '20px', fontWeight: '800' }}>{analytics.bounceRate}</div>
+                      <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--admin-text-muted)' }}>Not measured yet</div>
                     </div>
                   </div>
                 </div>
@@ -2467,10 +2467,10 @@ export default function Admin({ onToast }) {
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
                         <td style={{ padding: '12px 0' }}>Bounce Rate</td>
-                        <td style={{ padding: '12px 0', fontWeight: '700' }}>{analytics.bounceRate}</td>
+                        <td style={{ padding: '12px 0', fontWeight: '700', color: 'var(--admin-text-muted)' }}>Not measured yet</td>
                         <td style={{ padding: '12px 0' }}>50.0%</td>
-                        <td style={{ padding: '12px 0', textAlign: 'right', color: parseFloat(analytics.bounceRate || 0) <= 50.0 ? 'green' : 'orange', fontWeight: '700' }}>
-                          {parseFloat(analytics.bounceRate || 0) <= 50.0 ? 'Good (<= 50%)' : 'High Bounce Rate (> 50%)'}
+                        <td style={{ padding: '12px 0', textAlign: 'right', color: 'var(--admin-text-muted)', fontWeight: '700' }}>
+                          Pending backend calculation
                         </td>
                       </tr>
                       <tr style={{ borderBottom: '1px solid var(--admin-border)' }}>
@@ -2535,7 +2535,7 @@ export default function Admin({ onToast }) {
                 <div style={{ border: '1px solid var(--admin-border)', borderRadius: '8px', padding: '16px', marginBottom: '22px', background: '#FAFAFA' }}>
                   <div style={{ fontWeight: '900', marginBottom: '10px' }}>Google events currently sent by the website</div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                    {(analytics.google?.eventsSent || []).map((eventName) => (
+                    {['page_view', 'view_item', 'add_to_cart', 'begin_checkout', 'purchase', 'log_page_view'].map((eventName) => (
                       <span key={eventName} style={{ padding: '7px 10px', borderRadius: '999px', background: '#111', color: '#fff', fontSize: '11px', fontWeight: '800' }}>
                         {eventName}
                       </span>
@@ -2568,7 +2568,7 @@ export default function Admin({ onToast }) {
                       onChange={(e) => setAnalyticsConfig(prev => ({ ...prev, googleAnalyticsId: e.target.value.toUpperCase().trim() }))}
                       placeholder="G-XXXXXXXXXX"
                     />
-                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '12px', marginTop: '6px' }}>Find this in GA4 Admin, Data streams, Web stream details.</p>
+                    <p style={{ color: 'var(--admin-text-muted)', fontSize: '12px', marginTop: '6px' }}>Find this in GA4 Admin &gt; Data streams. Active site measurement ID is <strong>G-CQ744XW1WD</strong>.</p>
                   </div>
 
                   <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
