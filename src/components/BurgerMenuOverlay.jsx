@@ -114,7 +114,7 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
         {/* Header Row */}
         <div className="burger-overlay-header">
           <div className="burger-header-left">
-            <button className="burger-close-btn" onClick={onClose}>&times;</button>
+            <button className="burger-close-btn" onClick={onClose} aria-label="Close navigation menu">&times;</button>
             <span className="burger-logo">LOG</span>
           </div>
           

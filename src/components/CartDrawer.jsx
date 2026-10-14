@@ -607,7 +607,7 @@ export default function CartDrawer({
       <div className={`cart-drawer ${isOpen ? 'open' : ''}`}>
         <div className="cart-header">
           <h2 className="cart-title">Your Bag</h2>
-          <button className="cart-close-btn" onClick={onClose}>&times;</button>
+          <button className="cart-close-btn" onClick={onClose} aria-label="Close bag">&times;</button>
         </div>
 
         <div className="cart-body">
@@ -938,10 +938,11 @@ export default function CartDrawer({
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="cart-item-qty">
-                      <button className="qty-btn minus" onClick={() => onQtyChange(item.cartItemId, -1)}>-</button>
+                      <button className="qty-btn minus" onClick={() => onQtyChange(item.cartItemId, -1)} aria-label="Decrease quantity">-</button>
                       <span className="qty-num">{item.quantity}</span>
                       <button 
                         className="qty-btn plus" 
+                        aria-label="Increase quantity"
                         onClick={() => {
                           if (isAtMaxStock) {
                             onToast(`Only ${sizeStock} left in stock for size ${sizeKey || 'selected'}`);

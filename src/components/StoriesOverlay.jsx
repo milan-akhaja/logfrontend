@@ -121,6 +121,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
           className="story-top-action-btn pause-btn" 
           onClick={() => setIsPaused(prev => !prev)}
           title={isPaused ? "Resume" : "Pause"}
+          aria-label={isPaused ? "Resume" : "Pause"}
         >
           {isPaused ? (
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -133,7 +134,7 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
             </svg>
           )}
         </button>
-        <button className="story-top-action-btn close-btn" onClick={onClose} title="Close">
+        <button className="story-top-action-btn close-btn" onClick={onClose} title="Close" aria-label="Close story">
           <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -158,12 +159,12 @@ export default function StoriesOverlay({ isOpen, onClose, stories, onShopNow }) 
         </div>
 
         {/* Navigation Arrows */}
-        <button className="story-arrow story-arrow-left" onClick={handlePrev} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button className="story-arrow story-arrow-left" onClick={handlePrev} aria-label="Previous slide" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <button className="story-arrow story-arrow-right" onClick={handleNext} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+        <button className="story-arrow story-arrow-right" onClick={handleNext} aria-label="Next slide" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>

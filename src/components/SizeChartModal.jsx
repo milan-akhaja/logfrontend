@@ -75,7 +75,7 @@ export default function SizeChartModal({ isOpen, onClose, sizeChart }) {
               CM
             </button>
           </div>
-          <button className="size-modal-close" onClick={onClose}>&times;</button>
+          <button className="size-modal-close" onClick={onClose} aria-label="Close size guide">&times;</button>
         </div>
 
         <div className="size-modal-body">

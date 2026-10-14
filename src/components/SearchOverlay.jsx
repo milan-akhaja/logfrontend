@@ -66,7 +66,7 @@ export default function SearchOverlay({ isOpen, onClose }) {
             onKeyDown={handleKeyDown}
             autoFocus
           />
-          <button className="search-overlay-close" onClick={onClose}>&times;</button>
+          <button className="search-overlay-close" onClick={onClose} aria-label="Close search">&times;</button>
         </div>
 
         <div className="search-overlay-results">

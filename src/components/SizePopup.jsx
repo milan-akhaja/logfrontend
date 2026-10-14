@@ -81,7 +81,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
     <>
       <div className="size-popup-overlay" onClick={onClose}>
         <div className="size-popup" onClick={(e) => e.stopPropagation()}>
-          <button className="size-popup-close" onClick={onClose}>&times;</button>
+          <button className="size-popup-close" onClick={onClose} aria-label="Close size selector">&times;</button>
           
           <div className="size-popup-content">
             <h2 className="size-popup-title">{product.name}</h2>
