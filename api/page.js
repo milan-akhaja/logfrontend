@@ -28,20 +28,23 @@ const API_TIMEOUT_MS = 2500;
 // Same titles and descriptions the React routes set in App.jsx, so the HTML a
 // crawler reads matches what the page says once JavaScript runs.
 const STATIC_PAGES = {
-  '/shop': ['Shop Unisex Oversized T-Shirts, Graphic Tees & Streetwear | LOG', 'Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India.'],
-  '/new-in': ['New In - Latest LOG Streetwear Drops', 'Explore the newest LOG streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases.'],
-  '/our-mission': ['Our Mission - Streetwear With a Conscience | LOG', 'Learn how LOG combines premium Indian streetwear with a fixed Rs. 23 charity contribution from every product.'],
-  '/log-book': ['LOG Book - Streetwear Stories, Lookbook & Impact', 'Read LOG Book for streetwear styling, collection stories, lookbook editorials, and social impact updates from LOG.'],
-  '/refund-policy': ['Refund & Exchange Policy | LOG', "Read LOG's return, refund, exchange, and charity donation policy for orders across India."],
-  '/make-return': ['Make a Return or Exchange | LOG', 'Request a LOG return, refund, or size exchange for eligible orders within the return window.'],
-  '/shipping-policy': ['Shipping Policy | LOG', 'Read LOG shipping timelines, delivery details, and support information for Indian streetwear orders.'],
-  '/faqs': ['FAQs - logcloth', 'Answers to common LOG questions about orders, sizing, shipping, returns, exchanges, and charity donations.'],
-  '/terms': ['Terms & Conditions | LOG', 'Read the LOG website terms and conditions for shopping, payments, returns, and use of logcloth.com.'],
-  '/privacy-policy': ['Privacy Policy | LOG', 'Read how logcloth collects, uses, protects, shares, and retains customer information for orders and support.']
+  '/shop': ['Shop Unisex Oversized T-Shirts & Streetwear | logcloth', 'Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India.'],
+  '/new-in': ['New In - Latest logcloth Streetwear Drops', 'Explore the newest logcloth streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases across India.'],
+  '/our-mission': ['Our Mission - Streetwear With a Conscience | logcloth', 'Learn how logcloth combines premium Indian streetwear with an automatic Rs. 23 charity donation from every product sold. Shop with a conscience.'],
+  '/log-book': ['LOG Book - Streetwear Stories & Lookbook | logcloth', 'Explore the logcloth LOG Book for streetwear styling guides, drop stories, lookbook editorials, and social impact updates across India.'],
+  '/refund-policy': ['Refund & Exchange Policy | logcloth', 'Read the logcloth return, refund, exchange, and charity donation policy for streetwear orders across India. 100% complimentary doorstep size exchanges.'],
+  '/make-return': ['Make a Return or Exchange | logcloth', 'Request a logcloth return, refund, or size exchange for eligible orders within the return window. Free doorstep pickup and exchange across India.'],
+  '/shipping-policy': ['Shipping Policy | logcloth', 'Read logcloth shipping timelines, delivery details, order dispatch estimates, and customer support information for streetwear orders across India.'],
+  '/faqs': ['FAQs - Questions & Answers | logcloth', 'Answers to common logcloth questions about orders, sizing, shipping timelines, returns, exchanges, and the Rs. 23 charity donation on every item.'],
+  '/terms': ['Terms & Conditions | logcloth', 'Read the official logcloth terms and conditions for streetwear shopping, payments, doorstep returns, deliveries, and use of logcloth.com.'],
+  '/privacy-policy': ['Privacy Policy | logcloth', 'Read how logcloth collects, uses, protects, and retains customer information for streetwear orders, newsletter subscriptions, and customer support.']
 };
+
+const BLOGS_API_URL = 'https://api.logcloth.com/api/blogs';
 
 let template = null;
 let productsCache = null; // { at, data }
+let blogsCache = null; // { at, data }
 
 function loadTemplate() {
   if (template) return template;
@@ -72,6 +75,24 @@ async function loadProducts() {
   } catch {
     // A stale list beats no list; null means "unknown", never "empty shop".
     return productsCache ? productsCache.data : null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadBlogs() {
+  if (blogsCache && Date.now() - blogsCache.at < PRODUCTS_TTL_MS) return blogsCache.data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    const response = await fetch(BLOGS_API_URL, { signal: controller.signal });
+    if (!response.ok) throw new Error(`blogs ${response.status}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('blogs not a list');
+    blogsCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    return blogsCache ? blogsCache.data : null;
   } finally {
     clearTimeout(timer);
   }
@@ -146,8 +167,8 @@ function availabilityLabelOf(product) {
 
 function productTitle(product) {
   return isDropProduct(product)
-    ? `${product.name} — Unisex Oversized 240 GSM Tee | logcloth`
-    : `${product.name} — Unisex Oversized Tee | logcloth`;
+    ? `${product.name} — Oversized 240 GSM Tee | logcloth`
+    : `${product.name} — Oversized Tee | logcloth`;
 }
 
 function productDescription(product) {
@@ -379,8 +400,50 @@ async function renderPage(pagePath) {
     return { status: 200, html: setRobots(setUrl(base, `${SITE_URL}/admin`), 'noindex, nofollow') };
   }
 
-  if (/^\/blog\/[^/]+$/.test(pagePath)) {
-    return { status: 200, html: setUrl(base, `${SITE_URL}${pagePath}`) };
+  const blogMatch = pagePath.match(/^\/blog\/([^/]+)$/);
+  if (blogMatch) {
+    const blogs = await loadBlogs();
+    if (!blogs) return { status: 200, html: setUrl(base, `${SITE_URL}${pagePath}`) };
+    const blog = blogs.find((b) => String(b.id) === blogMatch[1]);
+    if (!blog) return notFound(base);
+    const url = `${SITE_URL}/blog/${encodeURIComponent(blog.id)}`;
+    const title = blog.metaTitle || truncate(`${blog.title} — LOG Book | logcloth`, 60);
+    const desc = blog.metaDescription || truncate(
+      (Array.isArray(blog.content) ? blog.content.map(c => c.text).filter(Boolean).join(' ') : String(blog.content || '')),
+      DESCRIPTION_MAX
+    ) || 'Read the latest logcloth streetwear story, lookbook entry, and social impact update.';
+    const image = blog.coverImage || blog.image || `${SITE_URL}/logo-512.png`;
+    let html = setTitle(base, title);
+    html = setDescription(html, desc);
+    html = setUrl(html, url);
+    html = setImage(html, image, blog.title);
+    html = html.replace('<meta property="og:type" content="website">', '<meta property="og:type" content="article">');
+    const blogJsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: blog.title,
+      description: desc,
+      image,
+      datePublished: blog.date,
+      dateModified: blog.date,
+      author: { '@type': 'Organization', name: blog.author || 'logcloth' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'logcloth',
+        logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-512.png` }
+      },
+      mainEntityOfPage: url
+    };
+    html = addToHead(html, `  ${jsonLdScript(blogJsonLd)}`);
+    const blogBody = `<main>
+  <p><a href="/log-book">LOG Book</a></p>
+  <article>
+    <h1>${escapeHtml(blog.title)}</h1>
+    <p>${escapeHtml(desc)}</p>
+  </article>
+</main>`;
+    html = setBody(html, blogBody);
+    return { status: 200, html };
   }
 
   return notFound(base);
@@ -395,12 +458,16 @@ function notFound(base) {
 }
 
 async function renderSitemap() {
-  const products = await loadProducts();
-  const staticPaths = ['/', ...Object.keys(STATIC_PAGES)];
+  const [products, blogs] = await Promise.all([loadProducts(), loadBlogs()]);
+  const staticPaths = ['/', ...Object.keys(STATIC_PAGES).filter(p => p !== '/new-in')];
   const urls = staticPaths.map((pagePath) => `  <url><loc>${SITE_URL}${pagePath}</loc></url>`);
   for (const product of products || []) {
     const lastmod = product.updated_at ? String(product.updated_at).slice(0, 10) : '';
     urls.push(`  <url><loc>${SITE_URL}/product/${encodeURIComponent(product.id)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`);
+  }
+  for (const blog of blogs || []) {
+    const lastmod = blog.date ? String(blog.date).slice(0, 10) : '';
+    urls.push(`  <url><loc>${SITE_URL}/blog/${encodeURIComponent(blog.id)}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ''}</url>`);
   }
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }

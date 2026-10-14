@@ -60,7 +60,9 @@ export default function SEO({
   const location = useLocation();
   const path = canonicalPath || `${location.pathname}${location.search}`;
   const canonicalUrl = `${SITE_URL}${path === '/' ? '/' : path}`;
-  const fullTitle = title.includes('LOG') ? title : `${title} | LOG`;
+  const fullTitle = title.toLowerCase().includes('logcloth')
+    ? title
+    : (title.length + 11 <= 60 ? `${title} | logcloth` : title);
 
   useEffect(() => {
     document.title = fullTitle;
