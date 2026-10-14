@@ -75,10 +75,19 @@ export function ProductGridCard({ product, onAddToCart }) {
     Object.keys(product.sizes).length > 0 &&
     Object.values(product.sizes).every(count => Number(count) <= 0)
   );
+  const totalStock = (
+    product.sizes &&
+    typeof product.sizes === 'object' &&
+    Object.keys(product.sizes).length > 0
+  )
+    ? Object.values(product.sizes).reduce((sum, qty) => sum + (parseInt(qty, 10) || 0), 0)
+    : Number(product.stock || 0);
+
   const isSoldOut = isDrop
     ? (product.soldOut === true || isDropAllSizesZero)
-    : product.stock === 0;
-  const isLowStock = !isDrop && product.stock <= 5 && product.stock > 0;
+    : totalStock === 0;
+  const isOneOfOne = !isDrop && totalStock === 1 && (!Array.isArray(product.subCategories) || !product.subCategories.includes('no-permission-3'));
+  const isLowStock = !isDrop && !isOneOfOne && totalStock <= 5 && totalStock > 0;
 
   return (
     <div
@@ -117,7 +126,8 @@ export function ProductGridCard({ product, onAddToCart }) {
         )}
         {isDrop && !isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82', color: '#fff', letterSpacing: '0.05em' }}>{product.preorderPhase === 'after' ? 'NEW DROP' : 'PRE ORDER'}</span>}
         {isSoldOut && <span className="product-tag tag-best" style={{ background: '#7E7E82' }}>Sold Out</span>}
-        {isLowStock && <span className="product-tag tag-limited">Low Stock</span>}
+        {isOneOfOne && <span className="product-tag tag-one-of-one">ONE OF ONE</span>}
+        {isLowStock && <span className="product-tag tag-limited">LOW STOCK</span>}
 
         {/* Scroll Buttons */}
         <button className="card-slide-arrow arrow-left" onClick={prevSlide} aria-label={`Previous image for ${product.name}`}>&#10094;</button>

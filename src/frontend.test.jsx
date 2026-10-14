@@ -13,6 +13,7 @@ import Footer from './components/Footer';
 import NewIn from './pages/NewIn';
 import ProductDetail from './pages/ProductDetail';
 import * as productsModule from './lib/products';
+import { ProductGridCard } from './pages/Shop';
 
 describe('Pricing Helper Functions', () => {
   it('priceNumber parses string values correctly', () => {
@@ -341,5 +342,47 @@ describe('GA4 Ecommerce Analytics', () => {
     expect(mockGtag).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('ONE OF ONE badge', () => {
+  it('a product with total stock 1 and no no-permission-3 shows ONE OF ONE and not LOW STOCK; a drop product with total stock 1 still shows LOW STOCK', () => {
+    const singlePieceProduct = {
+      id: 'prod-single',
+      name: 'item-1',
+      price: 1999,
+      stock: 1,
+      subCategories: ['oversize'],
+      sizes: { S: 0, M: 0, L: 1, XL: 0 }
+    };
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <ProductGridCard product={singlePieceProduct} onAddToCart={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('ONE OF ONE')).toBeDefined();
+    expect(screen.queryByText(/LOW STOCK/i)).toBeNull();
+    unmount();
+
+    const dropSinglePieceProduct = {
+      id: 'drop-single',
+      name: 'item-2',
+      price: 1899,
+      stock: 1,
+      subCategories: ['no-permission-3'],
+      sizes: { S: 1, M: 0, L: 0, XL: 0 }
+    };
+
+    render(
+      <MemoryRouter>
+        <ProductGridCard product={dropSinglePieceProduct} onAddToCart={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText(/LOW STOCK/i)).toBeDefined();
+    expect(screen.queryByText('ONE OF ONE')).toBeNull();
+  });
+});
+
 
 

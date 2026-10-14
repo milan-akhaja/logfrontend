@@ -975,6 +975,12 @@ header.scrolled .bag-count {
   color: white;
 }
 
+.tag-one-of-one {
+  background: #000000;
+  color: #C9A24D;
+  border: 1px solid #C9A24D;
+}
+
 .product-color-badge {
   position: absolute;
   bottom: 15px;
