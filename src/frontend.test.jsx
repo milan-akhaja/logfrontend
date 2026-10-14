@@ -252,12 +252,21 @@ describe('ProductDetail Component', () => {
 });
 
 describe('GA4 Ecommerce Analytics', () => {
-  it('canTrackGA4 respects admin, host, and static ID guards', async () => {
-    const { canTrackGA4 } = await import('./lib/analytics');
+  beforeEach(() => {
+    sessionStorage.clear();
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
+    document.cookie = 'cookieyes-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  });
+
+  it('canTrackGA4 respects admin, host, and static ID guards, and analytics consent', async () => {
+    const { canTrackGA4, hasGA4Consent } = await import('./lib/analytics');
 
     window.__LOG_ANALYTICS_HOST__ = false;
     window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
     window.gtag = vi.fn();
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
 
     // False on non-analytics host
     expect(canTrackGA4()).toBe(false);
@@ -274,12 +283,30 @@ describe('GA4 Ecommerce Analytics', () => {
     // False when gtag is missing
     delete window.gtag;
     expect(canTrackGA4()).toBe(false);
+    window.gtag = vi.fn();
+
+    // False when analytics consent is denied via window flag
+    window.__LOG_GA4_CONSENT_GRANTED__ = false;
+    expect(hasGA4Consent()).toBe(false);
+    expect(canTrackGA4()).toBe(false);
+
+    // False when analytics consent is denied via cookie
+    delete window.__LOG_GA4_CONSENT_GRANTED__;
+    document.cookie = 'cookieyes-consent=analytics:no,advertisement:yes; path=/;';
+    expect(hasGA4Consent()).toBe(false);
+    expect(canTrackGA4()).toBe(false);
+
+    // True when analytics consent is granted via cookie
+    document.cookie = 'cookieyes-consent=analytics:yes,advertisement:no; path=/;';
+    expect(hasGA4Consent()).toBe(true);
+    expect(canTrackGA4()).toBe(true);
   });
 
   it('trackGA4Event sends with send_to: window.__LOG_STATIC_GA4_ID', async () => {
     const { trackGA4Event } = await import('./lib/analytics');
     window.__LOG_ANALYTICS_HOST__ = true;
     window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
     const mockGtag = vi.fn();
     window.gtag = mockGtag;
 
@@ -303,6 +330,7 @@ describe('GA4 Ecommerce Analytics', () => {
     sessionStorage.clear();
     window.__LOG_ANALYTICS_HOST__ = true;
     window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
     const mockGtag = vi.fn();
     window.gtag = mockGtag;
 
@@ -441,31 +469,66 @@ describe('Meta Pixel Analytics', () => {
       ['content_ids', 'num_items', 'value', 'currency'].sort()
     );
   });
+});
 
-  it('purchase is deduped per order id, carries eventID, and sends exact key set with no personal data', async () => {
+describe('Independent Purchase Tracking and Consent (GA4 and Meta)', () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    delete window.gtag;
+    delete window.fbq;
+    delete window.__LOG_GA4_CONSENT_GRANTED__;
+    delete window.__LOG_META_CONSENT_GRANTED__;
+    window.__LOG_ANALYTICS_HOST__ = true;
+    window.__LOG_STATIC_GA4_ID = 'G-CQ744XW1WD';
+    window.__LOG_STATIC_META_PIXEL_ID = '1398026158457517';
+    document.cookie = 'cookieyes-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  });
+
+  const mockOrder = {
+    id: 'LOG-ORDER-777',
+    total: 2499,
+    customerInfo: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: ''
+    },
+    items: [
+      { id: 'prod-1', name: 'prod-1', price: 1499, quantity: 1, selectedSize: 'L' },
+      { id: 'prod-2', name: 'prod-2', price: 1000, quantity: 1, selectedSize: 'M' }
+    ]
+  };
+
+  it('both granted -> each fires once, second call deduped', async () => {
     const { trackPurchase } = await import('./lib/analytics');
+    const mockGtag = vi.fn();
     const mockFbq = vi.fn();
+    window.gtag = mockGtag;
     window.fbq = mockFbq;
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
     window.__LOG_META_CONSENT_GRANTED__ = true;
 
-    const mockOrder = {
-      id: 'LOG-ORDER-777',
-      total: 2499,
-      customerInfo: {
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        address: ''
-      },
-      items: [
-        { id: 'prod-1', name: 'prod-1', price: 1499, quantity: 1 },
-        { id: 'prod-2', name: 'prod-2', price: 1000, quantity: 1 }
-      ]
-    };
-
-    // First purchase call: sends event with exact keys and 4th argument eventID
+    // First purchase call: both fire once
     trackPurchase(mockOrder);
+
+    // GA4 assertion
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockGtag).toHaveBeenCalledWith('event', 'purchase', {
+      send_to: 'G-CQ744XW1WD',
+      transaction_id: 'LOG-ORDER-777',
+      value: 2499,
+      currency: 'INR',
+      items: [
+        { item_id: 'prod-1', item_name: 'prod-1', price: 1499, quantity: 1, item_variant: 'L' },
+        { item_id: 'prod-2', item_name: 'prod-2', price: 1000, quantity: 1, item_variant: 'M' }
+      ]
+    });
+    expect(Object.keys(mockGtag.mock.calls[0][2])).toEqual([
+      'send_to', 'transaction_id', 'value', 'currency', 'items'
+    ]);
+
+    // Meta assertion
     expect(mockFbq).toHaveBeenCalledTimes(1);
     expect(mockFbq).toHaveBeenCalledWith(
       'track',
@@ -479,15 +542,92 @@ describe('Meta Pixel Analytics', () => {
       },
       { eventID: 'LOG-ORDER-777' }
     );
-
-    const payload = mockFbq.mock.calls[0][2];
-    expect(Object.keys(payload).sort()).toEqual(
-      ['value', 'currency', 'content_ids', 'content_type', 'num_items'].sort()
+    expect(Object.keys(mockFbq.mock.calls[0][2]).sort()).toEqual(
+      ['content_ids', 'content_type', 'currency', 'num_items', 'value']
     );
 
-    // Second purchase call with same order id: deduped via sessionStorage, must NOT call fbq again
+    // Separate dedupe keys exist in sessionStorage
+    expect(sessionStorage.getItem('log_ga4_order_LOG-ORDER-777')).toBe('1');
+    expect(sessionStorage.getItem('log_meta_order_LOG-ORDER-777')).toBe('1');
+
+    // Second call with same order id: both deduped, neither fires again
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+  });
+
+  it('analytics only -> GA4 fires once and dedupes, Meta stays silent without key set', async () => {
+    const { trackPurchase } = await import('./lib/analytics');
+    const mockGtag = vi.fn();
+    const mockFbq = vi.fn();
+    window.gtag = mockGtag;
+    window.fbq = mockFbq;
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
+    window.__LOG_META_CONSENT_GRANTED__ = false;
+
+    // First call
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockFbq).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('log_ga4_order_LOG-ORDER-777')).toBe('1');
+    expect(sessionStorage.getItem('log_meta_order_LOG-ORDER-777')).toBeNull();
+
+    // Second call: GA4 deduped, Meta still silent
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(mockFbq).not.toHaveBeenCalled();
+
+    // If marketing consent is later granted, Meta can fire its Purchase event
+    window.__LOG_META_CONSENT_GRANTED__ = true;
     trackPurchase(mockOrder);
     expect(mockFbq).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem('log_meta_order_LOG-ORDER-777')).toBe('1');
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+  });
+
+  it('marketing only -> Meta fires once and dedupes, GA4 stays silent without key set', async () => {
+    const { trackPurchase } = await import('./lib/analytics');
+    const mockGtag = vi.fn();
+    const mockFbq = vi.fn();
+    window.gtag = mockGtag;
+    window.fbq = mockFbq;
+    window.__LOG_GA4_CONSENT_GRANTED__ = false;
+    window.__LOG_META_CONSENT_GRANTED__ = true;
+
+    // First call
+    trackPurchase(mockOrder);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+    expect(mockGtag).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('log_meta_order_LOG-ORDER-777')).toBe('1');
+    expect(sessionStorage.getItem('log_ga4_order_LOG-ORDER-777')).toBeNull();
+
+    // Second call: Meta deduped, GA4 still silent
+    trackPurchase(mockOrder);
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+    expect(mockGtag).not.toHaveBeenCalled();
+
+    // If analytics consent is later granted, GA4 can fire its purchase event
+    window.__LOG_GA4_CONSENT_GRANTED__ = true;
+    trackPurchase(mockOrder);
+    expect(mockGtag).toHaveBeenCalledTimes(1);
+    expect(sessionStorage.getItem('log_ga4_order_LOG-ORDER-777')).toBe('1');
+    expect(mockFbq).toHaveBeenCalledTimes(1);
+  });
+
+  it('neither granted -> neither fires, nothing throws, neither dedupe key set', async () => {
+    const { trackPurchase } = await import('./lib/analytics');
+    const mockGtag = vi.fn();
+    const mockFbq = vi.fn();
+    window.gtag = mockGtag;
+    window.fbq = mockFbq;
+    window.__LOG_GA4_CONSENT_GRANTED__ = false;
+    window.__LOG_META_CONSENT_GRANTED__ = false;
+
+    expect(() => trackPurchase(mockOrder)).not.toThrow();
+    expect(mockGtag).not.toHaveBeenCalled();
+    expect(mockFbq).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('log_ga4_order_LOG-ORDER-777')).toBeNull();
+    expect(sessionStorage.getItem('log_meta_order_LOG-ORDER-777')).toBeNull();
   });
 });
 

@@ -78,37 +78,49 @@
       fbq('track', 'PageView');
 
       (function () {
-        var granted = false;
-        function grant() {
-          if (granted) return;
-          granted = true;
+        var metaGranted = false;
+        function grantMeta() {
+          if (metaGranted) return;
+          metaGranted = true;
           window.__LOG_META_CONSENT_GRANTED__ = true;
           fbq('consent', 'grant');
         }
-        function hasStoredConsent() {
+        function checkStoredConsent() {
           try {
             var raw = decodeURIComponent(document.cookie || '');
-            // CookieYes writes e.g. "advertisement:yes" into cookieyes-consent.
-            return /cookieyes-consent[^;]*advertisement:yes/.test(raw);
-          } catch (err) {
-            return false;
-          }
-        }
-        if (hasStoredConsent()) {
-          grant();
-        } else {
-          document.addEventListener('cookieyes_consent_update', function (event) {
-            var detail = (event && event.detail) || {};
-            var accepted = detail.accepted || [];
-            if (detail.advertisement === 'yes' || (accepted.indexOf && accepted.indexOf('advertisement') > -1)) {
-              grant();
-            } else if (detail.advertisement === 'no' || (detail.rejected && detail.rejected.indexOf && detail.rejected.indexOf('advertisement') > -1)) {
-              granted = false;
-              window.__LOG_META_CONSENT_GRANTED__ = false;
-              fbq('consent', 'revoke');
+            if (/cookieyes-consent[^;]*advertisement:yes/.test(raw)) {
+              grantMeta();
             }
-          });
+            if (/cookieyes-consent[^;]*analytics:yes/.test(raw)) {
+              window.__LOG_GA4_CONSENT_GRANTED__ = true;
+            } else if (/cookieyes-consent[^;]*analytics:no/.test(raw)) {
+              window.__LOG_GA4_CONSENT_GRANTED__ = false;
+            }
+          } catch (err) {}
         }
+        checkStoredConsent();
+
+        document.addEventListener('cookieyes_consent_update', function (event) {
+          var detail = (event && event.detail) || {};
+          var accepted = detail.accepted || [];
+          var rejected = detail.rejected || [];
+
+          // Marketing / Meta Pixel consent
+          if (detail.advertisement === 'yes' || (accepted.indexOf && accepted.indexOf('advertisement') > -1)) {
+            grantMeta();
+          } else if (detail.advertisement === 'no' || (rejected.indexOf && rejected.indexOf('advertisement') > -1)) {
+            metaGranted = false;
+            window.__LOG_META_CONSENT_GRANTED__ = false;
+            fbq('consent', 'revoke');
+          }
+
+          // Analytics / GA4 consent
+          if (detail.analytics === 'yes' || (accepted.indexOf && accepted.indexOf('analytics') > -1)) {
+            window.__LOG_GA4_CONSENT_GRANTED__ = true;
+          } else if (detail.analytics === 'no' || (rejected.indexOf && rejected.indexOf('analytics') > -1)) {
+            window.__LOG_GA4_CONSENT_GRANTED__ = false;
+          }
+        });
       })();
     }
   </script>
