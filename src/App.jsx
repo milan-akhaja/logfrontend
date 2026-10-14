@@ -270,7 +270,7 @@ function ImageFallbacks() {
       if (!(image instanceof HTMLImageElement) || image.dataset.fallbackApplied === 'true') return;
       image.dataset.fallbackApplied = 'true';
       image.src = FALLBACK_IMAGE_SRC;
-      if (!image.alt) image.alt = 'LOG image coming soon';
+      if (!image.alt) image.alt = 'logcloth image coming soon';
     };
 
     window.addEventListener('error', handleImageError, true);

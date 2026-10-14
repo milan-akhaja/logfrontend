@@ -128,7 +128,7 @@ export default function Footer({ onToast }) {
             <div style={{ display: 'flex', gap: '15px', marginTop: '20px', marginBottom: '10px' }}>
               <a 
                 href="mailto:contact@logcloth.com" 
-                aria-label="Email LOG support"
+                aria-label="Email logcloth support"
                 title="Email Support"
                 onClick={handleContactClick}
                 style={{ width: '36px', height: '36px', borderRadius: '50%', border: '1px solid rgba(255, 255, 255, 0.3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}
@@ -150,13 +150,13 @@ export default function Footer({ onToast }) {
           {/* Col 1: Follow the log movements */}
           <div className="footer-accordion-col footer-socials-col">
             <h3 className="footer-title" style={{ fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Follow the log movments
+              Follow the log movements
             </h3>
             <ul className="footer-links pc-only">
               <li><a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer">Instagram</a></li>
             </ul>
             <div className="footer-social-icons-row" style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
-              <a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer" aria-label="Follow LOG on Instagram" style={{ color: 'white' }}><Instagram size={20} /></a>
+              <a href="https://www.instagram.com/log.cloth" target="_blank" rel="noreferrer" aria-label="Follow logcloth on Instagram" style={{ color: 'white' }}><Instagram size={20} /></a>
             </div>
           </div>
 

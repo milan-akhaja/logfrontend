@@ -770,7 +770,7 @@ export default function CartDrawer({
                 <div className="checkout-wall">
                   <label className="checkout-save-row">
                     <input type="checkbox" checked={wallOptIn} onChange={(e) => setWallOptIn(e.target.checked)} />
-                    <span>show my name on the LOG wall</span>
+                    <span>show my name on the logcloth wall</span>
                   </label>
                   {wallOptIn && (
                     <div className="checkout-two-col">
@@ -780,7 +780,7 @@ export default function CartDrawer({
                         onChange={(e) => setWallDisplayName(e.target.value.slice(0, WALL_TEXT_MAX))}
                         maxLength={WALL_TEXT_MAX}
                         placeholder="Display name (optional)"
-                        aria-label="Display name for the LOG wall"
+                        aria-label="Display name for the logcloth wall"
                       />
                       <input
                         type="text"
@@ -788,7 +788,7 @@ export default function CartDrawer({
                         onChange={(e) => setWallCity(e.target.value.slice(0, WALL_TEXT_MAX))}
                         maxLength={WALL_TEXT_MAX}
                         placeholder="City (optional)"
-                        aria-label="City for the LOG wall"
+                        aria-label="City for the logcloth wall"
                       />
                     </div>
                   )}

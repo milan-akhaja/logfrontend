@@ -354,7 +354,7 @@ export default function MakeReturn() {
             </button>
 
             <p style={{ fontSize: '12px', color: 'var(--grey-muted)', textAlign: 'center', margin: 0 }}>
-              Both you and the LOG support team will receive an email confirmation immediately upon submission.
+              Both you and the logcloth support team will receive an email confirmation immediately upon submission.
             </p>
           </form>
 

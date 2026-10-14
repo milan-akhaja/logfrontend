@@ -753,7 +753,7 @@ export default function Shop({ onAddToCart }) {
         ) : desktopHeroMediaType === 'slideshow' ? (
           <div
             className="hero-slideshow"
-            aria-label="LOG streetwear background slideshow"
+            aria-label="logcloth streetwear background slideshow"
             {...heroSwipeHandlers('desktop', desktopHeroImages.length)}
           >
             {desktopHeroImages.map((image, index) => (
@@ -791,7 +791,7 @@ export default function Shop({ onAddToCart }) {
         {mobileHeroMediaType === 'slideshow' ? (
           <div
             className="mobile-hero-slideshow"
-            aria-label="LOG streetwear mobile hero slideshow"
+            aria-label="logcloth streetwear mobile hero slideshow"
             {...heroSwipeHandlers('mobile', mobileHeroImages.length)}
           >
             {mobileHeroImages.map((image, index) => (
@@ -815,7 +815,7 @@ export default function Shop({ onAddToCart }) {
             srcSet={mediaSrcSet(mobileSingleImage)}
             sizes="100vw"
             onError={srcSetFallback}
-            alt="LOG streetwear mobile hero"
+            alt="logcloth streetwear mobile hero"
             className="mobile-hero-image"
             loading="eager"
             decoding="async"

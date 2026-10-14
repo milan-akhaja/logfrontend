@@ -5,7 +5,7 @@ import SEO from '../components/SEO';
 export default function NotFound() {
   return (
     <div className="policy-page-container" style={{ padding: '150px 20px 90px', minHeight: '70vh', textAlign: 'center' }}>
-      <SEO title="Page Not Found" description="The LOG page you requested could not be found." noindex canonicalPath="/404" />
+      <SEO title="Page Not Found | logcloth" description="The logcloth page you requested could not be found." noindex canonicalPath="/404" />
       <p style={{ fontSize: '12px', fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--grey-muted)', marginBottom: '12px' }}>
         404
       </p>

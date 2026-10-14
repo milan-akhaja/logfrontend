@@ -33,7 +33,7 @@ export default function FAQs() {
   return (
     <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '800px', margin: '0 auto', color: 'var(--ink)' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Frequently Asked Questions</h1>
-      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '40px' }}>LOG Support Hub & FAQs</p>
+      <p style={{ color: 'var(--grey-muted)', fontSize: '14px', marginBottom: '40px' }}>logcloth Support Hub & FAQs</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {faqData.map((item, idx) => {

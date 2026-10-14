@@ -48,9 +48,9 @@ export default function BlogDetail() {
     .map(block => block.text)
     .filter(Boolean)
     .join(' ')
-    .slice(0, 155) || 'Read the latest LOG streetwear story, lookbook entry, and impact update.';
+    .slice(0, 155) || 'Read the latest logcloth streetwear story, lookbook entry, and social impact update.';
   const seoDescription = blog.metaDescription || blogDescription;
-  const seoTitle = blog.metaTitle || `${blog.title} - LOG Book`;
+  const seoTitle = blog.metaTitle || `${blog.title} - LOG Book | logcloth`;
   const geoTitle = blog.geoTitle || seoTitle;
   const seoKeywords = Array.isArray(blog.metaKeywords)
     ? blog.metaKeywords
@@ -71,11 +71,11 @@ export default function BlogDetail() {
     dateModified: blog.date,
     author: {
       '@type': 'Organization',
-      name: blog.author || 'LOG'
+      name: blog.author || 'logcloth'
     },
     publisher: {
       '@type': 'Organization',
-      name: 'LOG',
+      name: 'logcloth',
       logo: {
         '@type': 'ImageObject',
         url: `${SITE_URL}/logo-512.png`

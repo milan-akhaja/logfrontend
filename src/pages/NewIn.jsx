@@ -188,7 +188,7 @@ export default function NewIn({ onAddToCart, onToast }) {
           <div className="reveal">
             <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '15px' }}>Need Support?</h2>
             <p style={{ fontSize: '13px', color: 'var(--grey-muted)', lineHeight: '1.7', marginBottom: '35px' }}>
-              Have questions about your order, sizing, or returns? Get in touch with the LOG support team directly. We are here to help.
+              Have questions about your order, sizing, or returns? Get in touch with the logcloth support team directly. We are here to help.
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', flexWrap: 'wrap', marginBottom: '30px' }}>
