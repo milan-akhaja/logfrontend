@@ -153,6 +153,7 @@ export default function ShopPage({ onAddToCart }) {
               <span style={{ fontWeight: '800', fontSize: '16px' }}>FILTERS</span>
               <button 
                 onClick={() => setIsMobileFilterOpen(false)}
+                aria-label="Close filters"
                 style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '0 5px' }}
               >
                 &times;

@@ -135,6 +135,7 @@ export default function BurgerMenuOverlay({ isOpen, onClose, onOpenStories }) {
             )}
             <button 
               className="burger-cart-btn"
+              aria-label="Open bag"
               onClick={() => {
                 onClose();
                 const bagBtn = document.querySelector('.header-bag-btn');

@@ -148,6 +148,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   if (!product) {
     return (
       <div className="product-detail-page-container" style={{ padding: '160px 20px', textAlign: 'center', minHeight: '100vh' }}>
+        <SEO title="Product Not Found | logcloth" description="The requested logcloth product could not be found." noindex canonicalPath={id ? `/product/${id}` : '/shop'} />
         <h2 style={{ fontSize: '24px', fontWeight: '900', textTransform: 'uppercase' }}>Product Not Found</h2>
         <button className="btn btn-accent" style={{ marginTop: '20px' }} onClick={() => navigate('/')}>
           Back to Shop
