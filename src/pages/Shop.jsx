@@ -377,7 +377,7 @@ function GalleryScroller() {
                     if (dragRef.current.didSwipe) event.preventDefault();
                   }}
                 >
-                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'Gallery Image'} loading="lazy" decoding="async" />
+                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'logcloth gallery image'} loading="lazy" decoding="async" />
                   {item.title && (
                     <div className="gallery-slide-text-overlay">
                       <span className="gallery-slide-title-text">{item.title}</span>
@@ -772,7 +772,7 @@ export default function Shop({ onAddToCart }) {
             ))}
           </div>
         ) : (
-          <img src={mediaUrl(desktopSingleImage)} srcSet={mediaSrcSet(desktopSingleImage)} sizes="100vw" onError={srcSetFallback} alt="LOG streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+          <img src={mediaUrl(desktopSingleImage)} srcSet={mediaSrcSet(desktopSingleImage)} sizes="100vw" onError={srcSetFallback} alt="logcloth streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
         )}
         <div className="hero-overlay"></div>
         <a

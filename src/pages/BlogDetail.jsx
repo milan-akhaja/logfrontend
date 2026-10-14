@@ -117,7 +117,7 @@ export default function BlogDetail() {
           <div key={index} style={{ margin: '30px 0', textAlign: 'center' }}>
             <img
               src={mediaUrl(block.url)}
-              alt="Blog attachment"
+              alt={block.alt || block.caption || blog.title || 'logcloth blog attachment'}
               loading="lazy"
               decoding="async"
               style={{ maxWidth: '100%', height: 'auto', borderRadius: '6px', boxShadow: 'var(--shadow-sm)' }}

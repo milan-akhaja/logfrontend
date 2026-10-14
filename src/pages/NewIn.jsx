@@ -75,7 +75,7 @@ export default function NewIn({ onAddToCart, onToast }) {
           </div>
         </div>
         <div className="lookbook-banner-right reveal">
-          <img src={mediaUrl(newInConfig.imageUrl)} alt="LOG streetwear editorial model" loading="eager" decoding="async" />
+          <img src={mediaUrl(newInConfig.imageUrl)} alt="logcloth streetwear editorial model" loading="eager" decoding="async" />
         </div>
       </section>
 
