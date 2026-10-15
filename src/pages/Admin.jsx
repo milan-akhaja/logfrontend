@@ -763,6 +763,11 @@ export default function Admin({ onToast }) {
   // Gallery Lookbook State
   const [galleryItems, setGalleryItems] = useState([]);
   const [newGalleryItem, setNewGalleryItem] = useState({ imageUrl: '', title: '', link: '' });
+  const [videoReelFile, setVideoReelFile] = useState(null);
+  const [videoReelTitle, setVideoReelTitle] = useState('');
+  const [videoReelLink, setVideoReelLink] = useState('');
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const videoCount = (galleryItems || []).filter(item => (item.media_type || item.mediaType) === 'video').length;
   const [contentBlocks, setContentBlocks] = useState(() => mergeContentBlocks(DEFAULT_CONTENT_BLOCKS));
   const [newInConfig, setNewInConfig] = useState({ tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
 
@@ -1133,6 +1138,133 @@ export default function Admin({ onToast }) {
     }
   };
 
+  const captureVideoPoster = (file) => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+
+      const objectUrl = URL.createObjectURL(file);
+      video.src = objectUrl;
+
+      let settled = false;
+      const cleanup = () => {
+        if (!settled) settled = true;
+        URL.revokeObjectURL(objectUrl);
+        video.removeAttribute('src');
+        video.load();
+      };
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error('Poster generation timed out. Please verify your video file.'));
+      }, 10000);
+
+      video.onloadedmetadata = () => {
+        const targetTime = Math.min(0.5, Math.max(0, (video.duration || 1) / 2));
+        video.currentTime = targetTime;
+      };
+
+      video.onseeked = () => {
+        try {
+          clearTimeout(timer);
+          const vw = video.videoWidth || 720;
+          const vh = video.videoHeight || 1280;
+          const maxWidth = 720;
+          const scale = vw > maxWidth ? maxWidth / vw : 1;
+          const cw = Math.round(vw * scale);
+          const ch = Math.round(vh * scale);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = cw;
+          canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, cw, ch);
+
+          let dataUrl = canvas.toDataURL('image/webp', 0.82);
+          if (!dataUrl || !dataUrl.startsWith('data:image/webp')) {
+            dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          }
+          cleanup();
+          resolve(dataUrl);
+        } catch (err) {
+          clearTimeout(timer);
+          cleanup();
+          reject(err);
+        }
+      };
+
+      video.onerror = () => {
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error('Failed to load video file for poster capture. Ensure it is a valid MP4 file.'));
+      };
+    });
+  };
+
+  const readFileAsBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleUploadVideoReel = async (e) => {
+    e.preventDefault();
+    if (!videoReelFile) {
+      onToast('Please select an MP4 video reel to upload.');
+      return;
+    }
+    if (videoCount >= 6) {
+      onToast('Gallery video limit reached. Maximum 6 videos are allowed in the gallery.');
+      return;
+    }
+    setIsUploadingVideo(true);
+    try {
+      const posterData = await captureVideoPoster(videoReelFile);
+      const videoData = await readFileAsBase64(videoReelFile);
+
+      const res = await fetch('/api/gallery/upload-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoData,
+          posterData,
+          title: videoReelTitle.trim(),
+          link: videoReelLink.trim() || '#',
+          caption: videoReelTitle.trim(),
+          saveItem: true
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.warning) {
+          onToast(`Video reel saved with note: ${data.warning}`);
+        } else {
+          onToast('Video reel successfully saved to gallery!');
+        }
+        setVideoReelFile(null);
+        setVideoReelTitle('');
+        setVideoReelLink('');
+        const fileInput = document.getElementById('admin-gallery-video-input');
+        if (fileInput) fileInput.value = '';
+        fetchData();
+      } else {
+        const errorMsg = await getApiError(res, 'Error uploading video reel.');
+        onToast(errorMsg);
+      }
+    } catch (err) {
+      console.error(err);
+      onToast(err.message || 'Video reel upload failed.');
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
   // Suggestion engine helper
   const showSuggestions = (value, fieldType, context = null) => {
     if (!value.trim()) {
@@ -1143,7 +1275,7 @@ export default function Admin({ onToast }) {
     const query = value.toLowerCase();
     let matches = [];
 
-    if (fieldType === 'link') {
+    if (fieldType === 'link' || fieldType === 'videoLink') {
       // Suggest Collections
       collections.forEach(col => {
         if (col.name.toLowerCase().includes(query)) {
@@ -3975,12 +4107,23 @@ export default function Admin({ onToast }) {
         {/* Gallery */}
         {activeTab === 'gallery' && (
           <div className="admin-card">
-            <div className="admin-card-header">
+            <div className="admin-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <h2 className="admin-card-title">Manage Homepage Gallery</h2>
+              <span style={{
+                fontSize: '13px',
+                fontWeight: '600',
+                padding: '4px 12px',
+                borderRadius: '12px',
+                background: videoCount >= 6 ? '#ffebee' : '#f0f4f8',
+                color: videoCount >= 6 ? '#c62828' : '#334e68'
+              }}>
+                Videos used: {videoCount} / 6
+              </span>
             </div>
 
-            {/* Gallery Upload Form */}
+            {/* Photo Upload Form */}
             <form onSubmit={handleSaveGalleryItem} style={{ padding: '20px', borderBottom: '1px solid var(--admin-border)' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '12px' }}>Add Photo Slide to Gallery</h3>
               <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
 
                 <div className="admin-form-group">
@@ -4049,6 +4192,90 @@ export default function Admin({ onToast }) {
               <button type="submit" className="btn btn-accent">Add Slide to Gallery</button>
             </form>
 
+            {/* Video Reel Upload Form */}
+            <form onSubmit={handleUploadVideoReel} style={{ padding: '20px', borderBottom: '1px solid var(--admin-border)', background: '#fafbfc' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>Upload Video Reel to Gallery (Reels)</h3>
+                <span style={{ fontSize: '12px', color: '#666' }}>Automatic poster frame generated</span>
+              </div>
+              <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '12px' }}>
+                <div className="admin-form-group">
+                  <label className="admin-label">MP4 Video File (Max 4 MB)</label>
+                  <input
+                    id="admin-gallery-video-input"
+                    type="file"
+                    accept="video/mp4,.mp4"
+                    onChange={(e) => setVideoReelFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                    disabled={isUploadingVideo || videoCount >= 6}
+                    required
+                    style={{ display: 'block', width: '100%' }}
+                  />
+                </div>
+
+                <div className="admin-form-group">
+                  <label className="admin-label">Reel Title</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="e.g. Summer Reel 2026"
+                    value={videoReelTitle}
+                    onChange={(e) => setVideoReelTitle(e.target.value)}
+                    disabled={isUploadingVideo || videoCount >= 6}
+                  />
+                </div>
+
+                <div className="admin-form-group" style={{ position: 'relative' }}>
+                  <label className="admin-label">Redirect Link (Auto-suggest)</label>
+                  <input
+                    type="text"
+                    className="admin-input"
+                    placeholder="Type to search link..."
+                    value={videoReelLink}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setVideoReelLink(val);
+                      showSuggestions(val, 'videoLink');
+                    }}
+                    disabled={isUploadingVideo || videoCount >= 6}
+                  />
+                  {/* Suggestions list popup */}
+                  {suggestionField === 'videoLink' && suggestions.length > 0 && (
+                    <div className="admin-suggestions-dropdown" style={{ position: 'absolute', zIndex: 100, background: 'white', border: '1px solid #ccc', width: '100%', top: '100%' }}>
+                      {suggestions.map((s, idx) => (
+                        <div
+                          key={idx}
+                          className="suggestion-item"
+                          style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #eee' }}
+                          onClick={() => {
+                            setVideoReelLink(s.value);
+                            clearSuggestions();
+                          }}
+                        >
+                          <span className="suggestion-type" style={{ fontWeight: 'bold', marginRight: '5px' }}>[{s.type}]</span> {s.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '14px', lineHeight: 1.5 }}>
+                <strong>Optimization Hint:</strong> 720x1280, H.264, no audio, Web-optimized/Fast start ON, under 4 MB.
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-accent"
+                disabled={isUploadingVideo || videoCount >= 6 || !videoReelFile}
+              >
+                {isUploadingVideo
+                  ? 'Capturing poster & uploading reel...'
+                  : videoCount >= 6
+                    ? 'Gallery Video Limit Reached (6/6)'
+                    : 'Upload Video Reel to Gallery'}
+              </button>
+            </form>
+
             {/* Gallery List */}
             <div className="admin-table-wrapper" style={{ marginTop: '20px' }}>
               <table className="admin-table">
@@ -4062,30 +4289,59 @@ export default function Admin({ onToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {galleryItems.map((item, idx) => (
-                    <tr key={item.id}>
-                      <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, -1)} disabled={idx === 0} aria-label={`Move ${item.title || 'gallery item'} up`}>
-                            <ArrowUp size={14} />
+                  {galleryItems.map((item, idx) => {
+                    const isVideo = (item.media_type || item.mediaType) === 'video' || Boolean(item.video_url || item.videoUrl);
+                    const previewSrc = mediaUrl(item.posterUrl || item.poster_url || item.imageUrl);
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, -1)} disabled={idx === 0} aria-label={`Move ${item.title || 'gallery item'} up`}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, 1)} disabled={idx === galleryItems.length - 1} aria-label={`Move ${item.title || 'gallery item'} down`}>
+                              <ArrowDown size={14} />
+                            </button>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ position: 'relative', width: '80px', height: '50px' }}>
+                            <img src={previewSrc} alt={item.title} style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                            {isVideo && (
+                              <span style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                background: 'rgba(0, 0, 0, 0.75)',
+                                color: '#fff',
+                                fontSize: '9px',
+                                fontWeight: '700',
+                                padding: '1px 4px',
+                                borderRadius: '3px',
+                                letterSpacing: '0.5px'
+                              }}>
+                                REEL
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          {item.title || '(No Title)'}
+                          {isVideo && (
+                            <span style={{ marginLeft: '6px', fontSize: '11px', color: '#666', fontWeight: '500' }}>
+                              (Video Reel)
+                            </span>
+                          )}
+                        </td>
+                        <td><code>{item.link}</code></td>
+                        <td>
+                          <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteGalleryItem(item.id)}>
+                            <Trash2 size={14} />
                           </button>
-                          <button type="button" className="admin-icon-btn" onClick={() => handleMoveResourceItem('gallery', galleryItems, setGalleryItems, idx, 1)} disabled={idx === galleryItems.length - 1} aria-label={`Move ${item.title || 'gallery item'} down`}>
-                            <ArrowDown size={14} />
-                          </button>
-                        </div>
-                      </td>
-                      <td>
-                        <img src={mediaUrl(item.imageUrl)} alt={item.title} style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
-                      </td>
-                      <td>{item.title || '(No Title)'}</td>
-                      <td><code>{item.link}</code></td>
-                      <td>
-                        <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDeleteGalleryItem(item.id)}>
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -1177,6 +1177,120 @@ describe('ConsentBanner and Consent Management', () => {
   });
 });
 
+describe('GalleryVideoCard Component', () => {
+  let originalMatchMedia;
 
+  beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    }));
+  });
 
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
+  });
 
+  it('renders poster img immediately and configures video element with preload=none, muted, playsInline, loop', async () => {
+    const GalleryVideoCard = (await import('./components/GalleryVideoCard')).default;
+    const mockItem = {
+      id: 'gallery-test-1',
+      title: 'Summer Reel 2026',
+      media_type: 'video',
+      video_url: '/uploads/gallery-test.mp4',
+      poster_url: '/uploads/gallery-test-poster.webp'
+    };
+
+    const { container, unmount } = render(
+      <GalleryVideoCard item={mockItem} isActive={false} />
+    );
+
+    const img = container.querySelector('img');
+    expect(img).toBeDefined();
+    expect(img.getAttribute('src')).toContain('/uploads/gallery-test-poster.webp');
+    expect(img.style.opacity).toBe('1'); // Poster visible initially
+
+    const video = container.querySelector('video');
+    expect(video).toBeDefined();
+    expect(video.getAttribute('preload')).toBe('none');
+    expect(video.hasAttribute('playsinline')).toBe(true);
+    expect(video.hasAttribute('loop')).toBe(true);
+
+    unmount();
+  });
+
+  it('attempts video play only when slide isActive is true', async () => {
+    const GalleryVideoCard = (await import('./components/GalleryVideoCard')).default;
+    const mockItem = {
+      id: 'gallery-test-2',
+      title: 'Active Reel',
+      media_type: 'video',
+      videoUrl: '/uploads/reel-2.mp4',
+      posterUrl: '/uploads/reel-2-poster.jpg'
+    };
+
+    const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(() => Promise.resolve());
+    const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+
+    const { rerender, unmount } = render(
+      <GalleryVideoCard item={mockItem} isActive={false} />
+    );
+
+    expect(playSpy).not.toHaveBeenCalled();
+
+    rerender(<GalleryVideoCard item={mockItem} isActive={true} />);
+    expect(playSpy).toHaveBeenCalled();
+
+    rerender(<GalleryVideoCard item={mockItem} isActive={false} />);
+    expect(pauseSpy).toHaveBeenCalled();
+
+    playSpy.mockRestore();
+    pauseSpy.mockRestore();
+    unmount();
+  });
+
+  it('respects prefers-reduced-motion: does not autoplay and shows Tap to play badge', async () => {
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    }));
+
+    const GalleryVideoCard = (await import('./components/GalleryVideoCard')).default;
+    const mockItem = {
+      id: 'gallery-test-3',
+      title: 'Reduced Motion Reel',
+      media_type: 'video',
+      video_url: '/uploads/reel-3.mp4',
+      poster_url: '/uploads/reel-3-poster.webp'
+    };
+
+    const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(() => Promise.resolve());
+
+    const { container, unmount } = render(
+      <GalleryVideoCard item={mockItem} isActive={true} />
+    );
+
+    // Should not autoplay even when active because reduced-motion is preferred
+    expect(playSpy).not.toHaveBeenCalled();
+
+    const badge = container.querySelector('.gallery-video-reduced-motion-badge');
+    expect(badge).toBeDefined();
+    expect(badge.textContent).toContain('Tap to play');
+
+    playSpy.mockRestore();
+    unmount();
+  });
+});

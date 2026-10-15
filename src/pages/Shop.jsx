@@ -198,6 +198,8 @@ export function ProductGridCard({ product, onAddToCart }) {
 }
 
 // Premium 3D Stacked Cover-Flow Lookbook Gallery Scroller
+const GalleryVideoCard = React.lazy(() => import('../components/GalleryVideoCard'));
+
 function GalleryScroller() {
   const [items, setItems] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -363,29 +365,48 @@ function GalleryScroller() {
             onTouchEnd={handleTouchEnd}
             onTouchCancel={handleTouchEnd}
           >
-            {items.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={getSlideClass(idx)}
-              >
-                <a
-                  href={appPath(item.link || '#')}
-                  className="gallery-item-link-card"
-                  aria-label={item.title ? `Open ${item.title}` : 'Open gallery item'}
-                  draggable="false"
-                  onClick={(event) => {
-                    if (dragRef.current.didSwipe) event.preventDefault();
-                  }}
+            {items.map((item, idx) => {
+              const isVideo = (item.media_type || item.mediaType) === 'video' || Boolean(item.video_url || item.videoUrl);
+              const poster = mediaUrl(item.posterUrl || item.poster_url || item.imageUrl);
+              return (
+                <div
+                  key={item.id || idx}
+                  className={getSlideClass(idx)}
                 >
-                  <img src={mediaUrl(item.imageUrl)} alt={item.title || 'logcloth gallery image'} loading="lazy" decoding="async" />
-                  {item.title && (
-                    <div className="gallery-slide-text-overlay">
-                      <span className="gallery-slide-title-text">{item.title}</span>
-                    </div>
-                  )}
-                </a>
-              </div>
-            ))}
+                  <a
+                    href={appPath(item.link || '#')}
+                    className="gallery-item-link-card"
+                    aria-label={item.title ? `Open ${item.title}` : 'Open gallery item'}
+                    draggable="false"
+                    onClick={(event) => {
+                      if (dragRef.current.didSwipe) event.preventDefault();
+                    }}
+                  >
+                    {isVideo ? (
+                      <React.Suspense
+                        fallback={
+                          <img
+                            src={poster}
+                            alt={item.title || 'logcloth gallery reel'}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        }
+                      >
+                        <GalleryVideoCard item={item} isActive={idx === activeIdx} />
+                      </React.Suspense>
+                    ) : (
+                      <img src={mediaUrl(item.imageUrl)} alt={item.title || 'logcloth gallery image'} loading="lazy" decoding="async" />
+                    )}
+                    {item.title && (
+                      <div className="gallery-slide-text-overlay">
+                        <span className="gallery-slide-title-text">{item.title}</span>
+                      </div>
+                    )}
+                  </a>
+                </div>
+              );
+            })}
           </div>
         </div>
 
