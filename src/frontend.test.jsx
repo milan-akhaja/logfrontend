@@ -1066,15 +1066,16 @@ describe('ConsentBanner and Consent Management', () => {
     expect(onAddToCart).toHaveBeenCalledTimes(1);
     expect(onAddToCart).toHaveBeenCalledWith(expect.objectContaining({ id: 'prod-atc-test' }), 'L');
 
-    // Test trackMetaEvent AddToCart parameters
+    // Test trackMetaEvent AddToCart parameters with eventID
     const { trackMetaEvent } = await import('./lib/analytics');
+    const testEventId = 'atc_prod-atc-test-L_1700000000000';
     trackMetaEvent('AddToCart', {
       content_ids: ['prod-atc-test'],
       content_type: 'product',
       value: 1299,
       currency: 'INR',
       contents: [{ id: 'prod-atc-test', quantity: 1 }]
-    });
+    }, testEventId);
 
     const atcCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'AddToCart');
     expect(atcCalls.length).toBe(1);
@@ -1084,8 +1085,40 @@ describe('ConsentBanner and Consent Management', () => {
       value: 1299,
       currency: 'INR'
     }));
+    expect(atcCalls[0][3]).toEqual({ eventID: testEventId });
 
     unmountPD();
+  });
+
+  it('Order (a): ViewContent fires immediately on mount when consent is already granted in cookie before opening product page', async () => {
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+    delete window.__LOG_META_CONSENT_GRANTED__;
+    document.cookie = 'cookieyes-consent=consentid:999,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes; path=/;';
+
+    const mockProduct = { id: 'prod-pre-consent', name: 'Pre Consent Tee', price: 1899, stock: 10, sizes: { M: 10 } };
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/product/prod-pre-consent']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={vi.fn()} onBuyNow={vi.fn()} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await screen.findByText('Pre Consent Tee');
+    // Pre-granted consent must allow ViewContent to fire exactly once on mount
+    const vcCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
+    expect(vcCalls.length).toBe(1);
+    expect(vcCalls[0][2]).toEqual(expect.objectContaining({
+      content_ids: ['prod-pre-consent'],
+      content_type: 'product',
+      value: 1899,
+      currency: 'INR'
+    }));
+
+    unmount();
   });
 
   it('renders scarcity stat 40 Pieces Per Design and clean Shop Now CTA without starting price', async () => {

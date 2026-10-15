@@ -965,6 +965,7 @@ export default function App() {
         quantity: isBogo ? 2 : 1
       }]
     });
+    const atcEventId = `atc_${cartItemId}_${now}`;
     try {
       trackMetaEvent('AddToCart', {
         content_ids: [String(product.id || '')],
@@ -975,7 +976,7 @@ export default function App() {
           id: String(product.id || ''),
           quantity: isBogo ? 2 : 1
         }]
-      });
+      }, atcEventId);
     } catch {}
     showToast(`${product.name} (${finalSize}) added to Bag`);
   };
@@ -1026,6 +1027,7 @@ export default function App() {
         quantity: isBogo ? 2 : 1
       }]
     });
+    const buyNowEventId = `bn_${cartItemId}_${now}`;
     try {
       trackMetaEvent('AddToCart', {
         content_ids: [String(product.id || '')],
@@ -1036,7 +1038,7 @@ export default function App() {
           id: String(product.id || ''),
           quantity: isBogo ? 2 : 1
         }]
-      });
+      }, buyNowEventId);
     } catch {}
     setCartOpen(true);
   };

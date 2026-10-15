@@ -62,37 +62,41 @@
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
 
-      // Consent gate. Google Consent Mode covers the Google tags above; Meta
-      // has no equivalent default, so revoke first and grant only once
-      // CookieYes reports consent. Events fired while revoked are queued by
-      // the pixel and sent after the grant, so nothing is lost.
-      fbq('consent', 'revoke');
+      // Consent gate. If the visitor already granted consent in a prior
+      // session (stored in cookieyes-consent cookie), grant immediately so
+      // events are not deadlocked in the queue. Only revoke when consent is
+      // not yet granted or denied.
+      var metaGranted = false;
+      try {
+        var rawCookie = decodeURIComponent(document.cookie || '');
+        if (/cookieyes-consent[^;]*advertisement:yes/.test(rawCookie)) {
+          metaGranted = true;
+          window.__LOG_META_CONSENT_GRANTED__ = true;
+        }
+        if (/cookieyes-consent[^;]*analytics:yes/.test(rawCookie)) {
+          window.__LOG_GA4_CONSENT_GRANTED__ = true;
+        } else if (/cookieyes-consent[^;]*analytics:no/.test(rawCookie)) {
+          window.__LOG_GA4_CONSENT_GRANTED__ = false;
+        }
+      } catch (err) {}
+
+      if (metaGranted) {
+        fbq('consent', 'grant');
+      } else {
+        fbq('consent', 'revoke');
+      }
+      fbq('set', 'autoConfig', false);
       fbq('set', 'autoConfig', false, '1398026158457517');
       fbq('init', '1398026158457517');
       fbq('track', 'PageView');
 
       (function () {
-        var metaGranted = false;
         function grantMeta() {
           if (metaGranted) return;
           metaGranted = true;
           window.__LOG_META_CONSENT_GRANTED__ = true;
           fbq('consent', 'grant');
         }
-        function checkStoredConsent() {
-          try {
-            var raw = decodeURIComponent(document.cookie || '');
-            if (/cookieyes-consent[^;]*advertisement:yes/.test(raw)) {
-              grantMeta();
-            }
-            if (/cookieyes-consent[^;]*analytics:yes/.test(raw)) {
-              window.__LOG_GA4_CONSENT_GRANTED__ = true;
-            } else if (/cookieyes-consent[^;]*analytics:no/.test(raw)) {
-              window.__LOG_GA4_CONSENT_GRANTED__ = false;
-            }
-          } catch (err) {}
-        }
-        checkStoredConsent();
 
         document.addEventListener('cookieyes_consent_update', function (event) {
           var detail = (event && event.detail) || {};
