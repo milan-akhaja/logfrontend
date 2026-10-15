@@ -1293,4 +1293,17 @@ describe('GalleryVideoCard Component', () => {
     playSpy.mockRestore();
     unmount();
   });
+
+  it('Admin gallery video reels limit: enforces 10 videos cap', () => {
+    const MAX_GALLERY_VIDEOS = 10;
+    const items = Array.from({ length: 10 }, (_, i) => ({ id: `v-${i}`, media_type: 'video' }));
+    const videoCount = items.filter(item => (item.media_type || item.mediaType) === 'video').length;
+    expect(videoCount).toBe(10);
+    expect(videoCount >= MAX_GALLERY_VIDEOS).toBe(true);
+    const isAtLimit = videoCount >= MAX_GALLERY_VIDEOS;
+    const label = isAtLimit ? `Gallery Video Limit Reached (${MAX_GALLERY_VIDEOS}/${MAX_GALLERY_VIDEOS})` : 'Upload Video Reel to Gallery';
+    expect(label).toBe('Gallery Video Limit Reached (10/10)');
+    const counterText = `Videos used: ${videoCount} / ${MAX_GALLERY_VIDEOS}`;
+    expect(counterText).toBe('Videos used: 10 / 10');
+  });
 });

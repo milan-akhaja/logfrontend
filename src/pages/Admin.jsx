@@ -768,6 +768,7 @@ export default function Admin({ onToast }) {
   const [videoReelLink, setVideoReelLink] = useState('');
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const videoCount = (galleryItems || []).filter(item => (item.media_type || item.mediaType) === 'video').length;
+  const MAX_GALLERY_VIDEOS = 10;
   const [contentBlocks, setContentBlocks] = useState(() => mergeContentBlocks(DEFAULT_CONTENT_BLOCKS));
   const [newInConfig, setNewInConfig] = useState({ tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
 
@@ -1218,8 +1219,8 @@ export default function Admin({ onToast }) {
       onToast('Please select an MP4 video reel to upload.');
       return;
     }
-    if (videoCount >= 6) {
-      onToast('Gallery video limit reached. Maximum 6 videos are allowed in the gallery.');
+    if (videoCount >= MAX_GALLERY_VIDEOS) {
+      onToast(`Gallery video limit reached. Maximum ${MAX_GALLERY_VIDEOS} videos are allowed in the gallery.`);
       return;
     }
     setIsUploadingVideo(true);
@@ -4114,10 +4115,10 @@ export default function Admin({ onToast }) {
                 fontWeight: '600',
                 padding: '4px 12px',
                 borderRadius: '12px',
-                background: videoCount >= 6 ? '#ffebee' : '#f0f4f8',
-                color: videoCount >= 6 ? '#c62828' : '#334e68'
+                background: videoCount >= MAX_GALLERY_VIDEOS ? '#ffebee' : '#f0f4f8',
+                color: videoCount >= MAX_GALLERY_VIDEOS ? '#c62828' : '#334e68'
               }}>
-                Videos used: {videoCount} / 6
+                Videos used: {videoCount} / {MAX_GALLERY_VIDEOS}
               </span>
             </div>
 
@@ -4206,7 +4207,7 @@ export default function Admin({ onToast }) {
                     type="file"
                     accept="video/mp4,.mp4"
                     onChange={(e) => setVideoReelFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
-                    disabled={isUploadingVideo || videoCount >= 6}
+                    disabled={isUploadingVideo || videoCount >= MAX_GALLERY_VIDEOS}
                     required
                     style={{ display: 'block', width: '100%' }}
                   />
@@ -4220,7 +4221,7 @@ export default function Admin({ onToast }) {
                     placeholder="e.g. Summer Reel 2026"
                     value={videoReelTitle}
                     onChange={(e) => setVideoReelTitle(e.target.value)}
-                    disabled={isUploadingVideo || videoCount >= 6}
+                    disabled={isUploadingVideo || videoCount >= MAX_GALLERY_VIDEOS}
                   />
                 </div>
 
@@ -4236,7 +4237,7 @@ export default function Admin({ onToast }) {
                       setVideoReelLink(val);
                       showSuggestions(val, 'videoLink');
                     }}
-                    disabled={isUploadingVideo || videoCount >= 6}
+                    disabled={isUploadingVideo || videoCount >= MAX_GALLERY_VIDEOS}
                   />
                   {/* Suggestions list popup */}
                   {suggestionField === 'videoLink' && suggestions.length > 0 && (
@@ -4266,12 +4267,12 @@ export default function Admin({ onToast }) {
               <button
                 type="submit"
                 className="btn btn-accent"
-                disabled={isUploadingVideo || videoCount >= 6 || !videoReelFile}
+                disabled={isUploadingVideo || videoCount >= MAX_GALLERY_VIDEOS || !videoReelFile}
               >
                 {isUploadingVideo
                   ? 'Capturing poster & uploading reel...'
-                  : videoCount >= 6
-                    ? 'Gallery Video Limit Reached (6/6)'
+                  : videoCount >= MAX_GALLERY_VIDEOS
+                    ? `Gallery Video Limit Reached (${MAX_GALLERY_VIDEOS}/${MAX_GALLERY_VIDEOS})`
                     : 'Upload Video Reel to Gallery'}
               </button>
             </form>
