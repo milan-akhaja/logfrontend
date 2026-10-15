@@ -91,11 +91,16 @@
       fbq('track', 'PageView');
 
       (function () {
+        var pageViewFiredOnGrant = metaGranted;
         function grantMeta() {
           if (metaGranted) return;
           metaGranted = true;
           window.__LOG_META_CONSENT_GRANTED__ = true;
           fbq('consent', 'grant');
+          if (!pageViewFiredOnGrant) {
+            fbq('track', 'PageView');
+            pageViewFiredOnGrant = true;
+          }
         }
 
         document.addEventListener('cookieyes_consent_update', function (event) {
