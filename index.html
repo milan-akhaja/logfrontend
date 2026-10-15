@@ -62,6 +62,27 @@
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
 
+      try {
+        (function() {
+          var currentSet = window.fbq.set;
+          Object.defineProperty(window.fbq, 'set', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return currentSet;
+            },
+            set: function(newSet) {
+              currentSet = typeof newSet === 'function' ? function(key, pixelId, rules) {
+                if (key === 'estRules') {
+                  return newSet.call(this, key, pixelId, []);
+                }
+                return newSet.apply(this, arguments);
+              } : newSet;
+            }
+          });
+        })();
+      } catch (err) {}
+
       // Consent gate. If the visitor already granted consent in a prior
       // session (stored in cookieyes-consent cookie), grant immediately so
       // events are not deadlocked in the queue. Only revoke when consent is
