@@ -1107,7 +1107,76 @@ describe('ConsentBanner and Consent Management', () => {
 
     unmount();
   });
+
+  it('renders 10% OFF on prepaid orders in payment options and Prepaid: 10% off label in CartDrawer', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const mockCart = [
+      { id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }
+    ];
+
+    // Mock fetch for /api/orders/quote
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, opts) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 240,
+            discountLabel: 'Prepaid: 10% off',
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: 2160,
+            paymentMethod: 'payu',
+            hasPreorder: false,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    // Initial cart drawer view: wait for quote to load and check label
+    await waitFor(() => {
+      expect(screen.getByText('Prepaid: 10% off')).toBeDefined();
+    });
+
+    // Proceed to checkout step
+    const proceedBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+    fireEvent.click(proceedBtn);
+
+    // Verify payment card text in checkout
+    await waitFor(() => {
+      expect(screen.getByText(/10% OFF on prepaid orders · Pay securely via GPay/i)).toBeDefined();
+    });
+
+    // Verify discount label in checkout order summary
+    expect(screen.getAllByText('Prepaid: 10% off').length).toBeGreaterThan(0);
+
+    window.fetch = originalFetch;
+    unmount();
+  });
 });
+
 
 
 
