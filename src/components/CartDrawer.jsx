@@ -838,8 +838,8 @@ export default function CartDrawer({
               <p className="checkout-policy-line">
                 {cartHasDrop
                   ? (isDropWindowClosed
-                    ? 'numbered drop: size exchange only within 7 days. no returns.'
-                    : 'pre-order: size exchange only within 7 days. no returns.')
+                    ? 'numbered drop: size exchange only within 7 days.'
+                    : 'pre-order: size exchange only within 7 days.')
                   : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
               </p>
 
