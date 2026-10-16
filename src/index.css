@@ -856,8 +856,10 @@ header.scrolled .bag-count {
   transition: var(--transition);
 }
 
-.product-card:hover .product-graphic {
-  transform: scale(1.08) rotate(2deg);
+@media (hover: hover) {
+  .product-card:hover .product-graphic {
+    transform: scale(1.08) rotate(2deg);
+  }
 }
 
 .graphic-logo {
@@ -4260,8 +4262,10 @@ footer {
   transition: opacity 220ms var(--ease-soft), transform 220ms var(--ease-soft);
 }
 
-.product-card:hover .card-slide-arrow {
-  opacity: 1;
+@media (hover: hover) {
+  .product-card:hover .card-slide-arrow {
+    opacity: 1;
+  }
 }
 
 .card-slide-arrow:hover {
@@ -4290,8 +4294,10 @@ footer {
   transition: opacity 220ms var(--ease-soft);
 }
 
-.product-card:hover .card-slide-dots {
-  opacity: 1;
+@media (hover: hover) {
+  .product-card:hover .card-slide-dots {
+    opacity: 1;
+  }
 }
 
 .slide-dot {
