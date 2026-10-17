@@ -5,7 +5,7 @@ import StoriesOverlay from './StoriesOverlay';
 import SearchOverlay from './SearchOverlay';
 import BurgerMenuOverlay from './BurgerMenuOverlay';
 
-const ANNOUNCEMENT_ITEMS = Array.from({ length: 8 });
+const ANNOUNCEMENT_ITEMS = Array.from({ length: 12 });
 
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
