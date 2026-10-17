@@ -338,6 +338,26 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     return product.sizes[size] !== undefined && Number(product.sizes[size]) > 0;
   };
 
+  const hasActivePreorderDiscount = Boolean(
+    isDrop &&
+    product.preorderPrice !== null &&
+    product.preorderPrice !== undefined &&
+    Number(product.preorderDiscount) > 0
+  );
+  const isRegularSoldOut = Boolean(
+    product.soldOut === true ||
+    (
+      product.sizes &&
+      typeof product.sizes === 'object' &&
+      !Array.isArray(product.sizes) &&
+      Object.keys(product.sizes).length > 0
+        ? Object.values(product.sizes).every(count => Number(count) <= 0)
+        : Number(product.stock || 0) <= 0
+    )
+  );
+  const isProductSoldOut = isDrop ? dropSoldOut : isRegularSoldOut;
+  const showPrepaidChip = !hasActivePreorderDiscount && !isProductSoldOut;
+
   const isChosenSoldOut = product.bogoOffer?.enabled
     ? Boolean((selectedSize && !isSizeAvailable(selectedSize)) || (selectedSecondSize && !isSizeAvailable(selectedSecondSize)))
     : Boolean(selectedSize && !isSizeAvailable(selectedSize));
@@ -463,6 +483,11 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   currentClassName="detail-product-price"
                   originalClassName="price-original detail-price-original"
                 />
+              )}
+              {showPrepaidChip && (
+                <div className="detail-prepaid-chip">
+                  10% OFF on prepaid
+                </div>
               )}
               {isDrop && Number(product.piecesTotal) > 0 && (
                 <div className="drop-claimed-count">
