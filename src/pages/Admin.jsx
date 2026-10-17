@@ -660,9 +660,16 @@ export default function Admin({ onToast }) {
     trackingUrl: ''
   });
   const [showProductModal, setShowProductModal] = useState(false);
+  const [productImageWarnings, setProductImageWarnings] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [savingProduct, setSavingProduct] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(0);
+
+  useEffect(() => {
+    if (!showProductModal) {
+      setProductImageWarnings([]);
+    }
+  }, [showProductModal]);
 
   // Product state
   const [newProduct, setNewProduct] = useState(loadProductDraft);
@@ -1352,6 +1359,40 @@ export default function Admin({ onToast }) {
     }
     return raw;
   };
+
+  const inspectImageDimensions = (file) => new Promise((resolve) => {
+    if (!file || !file.type?.startsWith('image/')) {
+      resolve(null);
+      return;
+    }
+    let objectUrl = '';
+    try {
+      objectUrl = URL.createObjectURL(file);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        URL.revokeObjectURL(objectUrl);
+      } catch {}
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      if (width && height) {
+        resolve({ width, height });
+      } else {
+        resolve(null);
+      }
+    };
+    img.onerror = () => {
+      try {
+        URL.revokeObjectURL(objectUrl);
+      } catch {}
+      resolve(null);
+    };
+    img.src = objectUrl;
+  });
 
   // Base64 file upload helper
   const handleDirectUpload = async (e, onUploadDone, { allowVideo = true } = {}) => {
@@ -5133,9 +5174,53 @@ export default function Admin({ onToast }) {
               {/* Product Images Manager */}
               <div className="admin-form-group">
                 <label className="admin-label">Product Images/Photos (Up to {PRODUCT_IMAGE_LIMIT} images)</label>
-                <p style={{ margin: '0 0 10px', color: 'var(--admin-text-muted)', fontSize: '12px' }}>
-                  Select one or many JPG, JPEG, PNG, WEBP, GIF, or AVIF files. Each file must be under {MAX_IMAGE_UPLOAD_MB}MB.
+                <p style={{ margin: '0 0 10px', color: 'var(--admin-text-muted)', fontSize: '12px', lineHeight: 1.5 }}>
+                  Recommended: 1200 × 1600 px (3:4 portrait). Subject ko beech me rakho, kinaron par thoda khali jagah chhodo kyunki mobile aur cards par kinare kat sakte hain. Max {MAX_IMAGE_UPLOAD_MB}MB per file (JPG, PNG, WEBP, AVIF).
                 </p>
+                {productImageWarnings.length > 0 && (
+                  <div
+                    className="admin-image-ratio-warnings"
+                    style={{
+                      background: '#FFFBEB',
+                      border: '1px solid #F59E0B',
+                      borderRadius: '6px',
+                      padding: '10px 14px',
+                      marginBottom: '12px',
+                      color: '#92400E',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {productImageWarnings.map((warn, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                            <span aria-hidden="true" style={{ fontSize: '14px' }}>⚠️</span>
+                            <span>{warn}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProductImageWarnings([])}
+                        title="Dismiss warning"
+                        aria-label="Dismiss warning"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#92400E',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          fontWeight: 'bold',
+                          lineHeight: '1',
+                          padding: '0 4px'
+                        }}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '10px' }}>
                   {(editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || []).map((url, idx) => (
                     <div key={idx} style={{ position: 'relative', border: '1px solid var(--admin-border)', borderRadius: '4px', overflow: 'hidden', height: '100px' }}>
@@ -5185,12 +5270,30 @@ export default function Admin({ onToast }) {
                         multiple
                         onChange={(e) => {
                           const currentList = editingProduct ? editingProduct.imageUrls || [] : newProduct.imageUrls || [];
-                          const selectedCount = e.target.files?.length || 0;
+                          const selectedFiles = Array.from(e.target.files || []);
+                          const selectedCount = selectedFiles.length;
                           if (currentList.length + selectedCount > PRODUCT_IMAGE_LIMIT) {
                             onToast(`You can add up to ${PRODUCT_IMAGE_LIMIT} product images. Remove some images or select fewer files.`);
                             e.target.value = '';
                             return;
                           }
+                          Promise.all(selectedFiles.map(async (file) => {
+                            try {
+                              const dims = await inspectImageDimensions(file);
+                              if (dims && dims.height > 0) {
+                                const ratio = dims.width / dims.height;
+                                if (ratio < 0.72 || ratio > 0.78) {
+                                  return `${file.name} is ${dims.width}×${dims.height} (ratio ${ratio.toFixed(2)}). Recommended: 3:4 (e.g. 1200×1600). Mobile gallery aur shop cards par photo kat sakti hai.`;
+                                }
+                              }
+                            } catch {}
+                            return null;
+                          })).then((results) => {
+                            const warnings = results.filter(Boolean);
+                            if (warnings.length > 0) {
+                              setProductImageWarnings(prev => [...prev, ...warnings]);
+                            }
+                          });
                           handleDirectUpload(e, (url) => {
                             if (editingProduct) {
                               setEditingProduct(prev => {
