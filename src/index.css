@@ -37,6 +37,13 @@
   --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
   --announcement-height: 30px;
   --announcement-height-mobile: 28px;
+  /* Top announcement strip marquee animation speeds:
+     Formula: duration = group width / target speed (px/s).
+     Desktop: ~4620px group width / ~70 px/s ≈ 65s (measured ~71.1 px/s, target: 60-80 px/s).
+     Mobile:  ~4081px group width / ~65 px/s ≈ 62s (measured ~65.8 px/s, target: 55-75 px/s).
+     Exposed as CSS variables so any future font or item count changes can be retuned without magic numbers. */
+  --announcement-duration: 65s;
+  --announcement-duration-mobile: 62s;
 
   /* Admin Palette */
   --admin-bg: #F4F6F8;
@@ -218,7 +225,7 @@ a {
   width: max-content;
   white-space: nowrap;
   will-change: transform;
-  animation: announcement-marquee 35s linear infinite;
+  animation: announcement-marquee var(--announcement-duration) linear infinite;
 }
 
 .announcement-group {
@@ -252,7 +259,7 @@ a {
   }
 
   .announcement-track {
-    animation-duration: 20s;
+    animation-duration: var(--announcement-duration-mobile);
   }
 
   .announcement-divider {
