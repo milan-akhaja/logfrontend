@@ -418,6 +418,26 @@ function GalleryScroller() {
 let cachedHeroConfig = null;
 let cachedCollections = null;
 
+// Per-slide object-position tuning (Fix 3):
+// Elevates model clothes/jeans/shoes above the bottom floating nav pill + "Shop now" button
+// while strictly protecting model heads/faces from being cropped at the top.
+const MOBILE_HERO_OBJECT_POSITIONS = {
+  'OCC06631': 'center 70%',
+  'OCC06684': 'center 62%',
+  'OCC06541': 'center 22%',
+  'OCC06606': 'center 65%',
+  'OCC06778': 'center 60%',
+  'DSC07904': 'center 65%'
+};
+
+export function getHeroObjectPosition(imageUrl) {
+  if (!imageUrl || typeof imageUrl !== 'string') return 'center 55%';
+  for (const [key, pos] of Object.entries(MOBILE_HERO_OBJECT_POSITIONS)) {
+    if (imageUrl.includes(key)) return pos;
+  }
+  return 'center 55%';
+}
+
 export default function Shop({ onAddToCart }) {
   // F25: mount one hero, not both. A hidden <img> still downloads its src.
   const isMobileViewport = useIsMobile();
@@ -793,20 +813,24 @@ export default function Shop({ onAddToCart }) {
             aria-label="logcloth streetwear mobile hero slideshow"
             {...heroSwipeHandlers('mobile', mobileHeroImages.length)}
           >
-            {mobileHeroImages.map((image, index) => (
-              <img
-                key={`${image}-${index}`}
-                src={mediaUrl(index === mobileHeroSlideIndex ? mobileImageUrl : image)}
-                srcSet={mediaSrcSet(index === mobileHeroSlideIndex ? mobileImageUrl : image)}
-                sizes="100vw"
-                onError={srcSetFallback}
-                alt=""
-                className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                decoding="async"
-                fetchpriority={index === 0 ? 'high' : 'auto'}
-              />
-            ))}
+            {mobileHeroImages.map((image, index) => {
+              const activeSrc = index === mobileHeroSlideIndex ? mobileImageUrl : image;
+              return (
+                <img
+                  key={`${image}-${index}`}
+                  src={mediaUrl(activeSrc)}
+                  srcSet={mediaSrcSet(activeSrc)}
+                  sizes="100vw"
+                  onError={srcSetFallback}
+                  alt=""
+                  className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
+                  style={{ objectPosition: getHeroObjectPosition(activeSrc) }}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  fetchpriority={index === 0 ? 'high' : 'auto'}
+                />
+              );
+            })}
           </div>
         ) : mobileHeroMediaType === 'image' ? (
           <img
@@ -816,6 +840,7 @@ export default function Shop({ onAddToCart }) {
             onError={srcSetFallback}
             alt="logcloth streetwear mobile hero"
             className="mobile-hero-image"
+            style={{ objectPosition: getHeroObjectPosition(mobileSingleImage) }}
             loading="eager"
             decoding="async"
             fetchpriority="high"
