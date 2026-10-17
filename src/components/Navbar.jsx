@@ -56,6 +56,24 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   return (
     <>
       <header className={`${scrolled ? 'scrolled' : ''} ${!isDarkPage ? 'transparent-inner-menu' : ''}`}>
+        <div className="top-announcement-strip" role="region" aria-label="Announcement">
+          <div className="announcement-content-desktop">
+            FREE SHIPPING · COD AVAILABLE ON ALL ORDERS
+          </div>
+          <div className="announcement-marquee-mobile">
+            <div className="announcement-track">
+              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+              <span className="announcement-divider" aria-hidden="true">·</span>
+              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+              <span className="announcement-divider" aria-hidden="true">·</span>
+              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+              <span className="announcement-divider" aria-hidden="true">·</span>
+              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+              <span className="announcement-divider" aria-hidden="true">·</span>
+            </div>
+          </div>
+        </div>
+
         <div className="nav-container nav-bluorng-style">
 
           {/* Left: uppercase links */}
