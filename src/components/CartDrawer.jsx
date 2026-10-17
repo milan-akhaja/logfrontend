@@ -754,7 +754,7 @@ export default function CartDrawer({
                           <span>Online Payment (PayU)</span>
                           <span style={{ fontSize: '9px', background: 'var(--ink)', color: '#FFFFFF', padding: '2px 7px', borderRadius: '3px', fontWeight: '800', letterSpacing: '0.05em' }}>UPI • CARDS • NETBANKING</span>
                         </span>
-                        <span className="checkout-payment-card-note">10% OFF on prepaid orders · Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
+                        <span className="checkout-payment-card-note">Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
                       </span>
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
@@ -920,7 +920,7 @@ export default function CartDrawer({
                 </div>
                 {discountAmount > 0 && (
                   <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                    <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Prepaid: 10% off')}</span>
+                    <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Discount')}</span>
                     <span className="cart-totals-val">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
@@ -1089,7 +1089,7 @@ export default function CartDrawer({
             </div>
             {discountAmount > 0 && (
               <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Prepaid: 10% off')}</span>
+                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Discount')}</span>
                 <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
               </div>
             )}

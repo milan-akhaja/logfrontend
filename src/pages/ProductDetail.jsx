@@ -614,29 +614,26 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
 
-            {/* PRODUCT OFFER & DROP FACTS CARDS (R11) */}
-            <div className="product-offer-cards-container">
-              {showOfferCard && (
+            {/* PRODUCT OFFER CARDS (OPTION A: PREPAID10 & FIRST5, NO DROP FACTS) */}
+            {showOfferCard && (
+              <div className="product-offer-cards-container">
                 <div className="product-offer-card product-offer-card-promo">
-                  <div className="product-offer-pill">NO PERMISSION 3.0 OFFER</div>
-                  <h3 className="product-offer-headline">UP TO 10% OFF</h3>
+                  <div className="product-offer-pill">PREPAID OFFER</div>
+                  <h3 className="product-offer-headline">10% OFF</h3>
                   <p className="product-offer-text">
-                    <span className="product-offer-highlight">10% OFF</span> on prepaid, or{' '}
-                    <span className="product-offer-highlight">5% OFF</span> on your first order. Pick one coupon at checkout. Prepaid orders only.
+                    Use code <span className="product-offer-highlight">PREPAID10</span> at checkout on prepaid orders.
                   </p>
                 </div>
-              )}
 
-              <div className="product-offer-card product-offer-card-facts">
-                <div className="product-offer-pill">NUMBERED DROP</div>
-                <h3 className="product-offer-headline">
-                  ONLY {Number(product.piecesTotal) || 40} PIECES PER DESIGN
-                </h3>
-                <p className="product-offer-text">
-                  ₹23 from every piece goes to LOG Fund.
-                </p>
+                <div className="product-offer-card product-offer-card-promo">
+                  <div className="product-offer-pill">FIRST ORDER</div>
+                  <h3 className="product-offer-headline">5% OFF</h3>
+                  <p className="product-offer-text">
+                    Use code <span className="product-offer-highlight">FIRST5</span> at checkout on your first prepaid order.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Tabbed Info Description */}
             <div className="detail-info-tabs-card">

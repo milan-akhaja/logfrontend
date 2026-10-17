@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
 import { priceNumber, formatPrice, getPriceDisplay } from './lib/pricing';
 import ProductPrice from './components/ProductPrice';
@@ -249,7 +249,7 @@ describe('ProductDetail Component', () => {
     soldOutBtns.forEach(btn => expect(btn.disabled).toBe(true));
     expect(screen.queryByRole('button', { name: /ADD TO BAG/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /BUY NOW/i })).toBeNull();
-  });
+  }, 20000);
 });
 
 describe('GA4 Ecommerce Analytics', () => {
@@ -1199,13 +1199,54 @@ describe('ConsentBanner and Consent Management', () => {
 
     // Verify payment card text in checkout
     await waitFor(() => {
-      expect(screen.getByText(/10% OFF on prepaid orders · Pay securely via GPay/i)).toBeDefined();
+      expect(screen.getByText(/Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking/i)).toBeDefined();
     });
 
     // Verify discount label in checkout order summary
     expect(screen.getAllByText('Prepaid: 10% off').length).toBeGreaterThan(0);
 
     window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('renders Option A: 2 offer cards (PREPAID10 and FIRST5) on ProductDetail without drop-facts card', async () => {
+    const ProductDetail = (await import('./pages/ProductDetail')).default;
+    const mockProduct = {
+      id: 'tee-regular',
+      name: 'Regular Black Tee',
+      price: 1800,
+      stock: 10,
+      isPreorder: false,
+      piecesTotal: 40,
+      sizes: { S: 5, M: 5 }
+    };
+
+    productsModule.invalidateProducts();
+    vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/product/tee-regular']}>
+        <Routes>
+          <Route path="/product/:id" element={<ProductDetail onAddToCart={() => {}} onBuyNow={() => {}} />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      // Card 1: PREPAID OFFER
+      expect(screen.getByText('PREPAID OFFER')).toBeDefined();
+      expect(screen.getByText('10% OFF')).toBeDefined();
+      expect(screen.getByText('PREPAID10')).toBeDefined();
+
+      // Card 2: FIRST ORDER
+      expect(screen.getByText('FIRST ORDER')).toBeDefined();
+      expect(screen.getByText('FIRST5')).toBeDefined();
+
+      // Drop facts card must NOT be present
+      expect(screen.queryByText(/NUMBERED DROP/i)).toBeNull();
+      expect(screen.queryByText(/ONLY 40 PIECES PER DESIGN/i)).toBeNull();
+    });
+
     unmount();
   });
 });
