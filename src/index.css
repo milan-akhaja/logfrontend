@@ -203,6 +203,7 @@ a {
 .top-announcement-strip {
   width: 100%;
   height: var(--announcement-height);
+  line-height: var(--announcement-height);
   background: var(--ink);
   color: var(--paper);
   font-family: inherit;
@@ -254,6 +255,7 @@ a {
 @media (max-width: 768px) {
   .top-announcement-strip {
     height: var(--announcement-height-mobile);
+    line-height: var(--announcement-height-mobile);
     font-size: 10px;
     letter-spacing: 0.1em;
   }
@@ -310,7 +312,8 @@ header {
   width: 100%;
   z-index: 1000;
   background: transparent;
-  transition: var(--transition);
+  /* Fix 2: Constrain transitions to visual properties only so header geometry/top never shifts on initial load */
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, -webkit-backdrop-filter 0.3s ease, backdrop-filter 0.3s ease;
 }
 
 header.scrolled {
@@ -6053,8 +6056,8 @@ header.scrolled .nav-action-icon-btn {
     position: relative;
     width: 100%;
     height: 100vh;
-    height: 100dvh;
-    /* dynamic viewport height */
+    height: 100svh;
+    /* Fix 2: 100svh (small viewport height) locks hero height on mobile, preventing jump when iOS address bar expands/contracts */
     background: #000;
     overflow: hidden;
   }
@@ -6979,3 +6982,17 @@ header.scrolled .nav-action-icon-btn {
     margin-top: calc(100px + var(--announcement-height-mobile)) !important;
   }
 }
+
+/* ── ROUTE LOADING FALLBACK / PRELOADER OVERLAY ─────────── */
+/* Fix 2: Keep preloader/loading fallbacks as fixed overlays so they never push header or page layout down */
+.route-loading-fallback {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100svh !important;
+  z-index: 9999 !important;
+  pointer-events: none;
+}
+
