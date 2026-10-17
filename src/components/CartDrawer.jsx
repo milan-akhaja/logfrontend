@@ -211,6 +211,7 @@ export default function CartDrawer({
   const [lastOrderSummary, setLastOrderSummary] = useState(null);
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
 
   // Scroll locking
   useEffect(() => {
@@ -256,10 +257,16 @@ export default function CartDrawer({
     const isDrop = dropIds.has(String(item.id)) || item.isPreorder === true;
     return isDrop && getItemPreorderPhase(item) === 'after';
   });
-  // Only trust the quote while it describes the exact cart and payment method on screen.
+  const isPreorderActive = cartHasDrop && !isDropWindowClosed;
+  const isCouponDisabled = paymentMethod === 'cod' || paymentMethod === 'founder_delivery' || isPreorderActive;
+  const hasValidPhone = String(customerInfo.phone || '').replace(/\D/g, '').length >= 10;
+
+  // Only trust the quote while it describes the exact cart, payment method, and coupon on screen.
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
+  const expectedCoupon = isCouponDisabled ? null : (selectedCoupon || null);
   const quoteMatchesCart = Boolean(quote)
     && String(quote.paymentMethod || '').trim().toLowerCase() === normalizedPaymentMethod
+    && (quote.couponCode || null) === expectedCoupon
     && quote.lines?.length === cart.length
     && quote.lines.every((line, index) => String(line.id) === String(cart[index]?.id) && line.quantity === cart[index]?.quantity);
   const useServerTotals = quoteMatchesCart;
@@ -309,7 +316,8 @@ export default function CartDrawer({
           })),
           paymentMethod,
           deliveryOption: paymentMethod === 'founder_delivery' ? 'founder_delivery' : 'standard',
-          customerInfo: { city: customerInfo.city }
+          customerInfo: { city: customerInfo.city, phone: customerInfo.phone },
+          couponCode: isCouponDisabled ? null : (selectedCoupon || null)
         })
       })
         .then((data) => {
@@ -317,12 +325,20 @@ export default function CartDrawer({
             setQuote(data);
             setQuoteError(false);
           } else {
+            if (data?.code === 'FIRST_ORDER_ONLY') {
+              onToast('This coupon is only valid on your first order.');
+              setSelectedCoupon(null);
+            }
             setQuote(null);
             setQuoteError(true);
           }
         })
         .catch((err) => {
           if (err?.name !== 'AbortError') {
+            if (err?.message?.includes('first order') || err?.code === 'FIRST_ORDER_ONLY') {
+              onToast('This coupon is only valid on your first order.');
+              setSelectedCoupon(null);
+            }
             setQuote(null);
             setQuoteError(true);
           }
@@ -332,11 +348,18 @@ export default function CartDrawer({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [isOpen, cart, paymentMethod, customerInfo.city, quoteRetry]);
+  }, [isOpen, cart, paymentMethod, customerInfo.city, customerInfo.phone, selectedCoupon, isCouponDisabled, quoteRetry]);
+
+  useEffect(() => {
+    if (isCouponDisabled && selectedCoupon) {
+      setSelectedCoupon(null);
+    }
+  }, [isCouponDisabled, selectedCoupon]);
 
   useEffect(() => {
     if (!isOpen) {
       setPaymentMethod('payu');
+      setSelectedCoupon(null);
     }
   }, [isOpen]);
 
@@ -558,7 +581,7 @@ export default function CartDrawer({
             items: orderItems,
             customerInfo: orderCustomerInfo,
             clientOrderId,
-            couponCode: null,
+            couponCode: isCouponDisabled ? null : (selectedCoupon || null),
             deliveryOption: orderCustomerInfo.deliveryOption,
             ...(cartHasDrop && wallOptIn ? { wallOptIn: true, wallDisplayName, wallCity } : {})
           })
@@ -764,6 +787,101 @@ export default function CartDrawer({
                     <p>{isDropWindowClosed ? 'numbered drop — your piece number is assigned when you place the order.' : 'pre-order — full payment now.'}</p>
                   </div>
                 )}
+              </div>
+
+              {/* COUPON / OFFER SELECTOR (R2, R3, R4, R12) */}
+              <div className="checkout-coupon-section">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <h4 style={{ margin: 0 }}>Offers & Coupons</h4>
+                  {selectedCoupon && (
+                    <button
+                      type="button"
+                      className="checkout-coupon-clear-btn"
+                      onClick={() => setSelectedCoupon(null)}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {isCouponDisabled && (
+                  <p className="checkout-coupon-disabled-note">
+                    {cartHasDrop && !isDropWindowClosed
+                      ? 'Coupons cannot be combined with drop pre-order discount.'
+                      : 'Coupon sirf prepaid orders par valid hai.'}
+                  </p>
+                )}
+
+                <div className={`checkout-coupon-options ${isCouponDisabled ? 'coupons-disabled' : ''}`}>
+                  {/* Option 0: No coupon */}
+                  <label className={`checkout-coupon-card ${!selectedCoupon ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
+                    <input
+                      type="radio"
+                      name="couponSelection"
+                      value="none"
+                      checked={!selectedCoupon}
+                      disabled={isCouponDisabled}
+                      onChange={() => setSelectedCoupon(null)}
+                    />
+                    <div className="checkout-coupon-card-content">
+                      <div className="checkout-coupon-card-title">No coupon</div>
+                      <div className="checkout-coupon-card-subtitle">Pay standard order total</div>
+                    </div>
+                  </label>
+
+                  {/* Option 1: PREPAID10 */}
+                  <label className={`checkout-coupon-card ${selectedCoupon === 'PREPAID10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
+                    <input
+                      type="radio"
+                      name="couponSelection"
+                      value="PREPAID10"
+                      checked={selectedCoupon === 'PREPAID10'}
+                      disabled={isCouponDisabled}
+                      onChange={() => {
+                        if (isCouponDisabled) return;
+                        setSelectedCoupon('PREPAID10');
+                      }}
+                    />
+                    <div className="checkout-coupon-card-content">
+                      <div className="checkout-coupon-card-header">
+                        <span className="checkout-coupon-code">PREPAID10</span>
+                        <span className="checkout-coupon-badge">10% OFF</span>
+                      </div>
+                      <div className="checkout-coupon-card-subtitle">10% OFF on prepaid orders</div>
+                    </div>
+                  </label>
+
+                  {/* Option 2: FIRST5 */}
+                  <label className={`checkout-coupon-card ${selectedCoupon === 'FIRST5' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
+                    <input
+                      type="radio"
+                      name="couponSelection"
+                      value="FIRST5"
+                      checked={selectedCoupon === 'FIRST5'}
+                      disabled={isCouponDisabled}
+                      onChange={() => {
+                        if (isCouponDisabled) return;
+                        if (!hasValidPhone) {
+                          onToast('Pehle phone number bharo');
+                        }
+                        setSelectedCoupon('FIRST5');
+                      }}
+                    />
+                    <div className="checkout-coupon-card-content">
+                      <div className="checkout-coupon-card-header">
+                        <span className="checkout-coupon-code">FIRST5</span>
+                        <span className="checkout-coupon-badge">5% OFF</span>
+                      </div>
+                      <div className="checkout-coupon-card-subtitle">
+                        {!hasValidPhone ? (
+                          <span className="coupon-phone-hint">Pehle phone number bharo</span>
+                        ) : (
+                          '5% OFF on first order'
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {cartHasDrop && (

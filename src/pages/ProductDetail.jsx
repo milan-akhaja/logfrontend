@@ -356,7 +356,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     )
   );
   const isProductSoldOut = isDrop ? dropSoldOut : isRegularSoldOut;
-  const showPrepaidChip = !hasActivePreorderDiscount && !isProductSoldOut;
+  const showOfferCard = !hasActivePreorderDiscount && !isProductSoldOut;
 
   const isChosenSoldOut = product.bogoOffer?.enabled
     ? Boolean((selectedSize && !isSizeAvailable(selectedSize)) || (selectedSecondSize && !isSizeAvailable(selectedSecondSize)))
@@ -483,11 +483,6 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                   currentClassName="detail-product-price"
                   originalClassName="price-original detail-price-original"
                 />
-              )}
-              {showPrepaidChip && (
-                <div className="detail-prepaid-chip">
-                  10% OFF on prepaid
-                </div>
               )}
               {isDrop && Number(product.piecesTotal) > 0 && (
                 <div className="drop-claimed-count">
@@ -618,6 +613,30 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 ? `${product.preorderPhase === 'after' ? 'numbered drop' : 'pre-order'}: size exchange only within 7 days.`
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
+
+            {/* PRODUCT OFFER & DROP FACTS CARDS (R11) */}
+            <div className="product-offer-cards-container">
+              {showOfferCard && (
+                <div className="product-offer-card product-offer-card-promo">
+                  <div className="product-offer-pill">NO PERMISSION 3.0 OFFER</div>
+                  <h3 className="product-offer-headline">UP TO 10% OFF</h3>
+                  <p className="product-offer-text">
+                    <span className="product-offer-highlight">10% OFF</span> on prepaid, or{' '}
+                    <span className="product-offer-highlight">5% OFF</span> on your first order. Pick one coupon at checkout. Prepaid orders only.
+                  </p>
+                </div>
+              )}
+
+              <div className="product-offer-card product-offer-card-facts">
+                <div className="product-offer-pill">NUMBERED DROP</div>
+                <h3 className="product-offer-headline">
+                  ONLY {Number(product.piecesTotal) || 40} PIECES PER DESIGN
+                </h3>
+                <p className="product-offer-text">
+                  ₹23 from every piece goes to LOG Fund.
+                </p>
+              </div>
+            </div>
 
             {/* Tabbed Info Description */}
             <div className="detail-info-tabs-card">

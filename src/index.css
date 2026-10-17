@@ -2254,6 +2254,136 @@ header.scrolled .bag-count {
   text-transform: none;
 }
 
+/* Coupon Picker Styles (R12) */
+.checkout-coupon-section {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.checkout-coupon-section h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 10px 0;
+  color: var(--ink);
+}
+
+.checkout-coupon-disabled-note {
+  font-size: 11px;
+  color: #c62828;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.checkout-coupon-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkout-coupon-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  transition: all 0.15s ease;
+}
+
+.checkout-coupon-card input {
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--ink);
+}
+
+.checkout-coupon-card.selected {
+  background: var(--ink);
+  color: #ffffff;
+  border-color: var(--ink);
+}
+
+.checkout-coupon-card.selected .checkout-coupon-code,
+.checkout-coupon-card.selected .checkout-coupon-title,
+.checkout-coupon-card.selected .checkout-coupon-subtitle {
+  color: #ffffff;
+}
+
+.checkout-coupon-card.selected .checkout-coupon-badge {
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.checkout-coupon-card.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  background: #f7f7f7;
+}
+
+.checkout-coupon-card-content {
+  flex: 1;
+}
+
+.checkout-coupon-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.checkout-coupon-code,
+.checkout-coupon-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.checkout-coupon-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--ink);
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+.checkout-coupon-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--grey);
+  margin-top: 2px;
+}
+
+.coupon-phone-hint {
+  color: #e65100;
+  font-weight: 600;
+}
+
+.checkout-coupon-clear-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--grey);
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.checkout-coupon-clear-btn:hover {
+  color: var(--ink);
+}
+
 .checkout-order-summary {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -5740,29 +5870,73 @@ header.scrolled .nav-action-icon-btn {
   font-size: 16px;
 }
 
-.detail-prepaid-chip {
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-  background: var(--grey-light);
-  color: var(--ink);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  margin-top: 6px;
-  margin-bottom: 2px;
+/* Product Page Offer Cards (R11) */
+.product-offer-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
 }
 
-@media (max-width: 767px) {
-  .detail-prepaid-chip {
-    font-size: 10px;
-    padding: 3px 8px;
-    margin-top: 4px;
+.product-offer-card {
+  background: var(--ink);
+  color: var(--paper);
+  border: 1px dashed rgba(245, 245, 240, 0.35);
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-offer-pill {
+  display: inline-block;
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+
+.product-offer-headline {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin: 0 0 8px 0;
+  line-height: 1.15;
+  color: var(--paper);
+}
+
+.product-offer-text {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.45;
+  margin: 0;
+  color: rgba(245, 245, 240, 0.85);
+}
+
+.product-offer-highlight {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .product-offer-headline {
+    font-size: 22px;
+  }
+  .product-offer-card {
+    padding: 16px 14px;
   }
 }
 

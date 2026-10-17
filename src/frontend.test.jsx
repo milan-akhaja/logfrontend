@@ -1340,3 +1340,114 @@ describe('GalleryVideoCard Component', () => {
     expect(counterText).toBe('Videos used: 10 / 10');
   });
 });
+
+describe('Coupon System Frontend Tests (KAAM 4)', () => {
+  it('R11: ProductDetail renders 2 offer cards and removes .detail-prepaid-chip', async () => {
+    const ProductDetail = (await import('./pages/ProductDetail')).default;
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const mockProduct = {
+      id: 'p-1',
+      name: 'NO PERMISSION TEE',
+      price: 2400,
+      stock: 10,
+      sizes: JSON.stringify({ S: 5, M: 5 }),
+      images: ['/img1.webp'],
+      piecesTotal: 40
+    };
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/products/')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockProduct) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <ProductDetail />
+      </MemoryRouter>
+    );
+
+    // Old chip must NOT exist
+    expect(container.querySelector('.detail-prepaid-chip')).toBeNull();
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('R3, R4, R12: CartDrawer renders coupon picker with No coupon, PREPAID10, and FIRST5', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const mockCart = [
+      { id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }
+    ];
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 0,
+            discountLabel: '',
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: 2400,
+            paymentMethod: 'payu',
+            couponCode: null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    // Go to checkout
+    const proceedBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+    fireEvent.click(proceedBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Offers & Coupons')).toBeDefined();
+      expect(screen.getByText('No coupon')).toBeDefined();
+      expect(screen.getByText('PREPAID10')).toBeDefined();
+      expect(screen.getByText('FIRST5')).toBeDefined();
+      expect(screen.getByText('Pehle phone number bharo')).toBeDefined();
+    });
+
+    // Select COD: coupons become disabled and note appears
+    const codCard = screen.getByText('Cash on Delivery (COD)');
+    fireEvent.click(codCard);
+
+    await waitFor(() => {
+      expect(screen.getByText('Coupon sirf prepaid orders par valid hai.')).toBeDefined();
+      const optionsContainer = container.querySelector('.checkout-coupon-options');
+      expect(optionsContainer.classList.contains('coupons-disabled')).toBe(true);
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+});
+
