@@ -205,23 +205,43 @@ a {
   text-transform: uppercase;
   display: flex;
   align-items: center;
-  justify-content: center;
   overflow: hidden;
   position: relative;
   z-index: 1001;
   box-sizing: border-box;
-}
-
-.top-announcement-strip .announcement-content-desktop {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
   user-select: none;
 }
 
-.top-announcement-strip .announcement-marquee-mobile {
-  display: none;
+.announcement-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  white-space: nowrap;
+  will-change: transform;
+  animation: announcement-marquee 35s linear infinite;
+}
+
+.announcement-group {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.announcement-item {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.announcement-divider {
+  padding: 0 16px;
+  opacity: 0.6;
+}
+
+@media (hover: hover) {
+  .top-announcement-strip:hover .announcement-track {
+    animation-play-state: paused;
+  }
 }
 
 @media (max-width: 768px) {
@@ -231,28 +251,12 @@ a {
     letter-spacing: 0.1em;
   }
 
-  .top-announcement-strip .announcement-content-desktop {
-    display: none;
-  }
-
-  .top-announcement-strip .announcement-marquee-mobile {
-    display: flex;
-    width: 100%;
-    overflow: hidden;
-    user-select: none;
-  }
-
   .announcement-track {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    will-change: transform;
-    animation: announcement-marquee 20s linear infinite;
+    animation-duration: 20s;
   }
 
   .announcement-divider {
-    padding: 0 16px;
-    opacity: 0.6;
+    padding: 0 14px;
   }
 }
 
@@ -266,11 +270,28 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .top-announcement-strip {
+    justify-content: center;
+  }
+
   .announcement-track {
     animation: none !important;
     transform: none !important;
     width: 100%;
     justify-content: center;
+  }
+
+  .announcement-group {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .announcement-group[aria-hidden="true"] {
+    display: none !important;
+  }
+
+  .announcement-group .announcement-item ~ * {
+    display: none !important;
   }
 }
 

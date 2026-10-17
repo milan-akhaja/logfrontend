@@ -5,6 +5,8 @@ import StoriesOverlay from './StoriesOverlay';
 import SearchOverlay from './SearchOverlay';
 import BurgerMenuOverlay from './BurgerMenuOverlay';
 
+const ANNOUNCEMENT_ITEMS = Array.from({ length: 8 });
+
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
   const isHome = location.pathname === '/';
@@ -57,19 +59,22 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
     <>
       <header className={`${scrolled ? 'scrolled' : ''} ${!isDarkPage ? 'transparent-inner-menu' : ''}`}>
         <div className="top-announcement-strip" role="region" aria-label="Announcement">
-          <div className="announcement-content-desktop">
-            FREE SHIPPING · COD AVAILABLE ON ALL ORDERS
-          </div>
-          <div className="announcement-marquee-mobile">
-            <div className="announcement-track">
-              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
-              <span className="announcement-divider" aria-hidden="true">·</span>
-              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
-              <span className="announcement-divider" aria-hidden="true">·</span>
-              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
-              <span className="announcement-divider" aria-hidden="true">·</span>
-              <span>FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
-              <span className="announcement-divider" aria-hidden="true">·</span>
+          <div className="announcement-track">
+            <div className="announcement-group">
+              {ANNOUNCEMENT_ITEMS.map((_, idx) => (
+                <React.Fragment key={idx}>
+                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+                  <span className="announcement-divider" aria-hidden="true">·</span>
+                </React.Fragment>
+              ))}
+            </div>
+            <div className="announcement-group" aria-hidden="true">
+              {ANNOUNCEMENT_ITEMS.map((_, idx) => (
+                <React.Fragment key={idx}>
+                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+                  <span className="announcement-divider" aria-hidden="true">·</span>
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
