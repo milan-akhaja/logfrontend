@@ -14,7 +14,7 @@ export default function FAQs() {
     },
     {
       q: "How long does shipping take and what does it cost?",
-      a: "Regular orders are dispatched within 15 days. Pre-order (numbered drop) pieces ship by the date shown on the product page and at checkout. Shipping is FREE on all orders across India. Standard transit time is 3 to 5 business days after dispatch."
+      a: "Regular orders are dispatched within 15 days. Pre-order (numbered drop) pieces ship once production is complete. Shipping is FREE on all orders across India. Standard transit time is 3 to 5 business days after dispatch."
     },
     {
       q: "Why wasn't the ₹23 donation refunded?",

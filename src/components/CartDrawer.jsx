@@ -793,57 +793,26 @@ export default function CartDrawer({
 
               {/* COUPON / OFFER SELECTOR (R2, R3, R4, R12) */}
               <div className="checkout-coupon-section">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <h4 style={{ margin: 0 }}>Offers & Coupons</h4>
-                  {selectedCoupon && (
-                    <button
-                      type="button"
-                      className="checkout-coupon-clear-btn"
-                      onClick={() => setSelectedCoupon(null)}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
+                <h4>Offers & Coupons</h4>
 
                 {isCouponDisabled && (
                   <p className="checkout-coupon-disabled-note">
                     {cartHasDrop && !isDropWindowClosed
                       ? 'Coupons cannot be combined with drop pre-order discount.'
-                      : 'Coupon sirf prepaid orders par valid hai.'}
+                      : 'Coupons are only valid on prepaid orders.'}
                   </p>
                 )}
 
                 <div className={`checkout-coupon-options ${isCouponDisabled ? 'coupons-disabled' : ''}`}>
-                  {/* Option 0: No coupon */}
-                  <label className={`checkout-coupon-card ${!selectedCoupon ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
-                    <input
-                      type="radio"
-                      name="couponSelection"
-                      value="none"
-                      checked={!selectedCoupon}
-                      disabled={isCouponDisabled}
-                      onChange={() => setSelectedCoupon(null)}
-                    />
-                    <div className="checkout-coupon-card-content">
-                      <div className="checkout-coupon-card-title">No coupon</div>
-                      <div className="checkout-coupon-card-subtitle">Pay standard order total</div>
-                    </div>
-                  </label>
-
-                  {/* Option 1: PREPAID10 */}
-                  <label className={`checkout-coupon-card ${selectedCoupon === 'PREPAID10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
-                    <input
-                      type="radio"
-                      name="couponSelection"
-                      value="PREPAID10"
-                      checked={selectedCoupon === 'PREPAID10'}
-                      disabled={isCouponDisabled}
-                      onChange={() => {
-                        if (isCouponDisabled) return;
-                        setSelectedCoupon('PREPAID10');
-                      }}
-                    />
+                  {/* PREPAID10 */}
+                  <div
+                    className={`checkout-coupon-card ${selectedCoupon === 'PREPAID10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
+                    data-coupon="PREPAID10"
+                    onClick={() => {
+                      if (isCouponDisabled || selectedCoupon === 'PREPAID10') return;
+                      setSelectedCoupon('PREPAID10');
+                    }}
+                  >
                     <div className="checkout-coupon-card-content">
                       <div className="checkout-coupon-card-header">
                         <span className="checkout-coupon-code">PREPAID10</span>
@@ -851,38 +820,112 @@ export default function CartDrawer({
                       </div>
                       <div className="checkout-coupon-card-subtitle">10% OFF on prepaid orders</div>
                     </div>
-                  </label>
+                    <div className="checkout-coupon-card-action">
+                      {selectedCoupon === 'PREPAID10' ? (
+                        <div className="checkout-coupon-applied-wrap">
+                          <button
+                            type="button"
+                            className="checkout-coupon-action-btn applied"
+                            disabled
+                          >
+                            APPLIED
+                          </button>
+                          <button
+                            type="button"
+                            className="checkout-coupon-remove-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCoupon(null);
+                            }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="checkout-coupon-action-btn"
+                          disabled={isCouponDisabled}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isCouponDisabled) return;
+                            setSelectedCoupon('PREPAID10');
+                          }}
+                        >
+                          APPLY
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                  {/* Option 2: FIRST5 */}
-                  <label className={`checkout-coupon-card ${selectedCoupon === 'FIRST5' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}>
-                    <input
-                      type="radio"
-                      name="couponSelection"
-                      value="FIRST5"
-                      checked={selectedCoupon === 'FIRST5'}
-                      disabled={isCouponDisabled}
-                      onChange={() => {
-                        if (isCouponDisabled) return;
-                        if (!hasValidPhone) {
-                          onToast('Pehle phone number bharo');
-                        }
-                        setSelectedCoupon('FIRST5');
-                      }}
-                    />
+                  {/* FIRST5 */}
+                  <div
+                    className={`checkout-coupon-card ${selectedCoupon === 'FIRST5' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
+                    data-coupon="FIRST5"
+                    onClick={() => {
+                      if (isCouponDisabled || selectedCoupon === 'FIRST5') return;
+                      if (!hasValidPhone) {
+                        onToast('Enter your phone number to apply FIRST5.');
+                      }
+                      setSelectedCoupon('FIRST5');
+                    }}
+                  >
                     <div className="checkout-coupon-card-content">
                       <div className="checkout-coupon-card-header">
                         <span className="checkout-coupon-code">FIRST5</span>
                         <span className="checkout-coupon-badge">5% OFF</span>
                       </div>
-                      <div className="checkout-coupon-card-subtitle">
-                        {!hasValidPhone ? (
-                          <span className="coupon-phone-hint">Pehle phone number bharo</span>
-                        ) : (
-                          '5% OFF on first order'
-                        )}
-                      </div>
+                      <div className="checkout-coupon-card-subtitle">5% OFF on first order</div>
+                      {selectedCoupon === 'FIRST5' && !hasValidPhone && (
+                        <div className="coupon-phone-hint">Enter phone number to activate</div>
+                      )}
                     </div>
-                  </label>
+                    <div className="checkout-coupon-card-action">
+                      {selectedCoupon === 'FIRST5' ? (
+                        <div className="checkout-coupon-applied-wrap">
+                          <button
+                            type="button"
+                            className={`checkout-coupon-action-btn ${hasValidPhone ? 'applied' : ''}`}
+                            disabled={hasValidPhone}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!hasValidPhone) {
+                                onToast('Enter your phone number to apply FIRST5.');
+                              }
+                            }}
+                          >
+                            {hasValidPhone ? 'APPLIED' : 'APPLY'}
+                          </button>
+                          <button
+                            type="button"
+                            className="checkout-coupon-remove-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCoupon(null);
+                            }}
+                          >
+                            REMOVE
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="checkout-coupon-action-btn"
+                          disabled={isCouponDisabled}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isCouponDisabled) return;
+                            if (!hasValidPhone) {
+                              onToast('Enter your phone number to apply FIRST5.');
+                            }
+                            setSelectedCoupon('FIRST5');
+                          }}
+                        >
+                          APPLY
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

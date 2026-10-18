@@ -17,7 +17,7 @@ export default function ShippingPolicy() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Dispatch Timeline</h2>
           <p>
-            Regular products are dispatched within 15 days of order confirmation and/or payment. Pre-order (numbered drop) pieces ship by the date shown on the product page and at checkout. Delivery after dispatch depends on courier company or postal authority norms.
+            Regular products are dispatched within 15 days of order confirmation and/or payment. Pre-order (numbered drop) pieces ship once production is complete. Delivery after dispatch depends on courier company or postal authority norms.
           </p>
         </section>
 

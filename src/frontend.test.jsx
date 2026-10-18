@@ -1472,10 +1472,11 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Offers & Coupons')).toBeDefined();
-      expect(screen.getByText('No coupon')).toBeDefined();
+      expect(screen.queryByText('No coupon')).toBeNull();
       expect(screen.getByText('PREPAID10')).toBeDefined();
       expect(screen.getByText('FIRST5')).toBeDefined();
-      expect(screen.getByText('Pehle phone number bharo')).toBeDefined();
+      expect(screen.getByText('5% OFF on first order')).toBeDefined();
+      expect(screen.queryByText('Pehle phone number bharo')).toBeNull();
     });
 
     // Select COD: coupons become disabled and note appears
@@ -1483,9 +1484,12 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     fireEvent.click(codCard);
 
     await waitFor(() => {
-      expect(screen.getByText('Coupon sirf prepaid orders par valid hai.')).toBeDefined();
+      expect(screen.getByText('Coupons are only valid on prepaid orders.')).toBeDefined();
       const optionsContainer = container.querySelector('.checkout-coupon-options');
       expect(optionsContainer.classList.contains('coupons-disabled')).toBe(true);
+      const applyButtons = screen.getAllByRole('button', { name: /^APPLY$/i });
+      expect(applyButtons.length).toBe(2);
+      applyButtons.forEach(btn => expect(btn.disabled).toBe(true));
     });
 
     window.fetch = originalFetch;
@@ -1527,6 +1531,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
     });
 
+    const onToast = vi.fn();
     const { container, unmount } = render(
       <MemoryRouter>
         <CartDrawer
@@ -1537,7 +1542,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
           onRemove={() => {}}
           onClearCart={() => {}}
           onPurchase={() => {}}
-          onToast={() => {}}
+          onToast={onToast}
         />
       </MemoryRouter>
     );
@@ -1557,27 +1562,38 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     });
 
     // Select FIRST5 while phone is empty
-    const first5Radio = container.querySelector('input[name="couponSelection"][value="FIRST5"]');
-    fireEvent.click(first5Radio);
-    expect(first5Radio.checked).toBe(true);
+    const first5Card = container.querySelector('.checkout-coupon-card[data-coupon="FIRST5"]');
+    const first5ApplyBtn = first5Card.querySelector('.checkout-coupon-action-btn');
+    fireEvent.click(first5ApplyBtn);
+
+    // Toast in English shown, hint displayed, button remains APPLY (does not claim APPLIED until valid phone)
+    expect(onToast).toHaveBeenCalledWith('Enter your phone number to apply FIRST5.');
+    expect(first5Card.classList.contains('selected')).toBe(true);
+    expect(first5Card.querySelector('.checkout-coupon-action-btn.applied')).toBeNull();
+    expect(first5Card.querySelector('.checkout-coupon-action-btn').textContent).toBe('APPLY');
+    expect(screen.getByText('Enter phone number to activate')).toBeDefined();
+    expect(screen.getByText('5% OFF on first order')).toBeDefined();
+    expect(screen.queryByText('Pehle phone number bharo')).toBeNull();
 
     // While phone is empty, quote request sends couponCode: null (not FIRST5)
     await waitFor(() => {
       const lastReq = quoteRequests[quoteRequests.length - 1];
       expect(lastReq.couponCode).toBeNull();
-      expect(screen.getByText('Pehle phone number bharo')).toBeDefined();
     });
 
     // Now fill a valid 10-digit phone number
     const phoneInput = container.querySelector('input[name="phone"]');
     fireEvent.change(phoneInput, { target: { value: '9876543210' } });
 
-    // Quote re-runs with couponCode: 'FIRST5' and updates totals to discounted amount
+    // Quote re-runs with couponCode: 'FIRST5' and updates totals to discounted amount; button flips to APPLIED; hint disappears
     await waitFor(() => {
       const lastReq = quoteRequests[quoteRequests.length - 1];
       expect(lastReq.couponCode).toBe('FIRST5');
       expect(lastReq.customerInfo.phone).toBe('9876543210');
       expect(screen.getByText('-₹120')).toBeDefined();
+      expect(first5Card.querySelector('.checkout-coupon-action-btn.applied')).toBeDefined();
+      expect(first5Card.querySelector('.checkout-coupon-action-btn').textContent).toBe('APPLIED');
+      expect(screen.queryByText('Enter phone number to activate')).toBeNull();
     });
 
     window.fetch = originalFetch;

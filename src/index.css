@@ -1166,8 +1166,9 @@ header.scrolled .bag-count {
 }
 
 .price-original {
-  font-size: 12px;
-  color: var(--grey-muted);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
   text-decoration: line-through;
 }
 
@@ -2286,9 +2287,10 @@ header.scrolled .bag-count {
 
 .checkout-coupon-card {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 10px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: #ffffff;
@@ -2296,14 +2298,6 @@ header.scrolled .bag-count {
   cursor: pointer;
   font-family: 'Montserrat', sans-serif;
   transition: all 0.15s ease;
-}
-
-.checkout-coupon-card input {
-  width: 16px;
-  min-height: 16px;
-  height: 16px;
-  margin-top: 2px;
-  accent-color: var(--ink);
 }
 
 .checkout-coupon-card.selected {
@@ -2331,12 +2325,12 @@ header.scrolled .bag-count {
 
 .checkout-coupon-card-content {
   flex: 1;
+  min-width: 0;
 }
 
 .checkout-coupon-card-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 6px;
 }
 
@@ -2366,22 +2360,78 @@ header.scrolled .bag-count {
 }
 
 .coupon-phone-hint {
-  color: #e65100;
+  font-size: 11px;
   font-weight: 600;
+  color: #ffb74d;
+  margin-top: 3px;
 }
 
-.checkout-coupon-clear-btn {
+.checkout-coupon-card-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checkout-coupon-applied-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.checkout-coupon-action-btn {
+  background: var(--ink);
+  color: #ffffff;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  padding: 6px 14px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.checkout-coupon-action-btn:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.checkout-coupon-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.checkout-coupon-action-btn.applied {
+  background: #ffffff;
+  color: var(--ink);
+  border-color: #ffffff;
+  opacity: 1 !important;
+  cursor: default;
+  font-weight: 800;
+}
+
+.checkout-coupon-remove-btn {
   background: none;
   border: none;
-  font-size: 11px;
-  font-weight: 700;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
   text-transform: uppercase;
-  color: var(--grey);
+  letter-spacing: 0.05em;
+  text-decoration: underline;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 2px 0;
+  transition: color 0.15s ease;
 }
-.checkout-coupon-clear-btn:hover {
-  color: var(--ink);
+
+.checkout-coupon-remove-btn:hover {
+  color: #ffffff;
 }
 
 .checkout-order-summary {
@@ -4247,6 +4297,13 @@ footer {
   margin-bottom: 12px;
 }
 
+.size-popup-prices .price-original {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: line-through;
+}
+
 .size-popup-desc {
   font-size: 13px;
   color: var(--grey-muted);
@@ -4793,6 +4850,11 @@ header.scrolled .nav-action-icon-btn {
 
   .price-current {
     font-size: 12px;
+  }
+
+  .price-original {
+    font-size: 12px;
+    font-weight: 500;
   }
 
   .add-to-bag-btn {
@@ -5870,7 +5932,10 @@ header.scrolled .nav-action-icon-btn {
 }
 
 .detail-price-original {
-  font-size: 16px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+  text-decoration: line-through;
 }
 
 /* Product Page Offer Cards (R11) */
@@ -6346,7 +6411,10 @@ header.scrolled .nav-action-icon-btn {
   }
 
   .price-original {
-    font-size: 9px !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: var(--accent) !important;
+    text-decoration: line-through;
   }
 
   /* Compact Add To Bag Button as circular bag icon on mobile */
@@ -6870,8 +6938,9 @@ header.scrolled .nav-action-icon-btn {
 
 .preorder-price-old {
   margin-right: 6px;
-  font-weight: 600;
-  color: var(--grey-muted);
+  font-size: inherit;
+  font-weight: inherit;
+  color: var(--accent);
   text-decoration: line-through;
 }
 

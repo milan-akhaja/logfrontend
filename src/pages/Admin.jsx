@@ -5175,7 +5175,7 @@ export default function Admin({ onToast }) {
               <div className="admin-form-group">
                 <label className="admin-label">Product Images/Photos (Up to {PRODUCT_IMAGE_LIMIT} images)</label>
                 <p style={{ margin: '0 0 10px', color: 'var(--admin-text-muted)', fontSize: '12px', lineHeight: 1.5 }}>
-                  Recommended: 1200 × 1600 px (3:4 portrait). Subject ko beech me rakho, kinaron par thoda khali jagah chhodo kyunki mobile aur cards par kinare kat sakte hain. Max {MAX_IMAGE_UPLOAD_MB}MB per file (JPG, PNG, WEBP, AVIF).
+                  Recommended: 1200 × 1600 px (3:4 portrait). Keep the subject centered with space around the edges, as mobile and shop cards may crop the edges. Max {MAX_IMAGE_UPLOAD_MB}MB per file (JPG, PNG, WEBP, AVIF).
                 </p>
                 {productImageWarnings.length > 0 && (
                   <div
@@ -5283,7 +5283,7 @@ export default function Admin({ onToast }) {
                               if (dims && dims.height > 0) {
                                 const ratio = dims.width / dims.height;
                                 if (ratio < 0.72 || ratio > 0.78) {
-                                  return `${file.name} is ${dims.width}×${dims.height} (ratio ${ratio.toFixed(2)}). Recommended: 3:4 (e.g. 1200×1600). Mobile gallery aur shop cards par photo kat sakti hai.`;
+                                  return `${file.name} is ${dims.width}×${dims.height} (ratio ${ratio.toFixed(2)}). Recommended: 3:4 (e.g. 1200×1600). Mobile gallery and shop cards may crop the photo.`;
                                 }
                               }
                             } catch {}
