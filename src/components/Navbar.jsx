@@ -76,7 +76,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
             <div className="announcement-group">
               {ANNOUNCEMENT_ITEMS.map((_, idx) => (
                 <React.Fragment key={idx}>
-                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)</span>
                   <span className="announcement-divider" aria-hidden="true">·</span>
                 </React.Fragment>
               ))}
@@ -84,7 +84,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
             <div className="announcement-group" aria-hidden="true">
               {ANNOUNCEMENT_ITEMS.map((_, idx) => (
                 <React.Fragment key={idx}>
-                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE ON ALL ORDERS</span>
+                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)</span>
                   <span className="announcement-divider" aria-hidden="true">·</span>
                 </React.Fragment>
               ))}

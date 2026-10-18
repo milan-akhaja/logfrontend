@@ -37,6 +37,16 @@ const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washe
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
 const DEFAULT_SHIPPING = "Free standard shipping across India. Standard orders are dispatched within 24-48 business hours and delivered within 3-5 business days. Easy exchanges and hassle-free returns within 7 days of delivery.";
 
+function isCodAdvanceOrder(order) {
+  if (!order) return false;
+  return Boolean(
+    Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0 ||
+    (order.paymentId && String(order.paymentId).startsWith('PAYU_COD_ADVANCE')) ||
+    order.paymentMethod === 'Cash on Delivery (advance paid)' ||
+    order.paymentMethod === 'COD (advance paid)'
+  );
+}
+
 const ADMIN_TABS = [
   ['dashboard', 'Analytics'],
   ['orders', 'Orders'],
@@ -3432,6 +3442,7 @@ export default function Admin({ onToast }) {
                   <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
+                    <th>Payment</th>
                     <th>Subtotal</th>
                     <th>Donation</th>
                     <th>Status</th>
@@ -3440,10 +3451,27 @@ export default function Admin({ onToast }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map(order => (
+                  {orders.map(order => {
+                    const isCodAdv = isCodAdvanceOrder(order);
+                    const advanceAmt = Number(order.advanceAmount ?? order.advance_amount ?? 0);
+                    const balDue = Number(order.balanceDue ?? order.balance_due ?? (Number(order.total || 0) - advanceAmt));
+                    return (
                     <tr key={order.id}>
                       <td><strong>{order.id}</strong></td>
                       <td>{order.customerInfo?.name} ({order.customerInfo?.email})</td>
+                      <td>
+                        {isCodAdv ? (
+                          <div>
+                            <span style={{ fontWeight: '700' }}>COD (advance paid)</span>
+                            <div style={{ fontSize: '11px', color: '#166534' }}>Advance received ₹{advanceAmt}</div>
+                            <div style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '2px' }}>
+                              Balance to collect on delivery ₹{balDue}
+                            </div>
+                          </div>
+                        ) : (
+                          <span>{order.paymentMethod || (order.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : order.paymentId === 'COD' ? 'Cash on Delivery' : order.paymentId || 'Pending')}</span>
+                        )}
+                      </td>
                       <td>₹{order.subtotal}</td>
                       <td>₹{order.donation || 23}</td>
                       <td>
@@ -3463,7 +3491,8 @@ export default function Admin({ onToast }) {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -4582,7 +4611,19 @@ export default function Admin({ onToast }) {
                 <div>Phone: {selectedOrder.customerInfo?.phone}</div>
                 <div>Date of Birth: {selectedOrder.customerInfo?.dob || 'Not provided'}</div>
                 <div>Address: {selectedOrder.customerInfo?.address}</div>
-                <div>Payment: {selectedOrder.paymentMethod || (selectedOrder.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : selectedOrder.paymentId === 'COD' ? 'Cash on Delivery' : selectedOrder.paymentId || 'Pending')}</div>
+                <div>
+                  Payment: {isCodAdvanceOrder(selectedOrder)
+                    ? 'COD (advance paid)'
+                    : (selectedOrder.paymentMethod || (selectedOrder.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : selectedOrder.paymentId === 'COD' ? 'Cash on Delivery' : selectedOrder.paymentId || 'Pending'))}
+                </div>
+                {isCodAdvanceOrder(selectedOrder) && (
+                  <div style={{ marginTop: '4px' }}>
+                    <div style={{ color: '#166534' }}>Advance received ₹{selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0}</div>
+                    <div style={{ fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '4px 8px', borderRadius: '4px', display: 'inline-block', marginTop: '2px' }}>
+                      Balance to collect on delivery ₹{selectedOrder.balanceDue ?? selectedOrder.balance_due ?? (Number(selectedOrder.total || 0) - Number(selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0))}
+                    </div>
+                  </div>
+                )}
                 <div>Delivery: {selectedOrder.deliveryMethod || selectedOrder.customerInfo?.deliveryMethod || 'Standard shipping'}</div>
               </div>
 
@@ -4619,6 +4660,18 @@ export default function Admin({ onToast }) {
                 <span>Grand Total:</span>
                 <span>₹{selectedOrder.total}</span>
               </div>
+              {isCodAdvanceOrder(selectedOrder) && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#166534' }}>
+                    <span>Advance received:</span>
+                    <span>₹{selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '800', color: '#b45309', background: '#fef3c7', padding: '6px 8px', borderRadius: '4px', marginTop: '4px' }}>
+                    <span>Balance to collect on delivery:</span>
+                    <span>₹{selectedOrder.balanceDue ?? selectedOrder.balance_due ?? (Number(selectedOrder.total || 0) - Number(selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0))}</span>
+                  </div>
+                </>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'green', fontWeight: '700' }}>
                 <span>Charity Donation (per-item math):</span>
                 <span>₹{selectedOrder.donation || (selectedOrder.items?.reduce((sum, item) => sum + item.quantity, 0) * 23) || 23}</span>
@@ -4629,6 +4682,16 @@ export default function Admin({ onToast }) {
                   <strong>Shipping / Delivery Partner</strong>
                   <span className={`admin-badge badge-${selectedOrder.status?.toLowerCase()}`}>{selectedOrder.status}</span>
                 </div>
+                {isCodAdvanceOrder(selectedOrder) ? (
+                  <div style={{ marginBottom: '12px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '13px' }}>
+                    <strong>COD Collect on Delivery (Shipping Label):</strong> <span style={{ fontWeight: '800', color: '#b45309' }}>₹{selectedOrder.balanceDue ?? selectedOrder.balance_due ?? (Number(selectedOrder.total || 0) - Number(selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0))}</span>
+                    <span style={{ marginLeft: '8px', fontSize: '12px', color: '#92400e' }}>(Advance received ₹{selectedOrder.advanceAmount ?? selectedOrder.advance_amount ?? 0})</span>
+                  </div>
+                ) : selectedOrder.paymentId === 'COD' || selectedOrder.paymentMethod === 'Cash on Delivery' ? (
+                  <div style={{ marginBottom: '12px', padding: '8px 12px', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '6px', fontSize: '13px' }}>
+                    <strong>COD Collect on Delivery (Shipping Label):</strong> <span style={{ fontWeight: '800', color: '#b45309' }}>₹{selectedOrder.total}</span>
+                  </div>
+                ) : null}
                 <div className="admin-form-row" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="admin-form-group" style={{ marginBottom: 0 }}>
                     <label className="admin-label">Delivery Partner</label>

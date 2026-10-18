@@ -2122,6 +2122,165 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
   }, 30000);
 });
 
+describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
+  beforeEach(async () => {
+    const { cleanup } = await import('@testing-library/react');
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+  });
 
+  afterEach(async () => {
+    const { cleanup } = await import('@testing-library/react');
+    cleanup();
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.restoreAllMocks();
+  });
 
+  it('Navbar top strip displays "FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)" in both desktop and mobile locations', async () => {
+    const Navbar = (await import('./components/Navbar')).default;
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
 
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <Navbar onCartOpen={() => {}} cartCount={0} />
+      </MemoryRouter>
+    );
+
+    const stripElements = screen.getAllByText('FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)');
+    expect(stripElements.length).toBeGreaterThan(0);
+    // Verify both marquee tracks render the new text
+    const groups = container.querySelectorAll('.announcement-group');
+    expect(groups.length).toBe(2);
+    groups.forEach((group) => {
+      expect(group.textContent).toContain('FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)');
+    });
+    expect(screen.queryByText(/COD AVAILABLE ON ALL ORDERS/i)).toBeNull();
+
+    unmount();
+  });
+
+  it('FAQs page renders ₹100 COD advance question and answer', async () => {
+    const FAQs = (await import('./pages/FAQs')).default;
+    const { render, screen, fireEvent } = await import('@testing-library/react');
+
+    const { unmount } = render(<FAQs />);
+
+    const questionButton = screen.getByRole('button', { name: /Why is there a ₹100 advance on Cash on Delivery\?/i });
+    expect(questionButton).toBeDefined();
+
+    // Click accordion item to expand answer
+    fireEvent.click(questionButton);
+
+    expect(screen.getByText('To confirm your order and avoid failed deliveries, we collect a ₹100 advance online. It is deducted from your total, and you pay the remaining balance on delivery.')).toBeDefined();
+
+    unmount();
+  });
+
+  it('ShippingPolicy renders the required Cash on Delivery confirmation advance paragraph', async () => {
+    const ShippingPolicy = (await import('./pages/ShippingPolicy')).default;
+    const { render, screen } = await import('@testing-library/react');
+
+    const { unmount } = render(<ShippingPolicy />);
+
+    expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+    expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
+    expect(screen.getByText(/The advance is not refunded if delivery is refused or the order is not accepted at the doorstep without a valid reason, because we bear the shipping cost\./i)).toBeDefined();
+
+    unmount();
+  });
+
+  it('RefundPolicy renders Cash on Delivery confirmation advance paragraph and non-contradictory cancellation terms', async () => {
+    const RefundPolicy = (await import('./pages/RefundPolicy')).default;
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <RefundPolicy />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Cash on Delivery Confirmation Advance')).toBeDefined();
+    expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
+    expect(screen.getByText(/The advance is refunded in full if you cancel before the order is dispatched/i)).toBeDefined();
+    // Verify contradiction was eliminated
+    expect(screen.queryByText(/you may reject the shipment at the doorstep where applicable/i)).toBeNull();
+
+    unmount();
+  });
+
+  it('Admin order list and detail modal show COD (advance paid), advance received, and highlighted balance to collect on delivery using balanceDue', async () => {
+    const Admin = (await import('./pages/Admin')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    sessionStorage.setItem('admin_token', 'test-token');
+    localStorage.setItem('log_admin_active_tab', 'orders');
+
+    const mockOrder = {
+      id: 'ord-cod-adv-99',
+      customerInfo: {
+        name: 'Sahaj Akhaja',
+        email: 'sahaj@example.com',
+        phone: '9876543210',
+        address: '42 Main St',
+        dob: '2000-01-01'
+      },
+      paymentId: 'PAYU_COD_ADVANCE_tx123',
+      paymentMethod: 'Cash on Delivery (advance paid)',
+      subtotal: 2400,
+      total: 2400,
+      donation: 23,
+      advanceAmount: 100,
+      balanceDue: 2300,
+      status: 'Pending',
+      date: new Date().toISOString(),
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/orders')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([mockOrder])
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([])
+      });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={() => {}} />
+      </MemoryRouter>
+    );
+
+    // Verify order in table
+    await waitFor(() => {
+      expect(screen.getByText('ord-cod-adv-99')).toBeDefined();
+      expect(screen.getByText('COD (advance paid)')).toBeDefined();
+      expect(screen.getByText('Advance received ₹100')).toBeDefined();
+      expect(screen.getByText('Balance to collect on delivery ₹2300')).toBeDefined();
+    });
+
+    // Open detail modal
+    const viewButton = screen.getByTitle('View Order Details');
+    fireEvent.click(viewButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Payment:\s*COD \(advance paid\)/i)).toBeDefined();
+      expect(screen.getByText('COD Collect on Delivery (Shipping Label):')).toBeDefined();
+      expect(screen.getAllByText('Balance to collect on delivery:').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('₹2300').length).toBeGreaterThan(0);
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+});

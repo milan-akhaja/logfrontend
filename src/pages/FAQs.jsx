@@ -17,6 +17,10 @@ export default function FAQs() {
       a: "Regular orders are dispatched within 15 days. Pre-order (numbered drop) pieces ship once production is complete. Shipping is FREE on all orders across India. Standard transit time is 3 to 5 business days after dispatch."
     },
     {
+      q: "Why is there a ₹100 advance on Cash on Delivery?",
+      a: "To confirm your order and avoid failed deliveries, we collect a ₹100 advance online. It is deducted from your total, and you pay the remaining balance on delivery."
+    },
+    {
       q: "Why wasn't the ₹23 donation refunded?",
       a: "For refunds you request, ₹23 per product is deducted — it goes to the LOG Fund. If the fault is ours (a defective item, the wrong item or size sent, or a pre-order piece that sold out before your payment reached us), you get a full refund with nothing deducted."
     },
