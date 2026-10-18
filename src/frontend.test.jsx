@@ -15,6 +15,7 @@ import ProductDetail from './pages/ProductDetail';
 import * as productsModule from './lib/products';
 import { ProductGridCard } from './pages/Shop';
 import Admin from './pages/Admin';
+import Navbar from './components/Navbar';
 
 describe('Pricing Helper Functions', () => {
   it('priceNumber parses string values correctly', () => {
@@ -1583,5 +1584,40 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     unmount();
   });
 });
+
+describe('Mobile Bottom Bar Back Button', () => {
+  it('back button absent on "/", present on a product page; with no history it navigates to "/"', () => {
+    // 1. Back button absent on "/"
+    const { unmount: unmountHome } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <Navbar onCartOpen={() => {}} cartCount={0} />
+      </MemoryRouter>
+    );
+    expect(screen.queryByRole('button', { name: /go back/i })).toBeNull();
+    unmountHome();
+
+    // 2. Present on a product page; with no history it navigates to "/"
+    const { unmount: unmountProduct } = render(
+      <MemoryRouter initialEntries={['/product/product-1790864126824']}>
+        <Routes>
+          <Route
+            path="/product/:id"
+            element={<Navbar onCartOpen={() => {}} cartCount={0} />}
+          />
+          <Route path="/" element={<div data-testid="home-page">Home Page Content</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const backBtn = screen.getByRole('button', { name: /go back/i });
+    expect(backBtn).toBeDefined();
+
+    fireEvent.click(backBtn);
+
+    expect(screen.getByTestId('home-page')).toBeDefined();
+    unmountProduct();
+  });
+});
+
 
 

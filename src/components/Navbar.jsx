@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Menu, Compass, ShoppingBag } from 'lucide-react';
 import StoriesOverlay from './StoriesOverlay';
 import SearchOverlay from './SearchOverlay';
@@ -9,6 +9,7 @@ const ANNOUNCEMENT_ITEMS = Array.from({ length: 12 });
 
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isHome = location.pathname === '/';
   const cleanPath = location.pathname.toLowerCase().replace(/\/+$/, '');
   const isDarkPage = isHome || 
@@ -22,6 +23,18 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
 
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showBottomNav, setShowBottomNav] = useState(true);
+
+  const handleBack = () => {
+    const hasInAppHistory = typeof window !== 'undefined' && (
+      (typeof window.history?.state?.idx === 'number' && window.history.state.idx > 0) ||
+      (Boolean(location.key) && location.key !== 'default')
+    );
+    if (hasInAppHistory) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -155,6 +168,29 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
       {/* Floating Bottom Nav for Mobile Only */}
       <div className={`mobile-bottom-navbar mobile-only ${showBottomNav ? 'visible' : 'hidden'}`}>
         <div className="mobile-bottom-nav-inner">
+          {!isHome && (
+            <button
+              type="button"
+              className="mobile-bottom-nav-btn mobile-bottom-back-btn"
+              onClick={handleBack}
+              title="Go back"
+              aria-label="Go back"
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
           <Link to="/shop" className="mobile-bottom-nav-btn" title="All Products" aria-label="All products">
             <Compass size={22} />
           </Link>

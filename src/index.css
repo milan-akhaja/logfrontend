@@ -5546,6 +5546,9 @@ header.scrolled .nav-action-icon-btn {
   justify-content: center;
   transition: transform 0.2s ease;
   padding: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .mobile-bottom-nav-btn:active {
