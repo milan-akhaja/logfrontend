@@ -418,6 +418,10 @@ function GalleryScroller() {
 let cachedHeroConfig = null;
 let cachedCollections = null;
 
+export function resetCachedHeroConfig() {
+  cachedHeroConfig = null;
+}
+
 // Per-slide object-position tuning (Fix 3):
 // Elevates model clothes/jeans/shoes above the bottom floating nav pill + "Shop now" button
 // while strictly protecting model heads/faces from being cropped at the top.
@@ -463,11 +467,11 @@ export default function Shop({ onAddToCart }) {
     isHorizontal: false
   });
   const [heroConfig, setHeroConfig] = useState(() => cachedHeroConfig || ({
-    tagline: 'New Season Drop',
-    title: 'Wear\nSome\nthing\nReal.',
-    desc: 'Streetwear built for India. Minimal by choice, meaningful by design. Every product you buy puts ₹23 into the hands of someone who needs it more.',
+    tagline: '',
+    title: '',
+    desc: '',
     desktopMediaType: 'image',
-    bgImage: 'assets/hero_streetwear.webp',
+    bgImage: '',
     desktopVideoUrl: '',
     desktopSlides: [],
     desktopSlideIntervalMs: 5000,
@@ -475,12 +479,13 @@ export default function Shop({ onAddToCart }) {
     mobileImageUrl: '',
     mobileSlides: [],
     mobileSlideIntervalMs: 5000,
-    button1Text: 'Shop the Drop',
+    button1Text: '',
     button1Link: '#shop-catalog',
-    button2Text: 'Our Mission',
+    button2Text: '',
     button2Link: '/our-mission',
     mobileVideoUrl: ''
   }));
+  const [isHeroLoaded, setIsHeroLoaded] = useState(() => Boolean(cachedHeroConfig));
 
   // Filtering states from URL query
   const [filter, setFilter] = useState('all');
@@ -500,9 +505,13 @@ export default function Shop({ onAddToCart }) {
         if (heroConfigData) {
           cachedHeroConfig = heroConfigData;
           setHeroConfig(heroConfigData);
+          setIsHeroLoaded(true);
         }
       })
-      .catch(err => console.error('Error fetching hero config:', err));
+      .catch(err => {
+        console.error('Error fetching hero config:', err);
+        setIsHeroLoaded(true);
+      });
 
     Promise.all([
       getProducts(),
@@ -756,120 +765,130 @@ export default function Shop({ onAddToCart }) {
     <>
       {/* PC HERO SECTION */}
       {!isMobileViewport && (
-      <section className="hero-section pc-only">
-        {desktopHeroMediaType === 'video' && desktopVideoUrl ? (
-          <video
-            className="hero-bg-image hero-bg-video"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster={mediaUrl(heroConfig.bgImage)}
-          >
-            <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
-          </video>
-        ) : desktopHeroMediaType === 'slideshow' ? (
-          <div
-            className="hero-slideshow"
-            aria-label="logcloth streetwear background slideshow"
-            {...heroSwipeHandlers('desktop', desktopHeroImages.length)}
-          >
-            {desktopHeroImages.map((image, index) => (
-              <img
-                key={`${image}-${index}`}
-                src={mediaUrl(image)}
-                srcSet={mediaSrcSet(image)}
-                sizes="100vw"
-                onError={srcSetFallback}
-                alt=""
-                className={`hero-bg-image hero-slideshow-image ${index === desktopHeroSlideIndex ? 'active' : ''}`}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                decoding="async"
-                fetchpriority={index === 0 ? 'high' : 'auto'}
-              />
-            ))}
-          </div>
-        ) : (
-          <img src={mediaUrl(desktopSingleImage)} srcSet={mediaSrcSet(desktopSingleImage)} sizes="100vw" onError={srcSetFallback} alt="logcloth streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+      <section className="hero-section pc-only" style={!isHeroLoaded ? { background: 'var(--paper)' } : undefined}>
+        {isHeroLoaded && (
+          <>
+            {desktopHeroMediaType === 'video' && desktopVideoUrl ? (
+              <video
+                className="hero-bg-image hero-bg-video"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                poster={mediaUrl(heroConfig.bgImage)}
+              >
+                <source src={mediaUrl(desktopVideoUrl)} type="video/mp4" />
+              </video>
+            ) : desktopHeroMediaType === 'slideshow' ? (
+              <div
+                className="hero-slideshow"
+                aria-label="logcloth streetwear background slideshow"
+                {...heroSwipeHandlers('desktop', desktopHeroImages.length)}
+              >
+                {desktopHeroImages.map((image, index) => (
+                  <img
+                    key={`${image}-${index}`}
+                    src={mediaUrl(image)}
+                    srcSet={mediaSrcSet(image)}
+                    sizes="100vw"
+                    onError={srcSetFallback}
+                    alt=""
+                    className={`hero-bg-image hero-slideshow-image ${index === desktopHeroSlideIndex ? 'active' : ''}`}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    fetchpriority={index === 0 ? 'high' : 'auto'}
+                  />
+                ))}
+              </div>
+            ) : desktopSingleImage ? (
+              <img src={mediaUrl(desktopSingleImage)} srcSet={mediaSrcSet(desktopSingleImage)} sizes="100vw" onError={srcSetFallback} alt="logcloth streetwear background" className="hero-bg-image" loading="eager" decoding="async" fetchpriority="high" />
+            ) : null}
+            <div className="hero-overlay"></div>
+            <a
+              href={appPath(heroShopLink)}
+              className="hero-shop-now"
+              onClick={() => trackHeroShopNow('Desktop')}
+            >
+              Shop now
+            </a>
+          </>
         )}
-        <div className="hero-overlay"></div>
-        <a
-          href={appPath(heroShopLink)}
-          className="hero-shop-now"
-          onClick={() => trackHeroShopNow('Desktop')}
-        >
-          Shop now
-        </a>
       </section>
       )}
 
       {/* MOBILE HERO SECTION */}
       {isMobileViewport && (
-      <section className="mobile-hero-video mobile-only">
-        {mobileHeroMediaType === 'slideshow' ? (
-          <div
-            className="mobile-hero-slideshow"
-            aria-label="logcloth streetwear mobile hero slideshow"
-            {...heroSwipeHandlers('mobile', mobileHeroImages.length)}
-          >
-            {mobileHeroImages.map((image, index) => {
-              const activeSrc = index === mobileHeroSlideIndex ? mobileImageUrl : image;
-              return (
+      <section className="mobile-hero-video mobile-only" style={!isHeroLoaded ? { background: 'var(--paper)' } : undefined}>
+        {isHeroLoaded && (
+          <>
+            {mobileHeroMediaType === 'slideshow' ? (
+              <div
+                className="mobile-hero-slideshow"
+                aria-label="logcloth streetwear mobile hero slideshow"
+                {...heroSwipeHandlers('mobile', mobileHeroImages.length)}
+              >
+                {mobileHeroImages.map((image, index) => {
+                  const activeSrc = index === mobileHeroSlideIndex ? mobileImageUrl : image;
+                  return (
+                    <img
+                      key={`${image}-${index}`}
+                      src={mediaUrl(activeSrc)}
+                      srcSet={mediaSrcSet(activeSrc)}
+                      sizes="100vw"
+                      onError={srcSetFallback}
+                      alt=""
+                      className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
+                      style={{ objectPosition: getHeroObjectPosition(activeSrc) }}
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      fetchpriority={index === 0 ? 'high' : 'auto'}
+                    />
+                  );
+                })}
+              </div>
+            ) : mobileHeroMediaType === 'image' ? (
+              mobileSingleImage ? (
                 <img
-                  key={`${image}-${index}`}
-                  src={mediaUrl(activeSrc)}
-                  srcSet={mediaSrcSet(activeSrc)}
+                  src={mediaUrl(mobileSingleImage)}
+                  srcSet={mediaSrcSet(mobileSingleImage)}
                   sizes="100vw"
                   onError={srcSetFallback}
-                  alt=""
-                  className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
-                  style={{ objectPosition: getHeroObjectPosition(activeSrc) }}
-                  loading={index === 0 ? 'eager' : 'lazy'}
+                  alt="logcloth streetwear mobile hero"
+                  className="mobile-hero-image"
+                  style={{ objectPosition: getHeroObjectPosition(mobileSingleImage) }}
+                  loading="eager"
                   decoding="async"
-                  fetchpriority={index === 0 ? 'high' : 'auto'}
+                  fetchpriority="high"
                 />
-              );
-            })}
-          </div>
-        ) : mobileHeroMediaType === 'image' ? (
-          <img
-            src={mediaUrl(mobileSingleImage)}
-            srcSet={mediaSrcSet(mobileSingleImage)}
-            sizes="100vw"
-            onError={srcSetFallback}
-            alt="logcloth streetwear mobile hero"
-            className="mobile-hero-image"
-            style={{ objectPosition: getHeroObjectPosition(mobileSingleImage) }}
-            loading="eager"
-            decoding="async"
-            fetchpriority="high"
-          />
-        ) : mobileVideoSrc && (
-          <video
-            ref={mobileHeroVideoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            controls={false}
-            poster={mediaUrl(heroConfig.bgImage)}
-            onError={() => {
-              setMobileVideoSrc('');
-            }}
-          >
-            <source src={mediaUrl(mobileVideoSrc)} type="video/mp4" />
-          </video>
+              ) : null
+            ) : mobileVideoSrc && (
+              <video
+                ref={mobileHeroVideoRef}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                controls={false}
+                poster={mediaUrl(heroConfig.bgImage)}
+                onError={() => {
+                  setMobileVideoSrc('');
+                }}
+              >
+                <source src={mediaUrl(mobileVideoSrc)} type="video/mp4" />
+              </video>
+            )}
+            <div className="mobile-hero-shop-now">
+              <a
+                href={appPath(heroShopLink)}
+                onClick={() => trackHeroShopNow('Mobile')}
+              >
+                Shop now
+              </a>
+            </div>
+          </>
         )}
-        <div className="mobile-hero-shop-now">
-          <a
-            href={appPath(heroShopLink)}
-            onClick={() => trackHeroShopNow('Mobile')}
-          >
-            Shop now
-          </a>
-        </div>
       </section>
       )}
 

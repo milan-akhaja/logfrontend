@@ -1635,5 +1635,85 @@ describe('Mobile Bottom Bar Back Button', () => {
   });
 });
 
+describe('Shop Hero Section Loading', () => {
+  it('before the fetch resolves, no <img> with src containing "hero_streetwear" is in the DOM; after it resolves, the configured slide images render', async () => {
+    const { default: Shop, resetCachedHeroConfig } = await import('./pages/Shop');
+    const { render, screen, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    resetCachedHeroConfig();
+
+    let resolveHeroConfig;
+    const heroPromise = new Promise((resolve) => {
+      resolveHeroConfig = resolve;
+    });
+
+    const mockHeroData = {
+      tagline: 'Autumn Streetwear',
+      title: 'Real Minimal Design',
+      desc: 'Exclusive drop.',
+      desktopMediaType: 'slideshow',
+      desktopSlides: ['assets/configured_slide_1.webp', 'assets/configured_slide_2.webp'],
+      desktopSlideIntervalMs: 5000,
+      mobileMediaType: 'slideshow',
+      mobileSlides: ['assets/configured_mobile_1.webp', 'assets/configured_mobile_2.webp'],
+      mobileSlideIntervalMs: 5000,
+      button1Text: 'Shop Now',
+      button1Link: '#shop-catalog'
+    };
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/hero-config')) {
+        return heroPromise.then((data) => ({
+          ok: true,
+          json: () => Promise.resolve(data)
+        }));
+      }
+      if (typeof url === 'string' && url.includes('/api/collections')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      if (typeof url === 'string' && url.includes('/api/products')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <Shop onAddToCart={() => {}} />
+      </MemoryRouter>
+    );
+
+    // 1. Before the fetch resolves:
+    // No <img> with src containing "hero_streetwear" is in the DOM
+    const allImages = container.querySelectorAll('img');
+    const streetwearImages = Array.from(allImages).filter((img) =>
+      img.src && img.src.includes('hero_streetwear')
+    );
+    expect(streetwearImages.length).toBe(0);
+
+    // Hero section renders plain neutral background with no images or marketing text
+    const heroSection = container.querySelector('.hero-section, .mobile-hero-video');
+    expect(heroSection).not.toBeNull();
+    expect(heroSection.querySelectorAll('img').length).toBe(0);
+    expect(heroSection.textContent.trim()).toBe('');
+
+    // 2. Resolve the hero-config fetch
+    resolveHeroConfig(mockHeroData);
+
+    // 3. After resolution, configured slide images render
+    await waitFor(() => {
+      const heroImgs = container.querySelectorAll('.hero-slideshow-image, .mobile-hero-slide');
+      expect(heroImgs.length).toBeGreaterThan(0);
+      const sources = Array.from(heroImgs).map((img) => img.getAttribute('src'));
+      expect(sources.some((src) => src && src.includes('configured_slide_1.webp'))).toBe(true);
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+});
+
 
 
