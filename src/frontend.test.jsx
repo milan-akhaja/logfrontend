@@ -1490,5 +1490,98 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     window.fetch = originalFetch;
     unmount();
   });
+
+  it('selecting FIRST5 with invalid phone sends couponCode: null and keeps standard total until valid 10-digit phone is entered', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const mockCart = [
+      { id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }
+    ];
+
+    const quoteRequests = [];
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        quoteRequests.push(body);
+        const hasCoupon = body.couponCode === 'FIRST5';
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: hasCoupon ? 120 : 0,
+            discountLabel: hasCoupon ? 'First order: 5% off' : '',
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: hasCoupon ? 2280 : 2400,
+            paymentMethod: body.paymentMethod || 'payu',
+            couponCode: hasCoupon ? 'FIRST5' : null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    // Proceed to checkout form
+    const proceedBtn = screen.getByRole('button', { name: /Proceed to Checkout/i });
+    fireEvent.click(proceedBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Offers & Coupons')).toBeDefined();
+    });
+
+    // Initial quote had couponCode: null
+    await waitFor(() => {
+      expect(quoteRequests.length).toBeGreaterThan(0);
+      expect(quoteRequests[0].couponCode).toBeNull();
+    });
+
+    // Select FIRST5 while phone is empty
+    const first5Radio = container.querySelector('input[name="couponSelection"][value="FIRST5"]');
+    fireEvent.click(first5Radio);
+    expect(first5Radio.checked).toBe(true);
+
+    // While phone is empty, quote request sends couponCode: null (not FIRST5)
+    await waitFor(() => {
+      const lastReq = quoteRequests[quoteRequests.length - 1];
+      expect(lastReq.couponCode).toBeNull();
+      expect(screen.getByText('Pehle phone number bharo')).toBeDefined();
+    });
+
+    // Now fill a valid 10-digit phone number
+    const phoneInput = container.querySelector('input[name="phone"]');
+    fireEvent.change(phoneInput, { target: { value: '9876543210' } });
+
+    // Quote re-runs with couponCode: 'FIRST5' and updates totals to discounted amount
+    await waitFor(() => {
+      const lastReq = quoteRequests[quoteRequests.length - 1];
+      expect(lastReq.couponCode).toBe('FIRST5');
+      expect(lastReq.customerInfo.phone).toBe('9876543210');
+      expect(screen.getByText('-₹120')).toBeDefined();
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
 });
+
 

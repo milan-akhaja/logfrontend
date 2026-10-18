@@ -263,7 +263,9 @@ export default function CartDrawer({
 
   // Only trust the quote while it describes the exact cart, payment method, and coupon on screen.
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
-  const expectedCoupon = isCouponDisabled ? null : (selectedCoupon || null);
+  const expectedCoupon = isCouponDisabled || (selectedCoupon === 'FIRST5' && !hasValidPhone)
+    ? null
+    : (selectedCoupon || null);
   const quoteMatchesCart = Boolean(quote)
     && String(quote.paymentMethod || '').trim().toLowerCase() === normalizedPaymentMethod
     && (quote.couponCode || null) === expectedCoupon
@@ -317,7 +319,7 @@ export default function CartDrawer({
           paymentMethod,
           deliveryOption: paymentMethod === 'founder_delivery' ? 'founder_delivery' : 'standard',
           customerInfo: { city: customerInfo.city, phone: customerInfo.phone },
-          couponCode: isCouponDisabled ? null : (selectedCoupon || null)
+          couponCode: expectedCoupon
         })
       })
         .then((data) => {
@@ -348,7 +350,7 @@ export default function CartDrawer({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [isOpen, cart, paymentMethod, customerInfo.city, customerInfo.phone, selectedCoupon, isCouponDisabled, quoteRetry]);
+  }, [isOpen, cart, paymentMethod, customerInfo.city, customerInfo.phone, selectedCoupon, isCouponDisabled, hasValidPhone, quoteRetry]);
 
   useEffect(() => {
     if (isCouponDisabled && selectedCoupon) {
@@ -581,7 +583,7 @@ export default function CartDrawer({
             items: orderItems,
             customerInfo: orderCustomerInfo,
             clientOrderId,
-            couponCode: isCouponDisabled ? null : (selectedCoupon || null),
+            couponCode: expectedCoupon,
             deliveryOption: orderCustomerInfo.deliveryOption,
             ...(cartHasDrop && wallOptIn ? { wallOptIn: true, wallDisplayName, wallCity } : {})
           })
