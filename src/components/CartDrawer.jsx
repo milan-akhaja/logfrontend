@@ -295,6 +295,12 @@ export default function CartDrawer({
   // When quote is loading or not yet matched, totals are pending.
   const totalPending = !useServerTotals;
 
+  const codAdvanceAmount = quoteMatchesCart && paymentMethod === 'cod' ? Number(quote?.advanceAmount || 0) : 0;
+  const codBalanceDue = quoteMatchesCart && paymentMethod === 'cod'
+    ? Number(quote?.balanceDue !== undefined ? quote.balanceDue : (total - codAdvanceAmount))
+    : 0;
+  const isCodWithAdvance = paymentMethod === 'cod' && codAdvanceAmount > 0;
+
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
       setQuote(null);
@@ -543,35 +549,72 @@ export default function CartDrawer({
     try {
       setIsSubmittingOrder(true);
       if (paymentMethod === 'cod') {
-        const data = await saveOrder('COD');
-        trackGoAffProOrder(data.order?.id || clientOrderId, total, orderCustomerInfo.email);
-        onPurchase?.({
-          transaction_id: data.order?.id || clientOrderId,
-          value: Number(total || 0),
-          tax: 0,
-          shipping: Number(shipping || 0),
-          currency: 'INR',
-          payment_type: 'COD',
-          items: orderItems.map((item) => ({
-            item_id: item.id,
-            item_name: item.name,
-            item_variant: item.selectedSize,
-            price: Number(item.price || 0),
-            quantity: Number(item.quantity || 1)
-          }))
-        });
-        setLastOrderSummary(data.order || null);
-        setEmailHtml(data.emailHtml || '');
-        setOrderEmailSent(Boolean(data.emailSent));
-        if (!data.emailSent || !data.ownerEmailSent) {
-          onToast('Order saved, but one email notification did not send. Check SMTP settings.');
+        if (!isCodWithAdvance) {
+          const data = await saveOrder('COD');
+          trackGoAffProOrder(data.order?.id || clientOrderId, total, orderCustomerInfo.email);
+          onPurchase?.({
+            transaction_id: data.order?.id || clientOrderId,
+            value: Number(total || 0),
+            tax: 0,
+            shipping: Number(shipping || 0),
+            currency: 'INR',
+            payment_type: 'COD',
+            items: orderItems.map((item) => ({
+              item_id: item.id,
+              item_name: item.name,
+              item_variant: item.selectedSize,
+              price: Number(item.price || 0),
+              quantity: Number(item.quantity || 1)
+            }))
+          });
+          setLastOrderSummary(data.order || null);
+          setEmailHtml(data.emailHtml || '');
+          setOrderEmailSent(Boolean(data.emailSent));
+          if (!data.emailSent || !data.ownerEmailSent) {
+            onToast('Order saved, but one email notification did not send. Check SMTP settings.');
+          }
+          localStorage.removeItem(CHECKOUT_ORDER_KEY);
+          localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+          onClearCart();
+          setShowCheckoutForm(false);
+          setShowSuccessModal(true);
+          setPaymentMethod('payu');
+          setIsSubmittingOrder(false);
+          return;
         }
-        localStorage.removeItem(CHECKOUT_ORDER_KEY);
-        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
-        onClearCart();
-        setShowCheckoutForm(false);
-        setShowSuccessModal(true);
-        setPaymentMethod('payu');
+
+        const data = await apiJson('/api/payments/payu/initiate', {
+          method: 'POST',
+          body: JSON.stringify({
+            items: orderItems,
+            customerInfo: orderCustomerInfo,
+            clientOrderId,
+            paymentMethod: 'cod',
+            couponCode: null,
+            deliveryOption: orderCustomerInfo.deliveryOption,
+            ...(cartHasDrop && wallOptIn ? { wallOptIn: true, wallDisplayName, wallCity } : {})
+          })
+        });
+
+        if (data.action && data.fields) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = data.action;
+
+          Object.entries(data.fields).forEach(([key, val]) => {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = key;
+            hiddenField.value = val !== undefined && val !== null ? String(val) : '';
+            form.appendChild(hiddenField);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+          return;
+        }
+
+        onToast(data?.error || 'Failed to initiate PayU payment.');
         setIsSubmittingOrder(false);
         return;
       }
@@ -761,7 +804,18 @@ export default function CartDrawer({
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                       <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                      <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
+                      {isCodWithAdvance ? (
+                        <span style={{ width: '100%' }}>
+                          <span className="checkout-payment-card-main">
+                            Cash on Delivery: pay ₹{codAdvanceAmount} now, rest on delivery
+                          </span>
+                          <span className="checkout-payment-card-note">
+                            Pay ₹{codAdvanceAmount} online now to confirm your order. Pay the remaining ₹{codBalanceDue} in cash or UPI when your order arrives. Coupons are valid on prepaid orders only.
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="checkout-payment-card-main">Cash on Delivery (COD)</span>
+                      )}
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
                       <input
@@ -990,6 +1044,21 @@ export default function CartDrawer({
                   <div className="cart-totals-row grand-total">
                     <span className="cart-totals-label">final price confirmed at payment.</span>
                   </div>
+                ) : isCodWithAdvance ? (
+                  <>
+                    <div className="cart-totals-row grand-total">
+                      <span className="cart-totals-label">Order total</span>
+                      <span className="cart-totals-val">{formatCurrency(total)}</span>
+                    </div>
+                    <div className="cart-totals-row" style={{ fontWeight: '700' }}>
+                      <span className="cart-totals-label">Advance paid online</span>
+                      <span className="cart-totals-val">{formatCurrency(codAdvanceAmount)}</span>
+                    </div>
+                    <div className="cart-totals-row" style={{ fontWeight: '700' }}>
+                      <span className="cart-totals-label">Balance payable on delivery</span>
+                      <span className="cart-totals-val">{formatCurrency(codBalanceDue)}</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="cart-totals-row grand-total">
                     <span className="cart-totals-label">Grand Total</span>
@@ -1021,7 +1090,13 @@ export default function CartDrawer({
                   disabled={isSubmittingOrder || !quoteMatchesCart}
                   style={{ flex: 1, padding: '12px', fontSize: '11px', opacity: (isSubmittingOrder || !quoteMatchesCart) ? 0.6 : 1 }}
                 >
-                  {isSubmittingOrder ? 'Placing Order...' : !quoteMatchesCart ? 'Calculating...' : 'Place Order'}
+                  {isSubmittingOrder
+                    ? 'Placing Order...'
+                    : !quoteMatchesCart
+                      ? 'Calculating...'
+                      : isCodWithAdvance
+                        ? `PAY ₹${codAdvanceAmount} ADVANCE & PLACE ORDER`
+                        : 'Place Order'}
                 </button>
               </div>
               {quoteError && !quoteMatchesCart && (
@@ -1292,7 +1367,13 @@ export default function CartDrawer({
                   <h3>Payment & Delivery</h3>
                   <div className="order-success-line">
                     <span>Payment</span>
-                    <strong>{lastOrderSummary.paymentId === 'FOUNDER_DELIVERY' ? 'Delivery by Founder' : 'Cash on Delivery'}</strong>
+                    <strong>
+                      {lastOrderSummary.paymentId === 'FOUNDER_DELIVERY'
+                        ? 'Delivery by Founder'
+                        : Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0) > 0
+                          ? `Cash on Delivery (${formatCurrency(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount)} advance paid)`
+                          : 'Cash on Delivery'}
+                    </strong>
                   </div>
                   <div className="order-success-line">
                     <span>Delivery</span>
@@ -1323,6 +1404,18 @@ export default function CartDrawer({
                     <span>Grand Total</span>
                     <strong>{formatCurrency(lastOrderSummary.total)}</strong>
                   </div>
+                  {Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0) > 0 && (
+                    <>
+                      <div className="order-success-line">
+                        <span>Advance paid:</span>
+                        <strong>{formatCurrency(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount)}</strong>
+                      </div>
+                      <div className="order-success-line">
+                        <span>Pay on delivery:</span>
+                        <strong>{formatCurrency(lastOrderSummary.balanceDue ?? lastOrderSummary.balance_due ?? (Number(lastOrderSummary.total || 0) - Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0)))}</strong>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}

@@ -1715,5 +1715,413 @@ describe('Shop Hero Section Loading', () => {
   });
 });
 
+describe('Phase 2 COD with Advance Frontend Tests', () => {
+  const mockCart = [
+    { id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }
+  ];
+
+  beforeEach(async () => {
+    const { cleanup } = await import('@testing-library/react');
+    cleanup();
+    localStorage.clear();
+    localStorage.setItem('log_checkout_customer_draft', JSON.stringify({
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'customer@example.com',
+      phoneCountryCode: '+91',
+      phone: '9876543210',
+      country: 'India',
+      address: '123 Main Street',
+      apartment: 'Apt 4B',
+      city: 'Ahmedabad',
+      state: 'Gujarat',
+      pinCode: '380001',
+      dob: '2000-01-01',
+      saveInfo: false
+    }));
+  });
+
+  afterEach(async () => {
+    const { cleanup } = await import('@testing-library/react');
+    cleanup();
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  it('COD selected shows advance and balance lines, new button text, and disables coupon picker', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        const isCod = body.paymentMethod === 'cod';
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 0,
+            discountLabel: '',
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: 2400,
+            advanceAmount: isCod ? 100 : 0,
+            balanceDue: isCod ? 2300 : 2400,
+            paymentMethod: body.paymentMethod || 'payu',
+            couponCode: null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    // Proceed to checkout form
+    const proceedBtn = container.querySelector('.checkout-btn');
+    fireEvent.click(proceedBtn);
+
+    // Initially with PayU, COD card says "Cash on Delivery (COD)"
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+    });
+
+    // Select COD
+    const codRadio = container.querySelector('input[type="radio"][value="cod"]');
+    fireEvent.click(codRadio);
+
+    // Wait for COD quote to resolve and advance UI to display
+    await waitFor(() => {
+      // 1. COD option label
+      expect(screen.getByText(/Cash on Delivery: pay ₹100 now, rest on delivery/i)).toBeDefined();
+      // 2. Note under COD option
+      expect(screen.getByText(/Pay ₹100 online now to confirm your order\. Pay the remaining ₹2300 in cash or UPI when your order arrives/i)).toBeDefined();
+      // 3. Order summary lines
+      expect(screen.getByText('Order total')).toBeDefined();
+      expect(screen.getByText('Advance paid online')).toBeDefined();
+      expect(screen.getByText('Balance payable on delivery')).toBeDefined();
+      // 4. Primary button text
+      expect(screen.getByRole('button', { name: 'PAY ₹100 ADVANCE & PLACE ORDER' })).toBeDefined();
+      // 5. Coupon picker disabled with COD
+      const couponSection = container.querySelector('.checkout-coupon-options');
+      expect(couponSection.classList.contains('coupons-disabled')).toBe(true);
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('COD submit calls /api/payments/payu/initiate with paymentMethod cod and couponCode null and no direct /api/orders POST', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const initiateCalls = [];
+    const orderCalls = [];
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        const isCod = body.paymentMethod === 'cod';
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 0,
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: 2400,
+            advanceAmount: isCod ? 100 : 0,
+            balanceDue: isCod ? 2300 : 2400,
+            paymentMethod: body.paymentMethod || 'payu',
+            couponCode: null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/payments/payu/initiate')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        initiateCalls.push(body);
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            action: 'https://test.payu.in/_payment',
+            fields: { key: 'testKey', txnid: 'txn123', amount: '100.00' }
+          })
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/orders')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        orderCalls.push(body);
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true, order: { id: 'order-123' } })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const formSubmitSpy = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(container.querySelector('.checkout-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+    });
+    fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PAY ₹100 ADVANCE & PLACE ORDER' })).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'PAY ₹100 ADVANCE & PLACE ORDER' }));
+
+    await waitFor(() => {
+      expect(initiateCalls.length).toBe(1);
+      expect(initiateCalls[0].paymentMethod).toBe('cod');
+      expect(initiateCalls[0].couponCode).toBeNull();
+      expect(orderCalls.length).toBe(0);
+      expect(formSubmitSpy).toHaveBeenCalled();
+    });
+
+    formSubmitSpy.mockRestore();
+    window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('quote advanceAmount 0 falls back to the old direct COD flow and old labels', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const orderCalls = [];
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 0,
+            shipping: 0,
+            founderDeliveryFee: 0,
+            total: 2400,
+            advanceAmount: 0,
+            balanceDue: 2400,
+            paymentMethod: body.paymentMethod || 'payu',
+            couponCode: null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/orders')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        orderCalls.push(body);
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            order: { id: 'order-direct-cod', total: 2400, subtotal: 2400, shipping: 0, paymentId: 'COD', items: [] }
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(container.querySelector('.checkout-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+    });
+    fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+      expect(screen.queryByText(/pay ₹.* now/i)).toBeNull();
+      expect(screen.getByText('Grand Total')).toBeDefined();
+      expect(screen.getByRole('button', { name: 'Place Order' })).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place Order' }));
+
+    await waitFor(() => {
+      expect(orderCalls.length).toBe(1);
+      expect(orderCalls[0].paymentId).toBe('COD');
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('Founder Delivery flow remains unchanged', async () => {
+    const CartDrawer = (await import('./components/CartDrawer')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    const initiateCalls = [];
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            success: true,
+            subtotal: 2400,
+            discount: 0,
+            shipping: 3000,
+            founderDeliveryFee: 3000,
+            total: 5400,
+            advanceAmount: 0,
+            balanceDue: 5400,
+            paymentMethod: body.paymentMethod || 'founder_delivery',
+            couponCode: null,
+            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+          })
+        });
+      }
+      if (typeof url === 'string' && url.includes('/api/payments/payu/initiate')) {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        initiateCalls.push(body);
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            action: 'https://test.payu.in/_payment',
+            fields: { key: 'testKey', txnid: 'txn123', amount: '5400.00' }
+          })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+
+    const formSubmitSpy = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
+
+    const { container, unmount } = render(
+      <MemoryRouter>
+        <CartDrawer
+          isOpen={true}
+          onClose={() => {}}
+          cart={mockCart}
+          onQtyChange={() => {}}
+          onRemove={() => {}}
+          onClearCart={() => {}}
+          onPurchase={() => {}}
+          onToast={() => {}}
+        />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(container.querySelector('.checkout-btn'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Delivery by Founder')).toBeDefined();
+    });
+    fireEvent.click(container.querySelector('input[type="radio"][value="founder_delivery"]'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Place Order' })).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place Order' }));
+
+    await waitFor(() => {
+      expect(initiateCalls.length).toBe(1);
+      expect(initiateCalls[0].deliveryOption).toBe('founder_delivery');
+      expect(formSubmitSpy).toHaveBeenCalled();
+    });
+
+    formSubmitSpy.mockRestore();
+    window.fetch = originalFetch;
+    unmount();
+  });
+
+  it('Order receipt modal shows advance paid, pay on delivery, and Cash on Delivery (₹100 advance paid) label', async () => {
+    const { OrderReceiptModal } = await import('./App');
+    const { render, screen } = await import('@testing-library/react');
+
+    const mockOrder = {
+      id: 'ord-cod-adv-1',
+      status: 'Pending',
+      paymentMethod: 'Cash on Delivery (advance paid)',
+      advanceAmount: 100,
+      balanceDue: 2300,
+      subtotal: 2400,
+      shipping: 0,
+      donation: 23,
+      total: 2400,
+      customerInfo: { name: 'Sahaj', phone: '9876543210', address: '123 Main St' },
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const { unmount } = render(
+      <OrderReceiptModal order={mockOrder} onClose={() => {}} />
+    );
+
+    // 1. Payment label: Cash on Delivery (₹100 advance paid)
+    expect(screen.getByText('Cash on Delivery (₹100 advance paid)')).toBeDefined();
+
+    // 2. Advance paid: ₹100
+    expect(screen.getByText('Advance paid:')).toBeDefined();
+    expect(screen.getByText('₹100')).toBeDefined();
+
+    // 3. Pay on delivery: ₹2,300
+    expect(screen.getByText('Pay on delivery:')).toBeDefined();
+    expect(screen.getByText('₹2,300')).toBeDefined();
+
+    unmount();
+  }, 30000);
+});
+
+
 
 

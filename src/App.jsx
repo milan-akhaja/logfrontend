@@ -31,7 +31,7 @@ const OurMission = React.lazy(() => import('./pages/OurMission'));
 const LogBook = React.lazy(() => import('./pages/LogBook'));
 const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
   // Preload ProductDetail chunk after load so opening products is instant
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(() => import('./pages/ProductDetail'), { timeout: 3000 });
@@ -251,7 +251,7 @@ function formatCurrency(value) {
   return `₹${Number(value || 0).toLocaleString('en-IN')}`;
 }
 
-function OrderReceiptModal({ order, onClose }) {
+export function OrderReceiptModal({ order, onClose }) {
   useEffect(() => {
     if (order && typeof window !== 'undefined') {
       try {
@@ -352,7 +352,11 @@ function OrderReceiptModal({ order, onClose }) {
             <h3>Payment & Delivery</h3>
             <div className="order-success-line">
               <span>Payment</span>
-              <strong>{order.paymentMethod || 'Online payment'}</strong>
+              <strong>
+                {Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0
+                  ? `Cash on Delivery (${formatCurrency(order.advanceAmount ?? order.advance_amount)} advance paid)`
+                  : (order.paymentMethod || 'Online payment')}
+              </strong>
             </div>
             <div className="order-success-line">
               <span>Delivery</span>
@@ -368,6 +372,18 @@ function OrderReceiptModal({ order, onClose }) {
             <div className="order-success-line"><span>Shipping</span><strong>{formatCurrency(order.shipping)}</strong></div>
             <div className="order-success-line"><span>Donation</span><strong>{formatCurrency(order.donation)}</strong></div>
             <div className="order-success-line order-success-grand"><span>Grand Total</span><strong>{formatCurrency(order.total)}</strong></div>
+            {Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0 && (
+              <>
+                <div className="order-success-line">
+                  <span>Advance paid:</span>
+                  <strong>{formatCurrency(order.advanceAmount ?? order.advance_amount)}</strong>
+                </div>
+                <div className="order-success-line">
+                  <span>Pay on delivery:</span>
+                  <strong>{formatCurrency(order.balanceDue ?? order.balance_due ?? (Number(order.total || 0) - Number(order.advanceAmount ?? order.advance_amount ?? 0)))}</strong>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
