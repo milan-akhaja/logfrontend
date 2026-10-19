@@ -1595,22 +1595,24 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       window.fetch = originalFetch;
     });
 
-    it('bag shows both offers unapplied, and APPLY in the bag updates the total on the checkout button', async () => {
+    it('bag shows both offers as compact tiles, unapplied, and APPLY updates the total on the checkout button', async () => {
       const { screen, waitFor, fireEvent } = await import('@testing-library/react');
       const { container, unmount } = await mountDrawer();
+      const tile = (code) => container.querySelector(`.bag-offer-tile[data-coupon="${code}"]`);
       const card = (code) => container.querySelector(`.checkout-coupon-card[data-coupon="${code}"]`);
 
       await waitFor(() => {
-        expect(card('PREPAID15')).not.toBeNull();
-        expect(card('FIRST10')).not.toBeNull();
+        expect(tile('PREPAID15')).not.toBeNull();
+        expect(tile('FIRST10')).not.toBeNull();
         expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,400/ })).toBeDefined();
       });
-      expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
+      expect(container.querySelector('.bag-offer-tile.selected')).toBeNull();
       expect(quoteRequests[quoteRequests.length - 1].couponCode).toBeNull();
 
-      fireEvent.click(card('PREPAID15').querySelector('.checkout-coupon-action-btn'));
+      fireEvent.click(tile('PREPAID15').querySelector('.bag-offer-btn'));
       await waitFor(() => {
-        expect(card('PREPAID15').classList.contains('selected')).toBe(true);
+        expect(tile('PREPAID15').classList.contains('selected')).toBe(true);
+        expect(tile('PREPAID15').querySelector('.bag-offer-btn').textContent).toBe('REMOVE');
         expect(screen.getByText('-₹360')).toBeDefined();
         expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,040/ })).toBeDefined();
       });
@@ -1619,6 +1621,41 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       fireEvent.click(screen.getByRole('button', { name: /Proceed to Checkout/ }));
       await waitFor(() => {
         expect(card('PREPAID15').classList.contains('selected')).toBe(true);
+      });
+      unmount();
+    });
+
+    it('REMOVE on a bag tile clears the offer and the total goes back', async () => {
+      const { screen, waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+      const tile = (code) => container.querySelector(`.bag-offer-tile[data-coupon="${code}"]`);
+
+      await waitFor(() => expect(tile('FIRST10')).not.toBeNull());
+      fireEvent.click(tile('PREPAID15').querySelector('.bag-offer-btn'));
+      await waitFor(() => expect(tile('PREPAID15').classList.contains('selected')).toBe(true));
+      fireEvent.click(tile('PREPAID15').querySelector('.bag-offer-btn'));
+      await waitFor(() => {
+        expect(container.querySelector('.bag-offer-tile.selected')).toBeNull();
+        expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,400/ })).toBeDefined();
+      });
+      expect(quoteRequests[quoteRequests.length - 1].couponCode).toBeNull();
+      unmount();
+    });
+
+    it('bag footer is one short note with no subtotal row until an offer is applied', async () => {
+      const { screen, waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+      const footer = () => container.querySelector('.cart-footer');
+
+      await waitFor(() => expect(screen.getByText('Grand Total')).toBeDefined());
+      expect(footer().textContent).toContain('Free shipping · ₹23 goes to the LOG Fund');
+      expect(footer().textContent).not.toContain('Subtotal');
+
+      fireEvent.click(container.querySelector('.bag-offer-tile[data-coupon="PREPAID15"] .bag-offer-btn'));
+      await waitFor(() => {
+        expect(footer().textContent).toContain('Subtotal');
+        expect(footer().textContent).toContain('₹2,400');
+        expect(footer().textContent).toContain('-₹360');
       });
       unmount();
     });

@@ -673,6 +673,76 @@ export default function CartDrawer({
     }
   };
 
+  const bagOffersSection = (
+    <div className="bag-offers">
+      <div className="bag-offers-label">Offers · one per order</div>
+      {isPrepaidCouponDisabled && (
+        <p className="checkout-coupon-disabled-note">
+          {cartHasDrop && !isDropWindowClosed
+            ? 'Coupons cannot be combined with drop pre-order discount.'
+            : (isCouponDisabled ? 'Coupons are only valid on prepaid orders.' : 'PREPAID15 is valid on prepaid orders only.')}
+        </p>
+      )}
+      <div className="bag-offers-grid">
+          <div
+            className={`bag-offer-tile ${selectedCoupon === 'PREPAID15' ? 'selected' : ''} ${isPrepaidCouponDisabled ? 'disabled' : ''}`}
+            data-coupon="PREPAID15"
+            onClick={() => {
+              if (isPrepaidCouponDisabled || selectedCoupon === 'PREPAID15') return;
+              setSelectedCoupon('PREPAID15');
+            }}
+          >
+            <div className="bag-offer-head">
+              <span className="bag-offer-code">PREPAID15</span>
+              <span className="bag-offer-badge">15% OFF</span>
+            </div>
+            <span className="bag-offer-note">When you pay online</span>
+            <button
+              type="button"
+              className="bag-offer-btn"
+              disabled={isPrepaidCouponDisabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isPrepaidCouponDisabled) return;
+                setSelectedCoupon(selectedCoupon === 'PREPAID15' ? null : 'PREPAID15');
+              }}
+            >
+              {selectedCoupon === 'PREPAID15' ? 'REMOVE' : 'APPLY'}
+            </button>
+          </div>
+          <div
+            className={`bag-offer-tile ${selectedCoupon === 'FIRST10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
+            data-coupon="FIRST10"
+            onClick={() => {
+              if (isCouponDisabled || selectedCoupon === 'FIRST10') return;
+              setSelectedCoupon('FIRST10');
+            }}
+          >
+            <div className="bag-offer-head">
+              <span className="bag-offer-code">FIRST10</span>
+              <span className="bag-offer-badge">10% OFF</span>
+            </div>
+            <span className="bag-offer-note">First order, COD or online</span>
+            <button
+              type="button"
+              className="bag-offer-btn"
+              disabled={isCouponDisabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (isCouponDisabled) return;
+                setSelectedCoupon(selectedCoupon === 'FIRST10' ? null : 'FIRST10');
+              }}
+            >
+              {selectedCoupon === 'FIRST10' ? 'REMOVE' : 'APPLY'}
+            </button>
+          </div>
+      </div>
+      {selectedCoupon === 'FIRST10' && !hasValidPhone && (
+        <div className="coupon-phone-hint">Applies at checkout once you enter your phone number</div>
+      )}
+    </div>
+  );
+
   const offersSection = (
               <div className="checkout-coupon-section">
                 <h4>Offers & Coupons</h4>
@@ -828,7 +898,7 @@ export default function CartDrawer({
           <button className="cart-close-btn" onClick={onClose} aria-label="Close bag">&times;</button>
         </div>
 
-        <div className="cart-body">
+        <div className={`cart-body${showCheckoutForm ? '' : ' cart-body-bag'}`}>
           {showCheckoutForm ? (
             <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
               <h3 className="checkout-delivery-title">Delivery</h3>
@@ -1213,36 +1283,33 @@ export default function CartDrawer({
               </div>
               );
             })}
-            {offersSection}
+            {bagOffersSection}
             </>
           )}
         </div>
 
         {!showCheckoutForm && cart.length > 0 && (
           <div className="cart-footer">
-            <div className="cart-totals-row">
-              <span className="cart-totals-label">Subtotal</span>
-              <span className="cart-totals-val">₹{subtotal.toLocaleString('en-IN')}</span>
-            </div>
             {discountAmount > 0 && (
-              <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
-                <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Discount')}</span>
-                <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
-              </div>
+              <>
+                <div className="cart-totals-row">
+                  <span className="cart-totals-label">Subtotal</span>
+                  <span className="cart-totals-val">₹{subtotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="cart-totals-row" style={{ color: 'var(--accent)', fontWeight: '700' }}>
+                  <span className="cart-totals-label">{quote?.discountLabel || (cartHasDrop && !isDropWindowClosed ? 'Pre-order discount' : 'Discount')}</span>
+                  <span className="cart-totals-val">-₹{discountAmount.toLocaleString('en-IN')}</span>
+                </div>
+              </>
             )}
-            {shipping > 0 ? (
+            {shipping > 0 && (
               <div className="cart-totals-row">
                 <span className="cart-totals-label">Shipping</span>
                 <span className="cart-totals-val">₹{shipping}</span>
               </div>
-            ) : (
-              <div className="cart-totals-row">
-                <span className="cart-totals-label">Shipping</span>
-                <span className="cart-totals-val" style={{ color: 'var(--accent)', fontWeight: '800' }}>FREE</span>
-              </div>
             )}
-            <div className="cart-donation-banner">
-              ₹{donation} will be donated to charity from this order (₹23 per product)
+            <div className="cart-footer-note">
+              {shipping > 0 ? '' : 'Free shipping · '}₹{donation} goes to the LOG Fund
             </div>
             {totalPending ? (
               <div className="cart-totals-row grand-total">
