@@ -1,10 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import useCodAdvance from '../hooks/useCodAdvance';
 
 export default function RefundPolicy() {
-  const { enabled, amountInr } = useCodAdvance();
-
   return (
     <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '850px', margin: '0 auto', color: 'var(--ink)' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>
@@ -46,22 +43,9 @@ export default function RefundPolicy() {
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Cancellation Policy</h2>
           <p>
-            {enabled ? (
-              'Cancellation requests are considered only if they are raised before the order is dispatched. A cancellation cannot be accepted if the order has already been processed for shipping, handed over to a courier partner, or is out for delivery. Refusing delivery or not accepting the order at the doorstep without a valid reason does not qualify for a refund of the Cash on Delivery advance, because we bear the shipping cost.'
-            ) : (
-              'Cancellation requests are considered only if they are raised within 7 days of placing the order. A cancellation may not be accepted if the order has already been processed for shipping, handed over to a courier partner, or is out for delivery. In such cases, you may reject the shipment at the doorstep where applicable.'
-            )}
+            Cancellation requests are considered only if they are raised within 7 days of placing the order. A cancellation may not be accepted if the order has already been processed for shipping, handed over to a courier partner, or is out for delivery. In such cases, you may reject the shipment at the doorstep where applicable.
           </p>
         </section>
-
-        {enabled && (
-          <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Cash on Delivery Confirmation Advance</h2>
-            <p>
-              On Cash on Delivery orders, a ₹{amountInr} confirmation advance is collected online. It is part of your order total and is deducted from the amount payable on delivery. The advance is refunded in full if you cancel before the order is dispatched, if we cancel the order, or if the product is unavailable. The advance is not refunded if delivery is refused or the order is not accepted at the doorstep without a valid reason, because we bear the shipping cost. Damaged or incorrect items are handled under our Returns policy, and the advance is refunded in that case.
-            </p>
-          </section>
-        )}
 
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Return & Exchange Window</h2>

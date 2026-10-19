@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
-import { fetchCodAdvanceConfig, useCodAdvance } from '../hooks/useCodAdvance';
 import { getProducts } from '../lib/products';
 import { canTrackGA4, trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
@@ -213,13 +212,11 @@ export default function CartDrawer({
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const { enabled: codAdvanceOn } = useCodAdvance();
 
-  // Scroll locking & COD advance config refresh
+  // Scroll locking
   useEffect(() => {
     if (isOpen) {
       lockBodyScroll();
-      fetchCodAdvanceConfig();
     }
     return () => {
       if (isOpen) unlockBodyScroll();
@@ -262,8 +259,7 @@ export default function CartDrawer({
   });
   const isPreorderActive = cartHasDrop && !isDropWindowClosed;
   const isCodPayment = paymentMethod === 'cod';
-  // FIRST10 works on plain COD; with the COD advance switch on, COD orders take no coupon.
-  const isCouponDisabled = paymentMethod === 'founder_delivery' || isPreorderActive || (isCodPayment && codAdvanceOn);
+  const isCouponDisabled = paymentMethod === 'founder_delivery' || isPreorderActive;
   const isPrepaidCouponDisabled = isCouponDisabled || isCodPayment;
   const hasValidPhone = String(customerInfo.phone || '').replace(/\D/g, '').length >= 10;
 
@@ -302,12 +298,6 @@ export default function CartDrawer({
   const total = useServerTotals ? quote.total : netSubtotal + shipping;
   // When quote is loading or not yet matched, totals are pending.
   const totalPending = !useServerTotals;
-
-  const codAdvanceAmount = quoteMatchesCart && paymentMethod === 'cod' ? Number(quote?.advanceAmount || 0) : 0;
-  const codBalanceDue = quoteMatchesCart && paymentMethod === 'cod'
-    ? Number(quote?.balanceDue !== undefined ? quote.balanceDue : (total - codAdvanceAmount))
-    : 0;
-  const isCodWithAdvance = paymentMethod === 'cod' && codAdvanceAmount > 0;
 
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
@@ -563,72 +553,35 @@ export default function CartDrawer({
     try {
       setIsSubmittingOrder(true);
       if (paymentMethod === 'cod') {
-        if (!isCodWithAdvance) {
-          const data = await saveOrder('COD');
-          trackGoAffProOrder(data.order?.id || clientOrderId, total, orderCustomerInfo.email);
-          onPurchase?.({
-            transaction_id: data.order?.id || clientOrderId,
-            value: Number(total || 0),
-            tax: 0,
-            shipping: Number(shipping || 0),
-            currency: 'INR',
-            payment_type: 'COD',
-            items: orderItems.map((item) => ({
-              item_id: item.id,
-              item_name: item.name,
-              item_variant: item.selectedSize,
-              price: Number(item.price || 0),
-              quantity: Number(item.quantity || 1)
-            }))
-          });
-          setLastOrderSummary(data.order || null);
-          setEmailHtml(data.emailHtml || '');
-          setOrderEmailSent(Boolean(data.emailSent));
-          if (!data.emailSent || !data.ownerEmailSent) {
-            onToast('Order saved, but one email notification did not send. Check SMTP settings.');
-          }
-          localStorage.removeItem(CHECKOUT_ORDER_KEY);
-          localStorage.removeItem(CHECKOUT_DRAFT_KEY);
-          onClearCart();
-          setShowCheckoutForm(false);
-          setShowSuccessModal(true);
-          setPaymentMethod('payu');
-          setIsSubmittingOrder(false);
-          return;
-        }
-
-        const data = await apiJson('/api/payments/payu/initiate', {
-          method: 'POST',
-          body: JSON.stringify({
-            items: orderItems,
-            customerInfo: orderCustomerInfo,
-            clientOrderId,
-            paymentMethod: 'cod',
-            couponCode: null,
-            deliveryOption: orderCustomerInfo.deliveryOption,
-            ...(cartHasDrop && wallOptIn ? { wallOptIn: true, wallDisplayName, wallCity } : {})
-          })
+        const data = await saveOrder('COD');
+        trackGoAffProOrder(data.order?.id || clientOrderId, total, orderCustomerInfo.email);
+        onPurchase?.({
+          transaction_id: data.order?.id || clientOrderId,
+          value: Number(total || 0),
+          tax: 0,
+          shipping: Number(shipping || 0),
+          currency: 'INR',
+          payment_type: 'COD',
+          items: orderItems.map((item) => ({
+            item_id: item.id,
+            item_name: item.name,
+            item_variant: item.selectedSize,
+            price: Number(item.price || 0),
+            quantity: Number(item.quantity || 1)
+          }))
         });
-
-        if (data.action && data.fields) {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = data.action;
-
-          Object.entries(data.fields).forEach(([key, val]) => {
-            const hiddenField = document.createElement('input');
-            hiddenField.type = 'hidden';
-            hiddenField.name = key;
-            hiddenField.value = val !== undefined && val !== null ? String(val) : '';
-            form.appendChild(hiddenField);
-          });
-
-          document.body.appendChild(form);
-          form.submit();
-          return;
+        setLastOrderSummary(data.order || null);
+        setEmailHtml(data.emailHtml || '');
+        setOrderEmailSent(Boolean(data.emailSent));
+        if (!data.emailSent || !data.ownerEmailSent) {
+          onToast('Order saved, but one email notification did not send. Check SMTP settings.');
         }
-
-        onToast(data?.error || 'Failed to initiate PayU payment.');
+        localStorage.removeItem(CHECKOUT_ORDER_KEY);
+        localStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        onClearCart();
+        setShowCheckoutForm(false);
+        setShowSuccessModal(true);
+        setPaymentMethod('payu');
         setIsSubmittingOrder(false);
         return;
       }
@@ -1030,18 +983,7 @@ export default function CartDrawer({
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                       <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                      {isCodWithAdvance ? (
-                        <span style={{ width: '100%' }}>
-                          <span className="checkout-payment-card-main">
-                            Cash on Delivery: pay ₹{codAdvanceAmount} now, rest on delivery
-                          </span>
-                          <span className="checkout-payment-card-note">
-                            Pay ₹{codAdvanceAmount} online now to confirm your order. Pay the remaining ₹{codBalanceDue} in cash or UPI when your order arrives. Coupons are valid on prepaid orders only.
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="checkout-payment-card-main">Cash on Delivery (COD){!isPreorderActive && !codAdvanceOn && <span className="checkout-payment-offer-badge">10% OFF · FIRST ORDER</span>}</span>
-                      )}
+                      <span className="checkout-payment-card-main">Cash on Delivery (COD){!isPreorderActive && <span className="checkout-payment-offer-badge">10% OFF · FIRST ORDER</span>}</span>
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
                       <input
@@ -1134,21 +1076,6 @@ export default function CartDrawer({
                   <div className="cart-totals-row grand-total">
                     <span className="cart-totals-label">final price confirmed at payment.</span>
                   </div>
-                ) : isCodWithAdvance ? (
-                  <>
-                    <div className="cart-totals-row grand-total">
-                      <span className="cart-totals-label">Order total</span>
-                      <span className="cart-totals-val">{formatCurrency(total)}</span>
-                    </div>
-                    <div className="cart-totals-row" style={{ fontWeight: '700' }}>
-                      <span className="cart-totals-label">Advance paid online</span>
-                      <span className="cart-totals-val">{formatCurrency(codAdvanceAmount)}</span>
-                    </div>
-                    <div className="cart-totals-row" style={{ fontWeight: '700' }}>
-                      <span className="cart-totals-label">Balance payable on delivery</span>
-                      <span className="cart-totals-val">{formatCurrency(codBalanceDue)}</span>
-                    </div>
-                  </>
                 ) : (
                   <div className="cart-totals-row grand-total">
                     <span className="cart-totals-label">Grand Total</span>
@@ -1184,9 +1111,7 @@ export default function CartDrawer({
                     ? 'Placing Order...'
                     : !quoteMatchesCart
                       ? 'Calculating...'
-                      : isCodWithAdvance
-                        ? `PAY ₹${codAdvanceAmount} ADVANCE & PLACE ORDER`
-                        : 'Place Order'}
+                      : 'Place Order'}
                 </button>
               </div>
               {quoteError && !quoteMatchesCart && (
@@ -1460,9 +1385,7 @@ export default function CartDrawer({
                     <strong>
                       {lastOrderSummary.paymentId === 'FOUNDER_DELIVERY'
                         ? 'Delivery by Founder'
-                        : Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0) > 0
-                          ? `Cash on Delivery (${formatCurrency(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount)} advance paid)`
-                          : 'Cash on Delivery'}
+                        : 'Cash on Delivery'}
                     </strong>
                   </div>
                   <div className="order-success-line">
@@ -1494,18 +1417,6 @@ export default function CartDrawer({
                     <span>Grand Total</span>
                     <strong>{formatCurrency(lastOrderSummary.total)}</strong>
                   </div>
-                  {Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0) > 0 && (
-                    <>
-                      <div className="order-success-line">
-                        <span>Advance paid:</span>
-                        <strong>{formatCurrency(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount)}</strong>
-                      </div>
-                      <div className="order-success-line">
-                        <span>Pay on delivery:</span>
-                        <strong>{formatCurrency(lastOrderSummary.balanceDue ?? lastOrderSummary.balance_due ?? (Number(lastOrderSummary.total || 0) - Number(lastOrderSummary.advanceAmount ?? lastOrderSummary.advance_amount ?? 0)))}</strong>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             )}

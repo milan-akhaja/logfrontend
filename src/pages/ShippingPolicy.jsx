@@ -1,9 +1,6 @@
 import React from 'react';
-import useCodAdvance from '../hooks/useCodAdvance';
 
 export default function ShippingPolicy() {
-  const { enabled, amountInr } = useCodAdvance();
-
   return (
     <div className="policy-page-container" style={{ padding: '140px 20px', maxWidth: '850px', margin: '0 auto', color: 'var(--ink)' }}>
       <h1 style={{ fontSize: '32px', fontWeight: '900', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '-0.5px' }}>Shipping Policy</h1>
@@ -44,15 +41,6 @@ export default function ShippingPolicy() {
             Shipping is free on all orders.
           </p>
         </section>
-
-        {enabled && (
-          <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Cash on Delivery (COD)</h2>
-            <p>
-              On Cash on Delivery orders, a ₹{amountInr} confirmation advance is collected online. It is part of your order total and is deducted from the amount payable on delivery. The advance is refunded in full if you cancel before the order is dispatched, if we cancel the order, or if the product is unavailable. The advance is not refunded if delivery is refused or the order is not accepted at the doorstep without a valid reason, because we bear the shipping cost. Damaged or incorrect items are handled under our Returns policy, and the advance is refunded in that case.
-            </p>
-          </section>
-        )}
 
         <section>
           <h2 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '10px', textTransform: 'uppercase' }}>Delivery Confirmation & Support</h2>

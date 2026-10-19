@@ -22,7 +22,6 @@ import CartDrawer from './components/CartDrawer';
 import SizePopup from './components/SizePopup';
 import ConsentBanner from './components/ConsentBanner';
 import SEO from './components/SEO';
-import { fetchCodAdvanceConfig } from './hooks/useCodAdvance';
 
 // Pages (Core & Code-Split)
 import Shop from './pages/Shop';
@@ -272,10 +271,6 @@ export function OrderReceiptModal({ order, onClose }) {
 
   if (!order) return null;
 
-  const advanceAmount = Number(order.advanceAmount ?? order.advance_amount ?? 0);
-  const balanceDue = Number(order.balanceDue ?? order.balance_due ?? (Number(order.total || 0) - advanceAmount));
-  const isCodAdvance = advanceAmount > 0 && balanceDue > 0;
-
   return (
     <div
       style={{
@@ -306,9 +301,7 @@ export function OrderReceiptModal({ order, onClose }) {
         <div style={{ textAlign: 'center', marginBottom: '22px' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, textTransform: 'uppercase' }}>Order placed successfully</h2>
           <p style={{ margin: 0, color: '#388e3c', fontWeight: 700 }}>
-            {isCodAdvance
-              ? `Your ${formatCurrency(advanceAmount)} advance is confirmed. Pay ${formatCurrency(balanceDue)} on delivery.`
-              : 'Your payment and order details are confirmed.'}
+            Your payment and order details are confirmed.
           </p>
         </div>
 
@@ -362,9 +355,7 @@ export function OrderReceiptModal({ order, onClose }) {
             <div className="order-success-line">
               <span>Payment</span>
               <strong>
-                {Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0
-                  ? `Cash on Delivery (${formatCurrency(order.advanceAmount ?? order.advance_amount)} advance paid)`
-                  : (order.paymentMethod || 'Online payment')}
+                {order.paymentMethod || 'Online payment'}
               </strong>
             </div>
             <div className="order-success-line">
@@ -381,18 +372,6 @@ export function OrderReceiptModal({ order, onClose }) {
             <div className="order-success-line"><span>Shipping</span><strong>{formatCurrency(order.shipping)}</strong></div>
             <div className="order-success-line"><span>Donation by LOG</span><strong>{formatCurrency(order.donation)}</strong></div>
             <div className="order-success-line order-success-grand"><span>Grand Total</span><strong>{formatCurrency(order.total)}</strong></div>
-            {Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0 && (
-              <>
-                <div className="order-success-line">
-                  <span>Advance paid:</span>
-                  <strong>{formatCurrency(order.advanceAmount ?? order.advance_amount)}</strong>
-                </div>
-                <div className="order-success-line">
-                  <span>Pay on delivery:</span>
-                  <strong>{formatCurrency(order.balanceDue ?? order.balance_due ?? (Number(order.total || 0) - Number(order.advanceAmount ?? order.advance_amount ?? 0)))}</strong>
-                </div>
-              </>
-            )}
           </div>
         </div>
 
@@ -925,18 +904,6 @@ export default function App() {
       }
     }
   }, []);
-
-  // Fetch COD advance config on app load
-  useEffect(() => {
-    fetchCodAdvanceConfig();
-  }, []);
-
-  // Refetch COD advance config when cart drawer opens
-  useEffect(() => {
-    if (cartOpen) {
-      fetchCodAdvanceConfig();
-    }
-  }, [cartOpen]);
 
   const saveCartState = (newCart) => {
     setCart(newCart);
