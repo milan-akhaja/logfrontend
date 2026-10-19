@@ -197,7 +197,6 @@ function CheckoutTags({ cart, cartHasDrop }) {
               aria-label={`Piece ${i + 1} of ${count}`}
             >
               <div className="checkout-tag">
-                <span className="checkout-tag-nail" aria-hidden="true"></span>
                 <span className="checkout-tag-string" aria-hidden="true"></span>
                 <span className="checkout-tag-eyelet" aria-hidden="true"><span></span></span>
                 <div className="checkout-tag-body">

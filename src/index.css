@@ -7361,7 +7361,7 @@ header.scrolled .nav-action-icon-btn {
 /* ── Checkout hang-tag layout (presentation only) ─────────── */
 .checkout-delivery-form { gap: 14px; }
 
-.checkout-tags { margin: 0 -4px 2px; }
+.checkout-tags { margin: -30px -4px 2px; }
 
 .checkout-tags-scroller {
   display: flex;
@@ -7401,27 +7401,17 @@ header.scrolled .nav-action-icon-btn {
   flex-direction: column;
   align-items: center;
   width: 100%;
-  padding-top: 20px;
   transform-origin: 50% 0;
-  animation: logTagIdle 4s ease-in-out infinite;
+  animation: logTagDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards, logTagIdle 4s ease-in-out 0.9s infinite;
 }
 
 .checkout-tag-slide.is-active .checkout-tag {
-  animation: logTagSettle 1.8s ease-out, logTagSway 5.5s ease-in-out 1.8s infinite;
-}
-
-.checkout-tag-nail {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--ink);
-  box-shadow: 0 0 0 3px rgba(15, 15, 17, 0.12);
+  animation: logTagDrop 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards, logTagSettle 1.8s ease-out 0.35s backwards, logTagSway 5.5s ease-in-out 2.15s infinite;
 }
 
 .checkout-tag-string {
   width: 3px;
-  height: 44px;
-  margin-top: -2px;
+  height: 48px;
   background: repeating-linear-gradient(135deg, #E6E1D4 0 3px, #B9B2A1 3px 6px);
 }
 
@@ -7639,6 +7629,7 @@ header.scrolled .nav-action-icon-btn {
 
 @media (max-width: 480px) {
   .cart-body:not(.cart-body-bag) { padding: 20px 16px; }
+  .checkout-tags { margin-top: -20px; }
   .checkout-ship-card { padding: 14px; }
   .checkout-actions-bar {
     bottom: -20px;
@@ -7664,6 +7655,11 @@ header.scrolled .nav-action-icon-btn {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
+}
+
+@keyframes logTagDrop {
+  from { translate: 0 -110px; opacity: 0; }
+  to { translate: 0 0; opacity: 1; }
 }
 
 @keyframes logTagSway {
