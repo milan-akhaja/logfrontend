@@ -844,6 +844,8 @@ export default function CartDrawer({
               </div>
   );
 
+  const checkoutQty = cart.reduce((n, i) => n + (Number(i.quantity) || 0), 0);
+
   return (
     <>
       <div
@@ -860,7 +862,34 @@ export default function CartDrawer({
         <div className={`cart-body${showCheckoutForm ? '' : ' cart-body-bag'}`}>
           {showCheckoutForm ? (
             <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
+              <div className="checkout-tag">
+                <span className="checkout-tag-hole" aria-hidden="true"></span>
+                <div className="checkout-tag-body">
+                  <div className="checkout-tag-top">
+                    <span>{cartHasDrop ? 'NUMBERED DROP' : 'LOGCLOTH'}</span>
+                    <span>{checkoutQty} {checkoutQty === 1 ? 'PIECE' : 'PIECES'}</span>
+                  </div>
+                  <div className="checkout-tag-name">{cart.length === 1 ? cart[0].name : `${checkoutQty} pieces`}</div>
+                  {cart.length > 1 && (
+                    <div className="checkout-tag-list">{cart.map((i) => `${i.name} (${i.selectedSize})`).join(' · ')}</div>
+                  )}
+                  <div className="checkout-tag-meta">
+                    <div>
+                      <span className="checkout-tag-k">{cart.length === 1 ? 'SIZE' : 'STYLES'}</span>
+                      <span className="checkout-tag-v">{cart.length === 1 ? cart[0].selectedSize : cart.length}</span>
+                    </div>
+                    <div>
+                      <span className="checkout-tag-k">VALUE</span>
+                      <span className="checkout-tag-v">{formatCurrency(subtotal)}</span>
+                    </div>
+                  </div>
+                  <div className="checkout-tag-barcode" aria-hidden="true"></div>
+                </div>
+              </div>
+
               <h3 className="checkout-delivery-title">Delivery</h3>
+
+              <div className="checkout-ship-card">
 
               <div className="checkout-field">
                 <label>Country/Region</label>
@@ -962,6 +991,8 @@ export default function CartDrawer({
                 <input type="checkbox" name="saveInfo" checked={customerInfo.saveInfo} onChange={handleInputChange} />
                 <span>Save this information for next time</span>
               </label>
+
+              </div>
 
               <div className="checkout-shipping-method">
                 <h4>Shipping method</h4>
@@ -1092,7 +1123,8 @@ export default function CartDrawer({
                   : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
               </p>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <div className="checkout-actions-bar">
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="button"
                   className="btn btn-outline"
@@ -1126,6 +1158,7 @@ export default function CartDrawer({
                   </button>
                 </p>
               )}
+              </div>
               <p className="checkout-contact">
                 Questions? <a href="mailto:contact@logcloth.com">contact@logcloth.com</a>
               </p>
