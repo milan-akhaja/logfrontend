@@ -1740,60 +1740,6 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
   });
 });
 
-describe('Mobile Bottom Bar Back Button', () => {
-  it('back button absent on "/", present on a non-product page; with no history it navigates to "/"', () => {
-    // 1. Back button absent on "/"
-    const { unmount: unmountHome } = render(
-      <MemoryRouter initialEntries={['/']}>
-        <Navbar onCartOpen={() => {}} cartCount={0} />
-      </MemoryRouter>
-    );
-    expect(screen.queryByRole('button', { name: /go back/i })).toBeNull();
-    unmountHome();
-
-    // 2. Present on a non-product page (/shop); with no history it navigates to "/"
-    const { unmount: unmountShop } = render(
-      <MemoryRouter initialEntries={['/shop']}>
-        <Routes>
-          <Route
-            path="/shop"
-            element={<Navbar onCartOpen={() => {}} cartCount={0} />}
-          />
-          <Route path="/" element={<div data-testid="home-page">Home Page Content</div>} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    const backBtn = screen.getByRole('button', { name: /go back/i });
-    expect(backBtn).toBeDefined();
-
-    fireEvent.click(backBtn);
-
-    expect(screen.getByTestId('home-page')).toBeDefined();
-    unmountShop();
-  });
-
-  it('back button is NOT present on a product detail route, and IS present on another route (for example /shop)', () => {
-    // 1. Not present on product detail page
-    const { unmount: unmountProduct } = render(
-      <MemoryRouter initialEntries={['/product/product-1790864126824']}>
-        <Navbar onCartOpen={() => {}} cartCount={0} />
-      </MemoryRouter>
-    );
-    expect(screen.queryByRole('button', { name: /go back/i })).toBeNull();
-    unmountProduct();
-
-    // 2. Present on another route (/shop)
-    const { unmount: unmountShop } = render(
-      <MemoryRouter initialEntries={['/shop']}>
-        <Navbar onCartOpen={() => {}} cartCount={0} />
-      </MemoryRouter>
-    );
-    expect(screen.getByRole('button', { name: /go back/i })).toBeDefined();
-    unmountShop();
-  });
-});
-
 describe('Shop Hero Section Loading', () => {
   it('before the fetch resolves, no <img> with src containing "hero_streetwear" is in the DOM; after it resolves, the configured slide images render', async () => {
     const { default: Shop, resetCachedHeroConfig } = await import('./pages/Shop');

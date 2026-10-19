@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Menu, Compass, ShoppingBag } from 'lucide-react';
+import { NavLink, Link, useLocation } from 'react-router-dom';
+import { Search, Menu, ShoppingBag } from 'lucide-react';
 import StoriesOverlay from './StoriesOverlay';
 import SearchOverlay from './SearchOverlay';
 import BurgerMenuOverlay from './BurgerMenuOverlay';
@@ -14,10 +14,8 @@ const ANNOUNCEMENT_CYCLES = Array.from({ length: 6 });
 
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const isHome = location.pathname === '/';
   const cleanPath = location.pathname.toLowerCase().replace(/\/+$/, '');
-  const isProductDetail = cleanPath === '/product' || cleanPath.startsWith('/product/');
   const isDarkPage = isHome || 
                      cleanPath === '/our-mission' ||  
                      cleanPath.startsWith('/blog');
@@ -26,21 +24,6 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const [storiesOpen, setStoriesOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [burgerOpen, setBurgerOpen] = useState(false);
-
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [showBottomNav, setShowBottomNav] = useState(true);
-
-  const handleBack = () => {
-    const hasInAppHistory = typeof window !== 'undefined' && (
-      (typeof window.history?.state?.idx === 'number' && window.history.state.idx > 0) ||
-      (Boolean(location.key) && location.key !== 'default')
-    );
-    if (hasInAppHistory) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,19 +35,10 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
         setScrolled(false);
       }
 
-      // Hide bottom nav on scroll down, show on scroll up
-      if (currentScrollY < 10) {
-        setShowBottomNav(true);
-      } else if (currentScrollY > lastScrollY) {
-        setShowBottomNav(false);
-      } else {
-        setShowBottomNav(true);
-      }
-      setLastScrollY(currentScrollY);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   // Fetch stories on load
   useEffect(() => {
@@ -164,6 +138,33 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
               BAG {cartCount > 0 && <span className="bag-count">{cartCount}</span>}
             </button>
 
+            {/* Mobile header: story ring (always visible) */}
+            {stories.length > 0 && (
+              <div
+                className="bluorng-stories-wrap header-story-mobile"
+                role="button"
+                tabIndex={0}
+                aria-label="Open stories"
+                onClick={() => setStoriesOpen(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setStoriesOpen(true); }}
+              >
+                <div className="stories-circle-inner">
+                  <span>LOG</span>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile header: bag with item count (always visible) */}
+            <button
+              type="button"
+              className="nav-action-icon-btn header-bag-mobile"
+              onClick={onCartOpen}
+              aria-label={`Open bag${cartCount > 0 ? ` with ${cartCount} item${cartCount > 1 ? 's' : ''}` : ''}`}
+            >
+              <ShoppingBag size={22} />
+              {cartCount > 0 && <span className="header-bag-mobile-count">{cartCount}</span>}
+            </button>
+
             {/* Hamburger Burger icon */}
             <button
               className="nav-action-icon-btn burger-menu-trigger"
@@ -178,57 +179,6 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
           </div>
         </div>
       </header>
-
-      {/* Floating Bottom Nav for Mobile Only */}
-      <div className={`mobile-bottom-navbar mobile-only ${showBottomNav ? 'visible' : 'hidden'}`}>
-        <div className="mobile-bottom-nav-inner">
-          {!isHome && !isProductDetail && (
-            <button
-              type="button"
-              className="mobile-bottom-nav-btn mobile-bottom-back-btn"
-              onClick={handleBack}
-              title="Go back"
-              aria-label="Go back"
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-          <Link to="/shop" className="mobile-bottom-nav-btn" title="All Products" aria-label="All products">
-            <Compass size={22} />
-          </Link>
-          <button className="mobile-bottom-nav-btn" onClick={() => setSearchOpen(true)} title="Search" aria-label="Search products">
-            <Search size={22} />
-          </button>
-          <button className="mobile-bottom-nav-btn" onClick={onCartOpen} title="Cart" aria-label={`Open cart${cartCount > 0 ? ` with ${cartCount} item${cartCount > 1 ? 's' : ''}` : ''}`} style={{ position: 'relative' }}>
-            <ShoppingBag size={22} />
-            {cartCount > 0 && <span className="mobile-bag-count">{cartCount}</span>}
-          </button>
-        </div>
-
-        {/* Story button on the right, outside the bar */}
-        {stories.length > 0 && (
-          <div
-            className="mobile-bottom-story-wrap"
-            onClick={() => setStoriesOpen(true)}
-          >
-            <div className="mobile-bottom-story-inner">
-              <span className="story-logo-text">LOG</span>
-            </div>
-          </div>
-        )}
-      </div>
 
       <StoriesOverlay
         isOpen={storiesOpen}
