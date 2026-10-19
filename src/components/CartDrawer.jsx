@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
-import { fetchCodAdvanceConfig } from '../hooks/useCodAdvance';
+import { fetchCodAdvanceConfig, useCodAdvance } from '../hooks/useCodAdvance';
 import { getProducts } from '../lib/products';
 import { canTrackGA4, trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
@@ -213,6 +213,7 @@ export default function CartDrawer({
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const { enabled: codAdvanceOn } = useCodAdvance();
 
   // Scroll locking & COD advance config refresh
   useEffect(() => {
@@ -260,12 +261,17 @@ export default function CartDrawer({
     return isDrop && getItemPreorderPhase(item) === 'after';
   });
   const isPreorderActive = cartHasDrop && !isDropWindowClosed;
-  const isCouponDisabled = paymentMethod === 'cod' || paymentMethod === 'founder_delivery' || isPreorderActive;
+  const isCodPayment = paymentMethod === 'cod';
+  // FIRST10 works on plain COD; with the COD advance switch on, COD orders take no coupon.
+  const isCouponDisabled = paymentMethod === 'founder_delivery' || isPreorderActive || (isCodPayment && codAdvanceOn);
+  const isPrepaidCouponDisabled = isCouponDisabled || isCodPayment;
   const hasValidPhone = String(customerInfo.phone || '').replace(/\D/g, '').length >= 10;
 
   // Only trust the quote while it describes the exact cart, payment method, and coupon on screen.
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
-  const expectedCoupon = isCouponDisabled || (selectedCoupon === 'FIRST5' && !hasValidPhone)
+  const expectedCoupon = isCouponDisabled
+    || (selectedCoupon === 'PREPAID15' && isCodPayment)
+    || (selectedCoupon === 'FIRST10' && !hasValidPhone)
     ? null
     : (selectedCoupon || null);
   const quoteMatchesCart = Boolean(quote)
@@ -361,10 +367,10 @@ export default function CartDrawer({
   }, [isOpen, cart, paymentMethod, customerInfo.city, customerInfo.phone, selectedCoupon, isCouponDisabled, hasValidPhone, quoteRetry]);
 
   useEffect(() => {
-    if (isCouponDisabled && selectedCoupon) {
+    if (selectedCoupon && (isCouponDisabled || (isPrepaidCouponDisabled && selectedCoupon === 'PREPAID15'))) {
       setSelectedCoupon(null);
     }
-  }, [isCouponDisabled, selectedCoupon]);
+  }, [isCouponDisabled, isPrepaidCouponDisabled, selectedCoupon]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -544,7 +550,7 @@ export default function CartDrawer({
         customerInfo: orderCustomerInfo,
         paymentId,
         clientOrderId,
-        couponCode: null,
+        couponCode: expectedCoupon,
         deliveryOption: orderCustomerInfo.deliveryOption
       })
     });
@@ -851,33 +857,33 @@ export default function CartDrawer({
               <div className="checkout-coupon-section">
                 <h4>Offers & Coupons</h4>
 
-                {isCouponDisabled && (
+                {isPrepaidCouponDisabled && (
                   <p className="checkout-coupon-disabled-note">
                     {cartHasDrop && !isDropWindowClosed
                       ? 'Coupons cannot be combined with drop pre-order discount.'
-                      : 'Coupons are only valid on prepaid orders.'}
+                      : (isCouponDisabled ? 'Coupons are only valid on prepaid orders.' : 'PREPAID15 is valid on prepaid orders only.')}
                   </p>
                 )}
 
                 <div className={`checkout-coupon-options ${isCouponDisabled ? 'coupons-disabled' : ''}`}>
-                  {/* PREPAID10 */}
+                  {/* PREPAID15 */}
                   <div
-                    className={`checkout-coupon-card ${selectedCoupon === 'PREPAID10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
-                    data-coupon="PREPAID10"
+                    className={`checkout-coupon-card ${selectedCoupon === 'PREPAID15' ? 'selected' : ''} ${isPrepaidCouponDisabled ? 'disabled' : ''}`}
+                    data-coupon="PREPAID15"
                     onClick={() => {
-                      if (isCouponDisabled || selectedCoupon === 'PREPAID10') return;
-                      setSelectedCoupon('PREPAID10');
+                      if (isPrepaidCouponDisabled || selectedCoupon === 'PREPAID15') return;
+                      setSelectedCoupon('PREPAID15');
                     }}
                   >
                     <div className="checkout-coupon-card-content">
                       <div className="checkout-coupon-card-header">
-                        <span className="checkout-coupon-code">PREPAID10</span>
-                        <span className="checkout-coupon-badge">10% OFF</span>
+                        <span className="checkout-coupon-code">PREPAID15</span>
+                        <span className="checkout-coupon-badge">15% OFF</span>
                       </div>
-                      <div className="checkout-coupon-card-subtitle">10% OFF on prepaid orders</div>
+                      <div className="checkout-coupon-card-subtitle">15% OFF on prepaid orders</div>
                     </div>
                     <div className="checkout-coupon-card-action">
-                      {selectedCoupon === 'PREPAID10' ? (
+                      {selectedCoupon === 'PREPAID15' ? (
                         <div className="checkout-coupon-applied-wrap">
                           <button
                             type="button"
@@ -901,11 +907,11 @@ export default function CartDrawer({
                         <button
                           type="button"
                           className="checkout-coupon-action-btn"
-                          disabled={isCouponDisabled}
+                          disabled={isPrepaidCouponDisabled}
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (isCouponDisabled) return;
-                            setSelectedCoupon('PREPAID10');
+                            if (isPrepaidCouponDisabled) return;
+                            setSelectedCoupon('PREPAID15');
                           }}
                         >
                           APPLY
@@ -914,30 +920,30 @@ export default function CartDrawer({
                     </div>
                   </div>
 
-                  {/* FIRST5 */}
+                  {/* FIRST10 */}
                   <div
-                    className={`checkout-coupon-card ${selectedCoupon === 'FIRST5' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
-                    data-coupon="FIRST5"
+                    className={`checkout-coupon-card ${selectedCoupon === 'FIRST10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
+                    data-coupon="FIRST10"
                     onClick={() => {
-                      if (isCouponDisabled || selectedCoupon === 'FIRST5') return;
+                      if (isCouponDisabled || selectedCoupon === 'FIRST10') return;
                       if (!hasValidPhone) {
-                        onToast('Enter your phone number to apply FIRST5.');
+                        onToast('Enter your phone number to apply FIRST10.');
                       }
-                      setSelectedCoupon('FIRST5');
+                      setSelectedCoupon('FIRST10');
                     }}
                   >
                     <div className="checkout-coupon-card-content">
                       <div className="checkout-coupon-card-header">
-                        <span className="checkout-coupon-code">FIRST5</span>
-                        <span className="checkout-coupon-badge">5% OFF</span>
+                        <span className="checkout-coupon-code">FIRST10</span>
+                        <span className="checkout-coupon-badge">10% OFF</span>
                       </div>
-                      <div className="checkout-coupon-card-subtitle">5% OFF on first order</div>
-                      {selectedCoupon === 'FIRST5' && !hasValidPhone && (
+                      <div className="checkout-coupon-card-subtitle">10% OFF on first order</div>
+                      {selectedCoupon === 'FIRST10' && !hasValidPhone && (
                         <div className="coupon-phone-hint">Enter phone number to activate</div>
                       )}
                     </div>
                     <div className="checkout-coupon-card-action">
-                      {selectedCoupon === 'FIRST5' ? (
+                      {selectedCoupon === 'FIRST10' ? (
                         <div className="checkout-coupon-applied-wrap">
                           <button
                             type="button"
@@ -946,7 +952,7 @@ export default function CartDrawer({
                             onClick={(e) => {
                               e.stopPropagation();
                               if (!hasValidPhone) {
-                                onToast('Enter your phone number to apply FIRST5.');
+                                onToast('Enter your phone number to apply FIRST10.');
                               }
                             }}
                           >
@@ -972,9 +978,9 @@ export default function CartDrawer({
                             e.stopPropagation();
                             if (isCouponDisabled) return;
                             if (!hasValidPhone) {
-                              onToast('Enter your phone number to apply FIRST5.');
+                              onToast('Enter your phone number to apply FIRST10.');
                             }
-                            setSelectedCoupon('FIRST5');
+                            setSelectedCoupon('FIRST10');
                           }}
                         >
                           APPLY

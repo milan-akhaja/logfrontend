@@ -1080,7 +1080,7 @@ describe('ConsentBanner and Consent Management', () => {
     unmount();
   });
 
-  it('renders 10% OFF on prepaid orders in payment options and Prepaid: 10% off label in CartDrawer', async () => {
+  it('renders 15% OFF on prepaid orders in payment options and Prepaid: 15% off label in CartDrawer', async () => {
     const CartDrawer = (await import('./components/CartDrawer')).default;
     const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
@@ -1099,7 +1099,7 @@ describe('ConsentBanner and Consent Management', () => {
             success: true,
             subtotal: 2400,
             discount: 240,
-            discountLabel: 'Prepaid: 10% off',
+            discountLabel: 'Prepaid: 15% off',
             shipping: 0,
             founderDeliveryFee: 0,
             total: 2160,
@@ -1129,7 +1129,7 @@ describe('ConsentBanner and Consent Management', () => {
 
     // Initial cart drawer view: wait for quote to load and check label
     await waitFor(() => {
-      expect(screen.getByText('Prepaid: 10% off')).toBeDefined();
+      expect(screen.getByText('Prepaid: 15% off')).toBeDefined();
     });
 
     // Proceed to checkout step
@@ -1142,13 +1142,13 @@ describe('ConsentBanner and Consent Management', () => {
     });
 
     // Verify discount label in checkout order summary
-    expect(screen.getAllByText('Prepaid: 10% off').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Prepaid: 15% off').length).toBeGreaterThan(0);
 
     window.fetch = originalFetch;
     unmount();
   });
 
-  it('renders Option A: 2 offer cards (PREPAID10 and FIRST5) on ProductDetail without drop-facts card', async () => {
+  it('renders Option A: 2 offer cards (PREPAID15 and FIRST10) on ProductDetail without drop-facts card', async () => {
     const ProductDetail = (await import('./pages/ProductDetail')).default;
     const mockProduct = {
       id: 'tee-regular',
@@ -1174,12 +1174,13 @@ describe('ConsentBanner and Consent Management', () => {
     await waitFor(() => {
       // Card 1: PREPAID OFFER
       expect(screen.getByText('PREPAID OFFER')).toBeDefined();
-      expect(screen.getByText('10% OFF')).toBeDefined();
-      expect(screen.getByText('PREPAID10')).toBeDefined();
+      expect(screen.getByText('15% OFF')).toBeDefined();
+      expect(screen.getByText('PREPAID15')).toBeDefined();
 
       // Card 2: FIRST ORDER
       expect(screen.getByText('FIRST ORDER')).toBeDefined();
-      expect(screen.getByText('FIRST5')).toBeDefined();
+      expect(screen.getByText('10% OFF')).toBeDefined();
+      expect(screen.getByText('FIRST10')).toBeDefined();
 
       // Drop facts card must NOT be present
       expect(screen.queryByText(/NUMBERED DROP/i)).toBeNull();
@@ -1358,7 +1359,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     unmount();
   });
 
-  it('R3, R4, R12: CartDrawer renders coupon picker with No coupon, PREPAID10, and FIRST5', async () => {
+  it('R3, R4, R12: CartDrawer renders coupon picker with No coupon, PREPAID15, and FIRST10', async () => {
     const CartDrawer = (await import('./components/CartDrawer')).default;
     const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
@@ -1411,30 +1412,29 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     await waitFor(() => {
       expect(screen.getByText('Offers & Coupons')).toBeDefined();
       expect(screen.queryByText('No coupon')).toBeNull();
-      expect(screen.getByText('PREPAID10')).toBeDefined();
-      expect(screen.getByText('FIRST5')).toBeDefined();
-      expect(screen.getByText('5% OFF on first order')).toBeDefined();
+      expect(screen.getByText('PREPAID15')).toBeDefined();
+      expect(screen.getByText('FIRST10')).toBeDefined();
+      expect(screen.getByText('10% OFF on first order')).toBeDefined();
       expect(screen.queryByText('Pehle phone number bharo')).toBeNull();
     });
 
-    // Select COD: coupons become disabled and note appears
+    // Select COD (advance off): PREPAID15 becomes disabled with a note, FIRST10 stays available
     const codCard = screen.getByText('Cash on Delivery (COD)');
     fireEvent.click(codCard);
 
     await waitFor(() => {
-      expect(screen.getByText('Coupons are only valid on prepaid orders.')).toBeDefined();
-      const optionsContainer = container.querySelector('.checkout-coupon-options');
-      expect(optionsContainer.classList.contains('coupons-disabled')).toBe(true);
+      expect(screen.getByText('PREPAID15 is valid on prepaid orders only.')).toBeDefined();
       const applyButtons = screen.getAllByRole('button', { name: /^APPLY$/i });
       expect(applyButtons.length).toBe(2);
-      applyButtons.forEach(btn => expect(btn.disabled).toBe(true));
+      expect(applyButtons[0].disabled).toBe(true);
+      expect(applyButtons[1].disabled).toBe(false);
     });
 
     window.fetch = originalFetch;
     unmount();
   });
 
-  it('selecting FIRST5 with invalid phone sends couponCode: null and keeps standard total until valid 10-digit phone is entered', async () => {
+  it('selecting FIRST10 with invalid phone sends couponCode: null and keeps standard total until valid 10-digit phone is entered', async () => {
     const CartDrawer = (await import('./components/CartDrawer')).default;
     const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
@@ -1449,19 +1449,19 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       if (typeof url === 'string' && url.includes('/api/orders/quote')) {
         const body = options?.body ? JSON.parse(options.body) : {};
         quoteRequests.push(body);
-        const hasCoupon = body.couponCode === 'FIRST5';
+        const hasCoupon = body.couponCode === 'FIRST10';
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
             success: true,
             subtotal: 2400,
             discount: hasCoupon ? 120 : 0,
-            discountLabel: hasCoupon ? 'First order: 5% off' : '',
+            discountLabel: hasCoupon ? 'First order: 10% off' : '',
             shipping: 0,
             founderDeliveryFee: 0,
             total: hasCoupon ? 2280 : 2400,
             paymentMethod: body.paymentMethod || 'payu',
-            couponCode: hasCoupon ? 'FIRST5' : null,
+            couponCode: hasCoupon ? 'FIRST10' : null,
             lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
           })
         });
@@ -1499,21 +1499,21 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       expect(quoteRequests[0].couponCode).toBeNull();
     });
 
-    // Select FIRST5 while phone is empty
-    const first5Card = container.querySelector('.checkout-coupon-card[data-coupon="FIRST5"]');
+    // Select FIRST10 while phone is empty
+    const first5Card = container.querySelector('.checkout-coupon-card[data-coupon="FIRST10"]');
     const first5ApplyBtn = first5Card.querySelector('.checkout-coupon-action-btn');
     fireEvent.click(first5ApplyBtn);
 
     // Toast in English shown, hint displayed, button remains APPLY (does not claim APPLIED until valid phone)
-    expect(onToast).toHaveBeenCalledWith('Enter your phone number to apply FIRST5.');
+    expect(onToast).toHaveBeenCalledWith('Enter your phone number to apply FIRST10.');
     expect(first5Card.classList.contains('selected')).toBe(true);
     expect(first5Card.querySelector('.checkout-coupon-action-btn.applied')).toBeNull();
     expect(first5Card.querySelector('.checkout-coupon-action-btn').textContent).toBe('APPLY');
     expect(screen.getByText('Enter phone number to activate')).toBeDefined();
-    expect(screen.getByText('5% OFF on first order')).toBeDefined();
+    expect(screen.getByText('10% OFF on first order')).toBeDefined();
     expect(screen.queryByText('Pehle phone number bharo')).toBeNull();
 
-    // While phone is empty, quote request sends couponCode: null (not FIRST5)
+    // While phone is empty, quote request sends couponCode: null (not FIRST10)
     await waitFor(() => {
       const lastReq = quoteRequests[quoteRequests.length - 1];
       expect(lastReq.couponCode).toBeNull();
@@ -1523,10 +1523,10 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     const phoneInput = container.querySelector('input[name="phone"]');
     fireEvent.change(phoneInput, { target: { value: '9876543210' } });
 
-    // Quote re-runs with couponCode: 'FIRST5' and updates totals to discounted amount; button flips to APPLIED; hint disappears
+    // Quote re-runs with couponCode: 'FIRST10' and updates totals to discounted amount; button flips to APPLIED; hint disappears
     await waitFor(() => {
       const lastReq = quoteRequests[quoteRequests.length - 1];
-      expect(lastReq.couponCode).toBe('FIRST5');
+      expect(lastReq.couponCode).toBe('FIRST10');
       expect(lastReq.customerInfo.phone).toBe('9876543210');
       expect(screen.getByText('-₹120')).toBeDefined();
       expect(first5Card.querySelector('.checkout-coupon-action-btn.applied')).toBeDefined();
@@ -1710,9 +1710,13 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
     const CartDrawer = (await import('./components/CartDrawer')).default;
     const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
+    const { resetCodAdvanceConfigForTesting } = await import('./hooks/useCodAdvance');
 
     const originalFetch = window.fetch;
     window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/cod-advance-config')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ enabled: true, amountInr: 100 }) });
+      }
       if (typeof url === 'string' && url.includes('/api/orders/quote')) {
         const body = options?.body ? JSON.parse(options.body) : {};
         const isCod = body.paymentMethod === 'cod';
@@ -1783,6 +1787,7 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
     });
 
     window.fetch = originalFetch;
+    resetCodAdvanceConfigForTesting();
     unmount();
   });
 

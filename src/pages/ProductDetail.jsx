@@ -614,22 +614,22 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
 
-            {/* PRODUCT OFFER CARDS (OPTION A: PREPAID10 & FIRST5, NO DROP FACTS) */}
+            {/* PRODUCT OFFER CARDS (OPTION A: PREPAID15 & FIRST10, NO DROP FACTS) */}
             {showOfferCard && (
               <div className="product-offer-cards-container">
                 <div className="product-offer-card product-offer-card-promo">
                   <div className="product-offer-pill">PREPAID OFFER</div>
-                  <h3 className="product-offer-headline">10% OFF</h3>
+                  <h3 className="product-offer-headline">15% OFF</h3>
                   <p className="product-offer-text">
-                    Use code <span className="product-offer-highlight">PREPAID10</span> at checkout on prepaid orders.
+                    Use code <span className="product-offer-highlight">PREPAID15</span> at checkout on prepaid orders.
                   </p>
                 </div>
 
                 <div className="product-offer-card product-offer-card-promo">
                   <div className="product-offer-pill">FIRST ORDER</div>
-                  <h3 className="product-offer-headline">5% OFF</h3>
+                  <h3 className="product-offer-headline">10% OFF</h3>
                   <p className="product-offer-text">
-                    Use code <span className="product-offer-highlight">FIRST5</span> at checkout on your first prepaid order.
+                    Use code <span className="product-offer-highlight">FIRST10</span> at checkout on your first order (COD or prepaid).
                   </p>
                 </div>
               </div>
