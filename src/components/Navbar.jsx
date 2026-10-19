@@ -5,7 +5,12 @@ import StoriesOverlay from './StoriesOverlay';
 import SearchOverlay from './SearchOverlay';
 import BurgerMenuOverlay from './BurgerMenuOverlay';
 
-const ANNOUNCEMENT_ITEMS = Array.from({ length: 12 });
+const ANNOUNCEMENT_MESSAGES = [
+  'COD AVAILABLE (₹100 ADVANCE)',
+  'NO EXTRA FEES, TAXES INCLUDED',
+  'FREE SHIPPING'
+];
+const ANNOUNCEMENT_CYCLES = Array.from({ length: 6 });
 
 export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const location = useLocation();
@@ -75,18 +80,26 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
         <div className="top-announcement-strip" role="region" aria-label="Announcement">
           <div className="announcement-track">
             <div className="announcement-group">
-              {ANNOUNCEMENT_ITEMS.map((_, idx) => (
-                <React.Fragment key={idx}>
-                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)</span>
-                  <span className="announcement-divider" aria-hidden="true">·</span>
+              {ANNOUNCEMENT_CYCLES.map((_, cycleIdx) => (
+                <React.Fragment key={cycleIdx}>
+                  {ANNOUNCEMENT_MESSAGES.map((msg, msgIdx) => (
+                    <React.Fragment key={`${cycleIdx}-${msgIdx}`}>
+                      <span className="announcement-item">{msg}</span>
+                      <span className="announcement-divider" aria-hidden="true">•</span>
+                    </React.Fragment>
+                  ))}
                 </React.Fragment>
               ))}
             </div>
             <div className="announcement-group" aria-hidden="true">
-              {ANNOUNCEMENT_ITEMS.map((_, idx) => (
-                <React.Fragment key={idx}>
-                  <span className="announcement-item">FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)</span>
-                  <span className="announcement-divider" aria-hidden="true">·</span>
+              {ANNOUNCEMENT_CYCLES.map((_, cycleIdx) => (
+                <React.Fragment key={cycleIdx}>
+                  {ANNOUNCEMENT_MESSAGES.map((msg, msgIdx) => (
+                    <React.Fragment key={`${cycleIdx}-${msgIdx}`}>
+                      <span className="announcement-item">{msg}</span>
+                      <span className="announcement-divider" aria-hidden="true">•</span>
+                    </React.Fragment>
+                  ))}
                 </React.Fragment>
               ))}
             </div>

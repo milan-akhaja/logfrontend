@@ -2158,7 +2158,7 @@ describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
     vi.restoreAllMocks();
   });
 
-  it('Navbar top strip displays "FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)" in both desktop and mobile locations', async () => {
+  it('Navbar top strip displays "COD AVAILABLE (₹100 ADVANCE) • NO EXTRA FEES, TAXES INCLUDED • FREE SHIPPING" in both marquee groups', async () => {
     const Navbar = (await import('./components/Navbar')).default;
     const { render, screen } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
@@ -2169,15 +2169,19 @@ describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
       </MemoryRouter>
     );
 
-    const stripElements = screen.getAllByText('FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)');
-    expect(stripElements.length).toBeGreaterThan(0);
-    // Verify both marquee tracks render the new text
+    // Verify all 3 items render in the strip
+    expect(screen.getAllByText('COD AVAILABLE (₹100 ADVANCE)').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('NO EXTRA FEES, TAXES INCLUDED').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('FREE SHIPPING').length).toBeGreaterThan(0);
+
+    // Verify both marquee tracks render the 3 items in exact order separated by •
     const groups = container.querySelectorAll('.announcement-group');
     expect(groups.length).toBe(2);
     groups.forEach((group) => {
-      expect(group.textContent).toContain('FREE SHIPPING · COD AVAILABLE (₹100 ADVANCE)');
+      expect(group.textContent).toMatch(/COD AVAILABLE \(₹100 ADVANCE\)\s*•\s*NO EXTRA FEES, TAXES INCLUDED\s*•\s*FREE SHIPPING/);
     });
     expect(screen.queryByText(/COD AVAILABLE ON ALL ORDERS/i)).toBeNull();
+    expect(screen.queryByText(/FREE SHIPPING · COD AVAILABLE/i)).toBeNull();
 
     unmount();
   });
