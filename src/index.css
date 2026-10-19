@@ -7666,54 +7666,6 @@ header.scrolled .nav-action-icon-btn {
   letter-spacing: 0.06em;
 }
 
-.checkout-tags-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-}
-
-.checkout-tags-arrow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid rgba(15, 15, 17, 0.2);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.checkout-tags-arrow:disabled { opacity: 0.35; cursor: default; }
-
-.checkout-tags-nav-mid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.checkout-tags-dots { display: flex; gap: 8px; }
-
-.checkout-tags-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background: rgba(15, 15, 17, 0.25);
-  transition: width 0.3s ease, background 0.3s ease;
-}
-
-.checkout-tags-dot.is-active { width: 22px; background: var(--ink); }
-
-.checkout-tags-hint {
-  color: #5F5F63;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-}
-
 @keyframes logTagSway {
   0%, 100% { transform: rotate(0deg); }
   25% { transform: rotate(2.2deg); }

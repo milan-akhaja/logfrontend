@@ -182,13 +182,6 @@ function CheckoutTags({ cart, cartHasDrop }) {
     setIdx((prev) => (prev === next ? prev : next));
   };
 
-  const goTo = (i) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const target = Math.max(0, Math.min(count - 1, i));
-    el.scrollTo({ left: target * getStep(el), behavior: 'smooth' });
-  };
-
   if (count === 0) return null;
 
   return (
@@ -230,24 +223,6 @@ function CheckoutTags({ cart, cartHasDrop }) {
           );
         })}
       </div>
-      {multi && (
-        <div className="checkout-tags-nav">
-          <button type="button" className="checkout-tags-arrow" aria-label="Previous piece" disabled={active === 0} onClick={() => goTo(active - 1)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
-          </button>
-          <div className="checkout-tags-nav-mid">
-            <div className="checkout-tags-dots" aria-hidden="true">
-              {cart.map((item, i) => (
-                <span className={`checkout-tags-dot${i === active ? ' is-active' : ''}`} key={item.cartItemId}></span>
-              ))}
-            </div>
-            <span className="checkout-tags-hint" aria-live="polite">PIECE {active + 1} OF {count} · SWIPE</span>
-          </div>
-          <button type="button" className="checkout-tags-arrow" aria-label="Next piece" disabled={active === count - 1} onClick={() => goTo(active + 1)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
