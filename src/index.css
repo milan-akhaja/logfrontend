@@ -7361,48 +7361,126 @@ header.scrolled .nav-action-icon-btn {
 /* ── Checkout hang-tag layout (presentation only) ─────────── */
 .checkout-delivery-form { gap: 14px; }
 
+.checkout-tags { margin: 0 -4px 2px; }
+
+.checkout-tags-scroller {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 calc((100% - min(300px, 78vw)) / 2) 22px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.checkout-tags-scroller::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .checkout-tags-scroller { scroll-behavior: smooth; }
+}
+
+.checkout-tag-slide {
+  flex: 0 0 min(300px, 78vw);
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  opacity: 0.6;
+  transform: scale(0.9);
+  transform-origin: 50% 0;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+}
+
+.checkout-tag-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+}
+
 .checkout-tag {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 300px;
-  margin: 0 auto 2px;
-  padding-top: 26px;
+  padding-top: 20px;
+  transform-origin: 50% 0;
+  animation: logTagIdle 4s ease-in-out infinite;
 }
 
-.checkout-tag-hole {
+.checkout-tag-slide.is-active .checkout-tag {
+  animation: logTagSettle 1.8s ease-out, logTagSway 5.5s ease-in-out 1.8s infinite;
+}
+
+.checkout-tag-nail {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: 0 0 0 3px rgba(15, 15, 17, 0.12);
+}
+
+.checkout-tag-string {
+  width: 3px;
+  height: 44px;
+  margin-top: -2px;
+  background: repeating-linear-gradient(135deg, #E6E1D4 0 3px, #B9B2A1 3px 6px);
+}
+
+.checkout-tag-eyelet {
   position: relative;
-  z-index: 1;
-  width: 14px;
-  height: 14px;
-  margin-bottom: -8px;
-  border: 2px solid var(--ink);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -2px 0 -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #F7F7F7, #A3A3A8 55%, #5A5A5F);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.checkout-tag-eyelet span {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--paper);
-}
-
-.checkout-tag-hole::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 2px;
-  height: 26px;
-  margin-left: -1px;
-  background: var(--ink);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .checkout-tag-body {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
   width: 100%;
   min-width: 0;
-  padding: 22px 20px 16px;
-  border-radius: 14px;
-  background: var(--ink);
+  padding: 26px 22px 18px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #202024, #0F0F11 55%, #18181B);
   color: var(--paper);
+  box-shadow: 0 22px 28px -14px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+.checkout-tag-body::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1.5px dashed rgba(250, 249, 246, 0.22);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+.checkout-tag-body::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.09), transparent);
+  animation: logTagSheen 6s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .checkout-tag-top {
@@ -7425,17 +7503,6 @@ header.scrolled .nav-action-icon-btn {
   font-weight: 900;
   line-height: 1.1;
   letter-spacing: -0.02em;
-}
-
-.checkout-tag-list {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  color: #A8A8AD;
-  font-size: 11px;
-  line-height: 1.4;
 }
 
 .checkout-tag-meta {
@@ -7585,4 +7652,97 @@ header.scrolled .nav-action-icon-btn {
 @media (max-width: 340px) {
   .checkout-tag-name { font-size: 19px; }
   .checkout-tag-v { font-size: 17px; }
+}
+
+.checkout-tag-top { align-items: center; }
+
+.checkout-tag-count {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #C92A2A;
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.checkout-tags-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.checkout-tags-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(15, 15, 17, 0.2);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.checkout-tags-arrow:disabled { opacity: 0.35; cursor: default; }
+
+.checkout-tags-nav-mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkout-tags-dots { display: flex; gap: 8px; }
+
+.checkout-tags-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(15, 15, 17, 0.25);
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.checkout-tags-dot.is-active { width: 22px; background: var(--ink); }
+
+.checkout-tags-hint {
+  color: #5F5F63;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+@keyframes logTagSway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(2.2deg); }
+  75% { transform: rotate(-2.2deg); }
+}
+
+@keyframes logTagSettle {
+  0% { transform: rotate(10deg); }
+  16% { transform: rotate(-7deg); }
+  32% { transform: rotate(4.5deg); }
+  48% { transform: rotate(-2.8deg); }
+  64% { transform: rotate(1.6deg); }
+  80% { transform: rotate(-0.8deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes logTagIdle {
+  0%, 100% { transform: rotate(-1.2deg); }
+  50% { transform: rotate(1.2deg); }
+}
+
+@keyframes logTagSheen {
+  0%, 60% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkout-tag,
+  .checkout-tag-slide.is-active .checkout-tag,
+  .checkout-tag-body::after { animation: none; }
+  .checkout-tag-slide { transition: none; }
 }
