@@ -434,6 +434,7 @@ export default function CartDrawer({
     if (!isOpen) {
       setPaymentMethod('payu');
       setSelectedCoupon(null);
+      setShowCheckoutForm(false);
     }
   }, [isOpen]);
 
