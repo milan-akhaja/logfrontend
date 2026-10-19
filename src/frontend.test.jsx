@@ -1104,6 +1104,7 @@ describe('ConsentBanner and Consent Management', () => {
             founderDeliveryFee: 0,
             total: 2160,
             paymentMethod: 'payu',
+            couponCode: 'PREPAID15',
             hasPreorder: false,
             lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
           })
@@ -1493,10 +1494,10 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       expect(screen.getByText('Offers & Coupons')).toBeDefined();
     });
 
-    // Initial quote had couponCode: null
+    // Best offer for prepaid (PREPAID15) is auto-applied before the customer picks anything
     await waitFor(() => {
       expect(quoteRequests.length).toBeGreaterThan(0);
-      expect(quoteRequests[0].couponCode).toBeNull();
+      expect(quoteRequests[0].couponCode).toBe('PREPAID15');
     });
 
     // Select FIRST10 while phone is empty
@@ -1536,6 +1537,136 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
 
     window.fetch = originalFetch;
     unmount();
+  });
+
+  describe('bag offers and auto-applied best offer', () => {
+    const bagCart = [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }];
+    let quoteRequests;
+    let originalFetch;
+
+    const mountDrawer = async () => {
+      const CartDrawer = (await import('./components/CartDrawer')).default;
+      const { render } = await import('@testing-library/react');
+      const { MemoryRouter } = await import('react-router-dom');
+      return render(
+        <MemoryRouter>
+          <CartDrawer
+            isOpen={true}
+            onClose={() => {}}
+            cart={bagCart}
+            onQtyChange={() => {}}
+            onRemove={() => {}}
+            onClearCart={() => {}}
+            onPurchase={() => {}}
+            onToast={() => {}}
+          />
+        </MemoryRouter>
+      );
+    };
+
+    beforeEach(() => {
+      quoteRequests = [];
+      originalFetch = window.fetch;
+      window.fetch = vi.fn().mockImplementation((url, options) => {
+        if (typeof url === 'string' && url.includes('/api/orders/quote')) {
+          const body = options?.body ? JSON.parse(options.body) : {};
+          quoteRequests.push(body);
+          const discount = body.couponCode === 'PREPAID15' ? 360 : (body.couponCode === 'FIRST10' ? 240 : 0);
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              success: true,
+              subtotal: 2400,
+              discount,
+              discountLabel: discount ? 'Offer' : '',
+              shipping: 0,
+              founderDeliveryFee: 0,
+              total: 2400 - discount,
+              paymentMethod: body.paymentMethod || 'payu',
+              couponCode: body.couponCode ?? null,
+              lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
+            })
+          });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+      });
+    });
+
+    afterEach(() => {
+      window.fetch = originalFetch;
+    });
+
+    it('bag shows both offers with PREPAID15 auto-applied and the checkout button carries the total', async () => {
+      const { screen, waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+
+      await waitFor(() => {
+        expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true);
+        expect(container.querySelector('.checkout-coupon-card[data-coupon="FIRST10"]').classList.contains('selected')).toBe(false);
+        expect(screen.getByText('-₹360')).toBeDefined();
+        expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,040/ })).toBeDefined();
+      });
+      expect(quoteRequests[quoteRequests.length - 1].couponCode).toBe('PREPAID15');
+
+      fireEvent.click(screen.getByRole('button', { name: /Proceed to Checkout/ }));
+      await waitFor(() => {
+        expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true);
+      });
+      unmount();
+    });
+
+    it('switching payment method moves the auto-applied offer between PREPAID15 and FIRST10', async () => {
+      const { waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+      const card = (code) => container.querySelector(`.checkout-coupon-card[data-coupon="${code}"]`);
+
+      fireEvent.click(container.querySelector('.checkout-btn'));
+      await waitFor(() => expect(container.querySelector('input[type="radio"][value="cod"]')).not.toBeNull());
+
+      fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
+      await waitFor(() => {
+        expect(card('FIRST10').classList.contains('selected')).toBe(true);
+        expect(card('PREPAID15').classList.contains('selected')).toBe(false);
+      });
+
+      fireEvent.click(container.querySelector('input[type="radio"][value="payu"]'));
+      await waitFor(() => {
+        expect(card('PREPAID15').classList.contains('selected')).toBe(true);
+        expect(card('FIRST10').classList.contains('selected')).toBe(false);
+      });
+      unmount();
+    });
+
+    it('an offer the customer removed stays removed when the payment method changes', async () => {
+      const { waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+
+      await waitFor(() => expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true));
+      fireEvent.click(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"] .checkout-coupon-remove-btn'));
+      await waitFor(() => expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull());
+
+      fireEvent.click(container.querySelector('.checkout-btn'));
+      await waitFor(() => expect(container.querySelector('input[type="radio"][value="cod"]')).not.toBeNull());
+      fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
+
+      await waitFor(() => {
+        expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
+        expect(quoteRequests[quoteRequests.length - 1].couponCode).toBeNull();
+      });
+      unmount();
+    });
+
+    it('payment cards carry the 15% OFF and 10% OFF first-order badges', async () => {
+      const { waitFor, fireEvent } = await import('@testing-library/react');
+      const { container, unmount } = await mountDrawer();
+
+      fireEvent.click(container.querySelector('.checkout-btn'));
+      await waitFor(() => {
+        const badges = Array.from(container.querySelectorAll('.checkout-payment-offer-badge')).map((el) => el.textContent);
+        expect(badges).toEqual(['15% OFF', '10% OFF · FIRST ORDER']);
+      });
+      unmount();
+    });
   });
 });
 
@@ -1800,6 +1931,9 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
     const orderCalls = [];
     const originalFetch = window.fetch;
     window.fetch = vi.fn().mockImplementation((url, options) => {
+      if (typeof url === 'string' && url.includes('/api/cod-advance-config')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ enabled: true, amountInr: 100 }) });
+      }
       if (typeof url === 'string' && url.includes('/api/orders/quote')) {
         const body = options?.body ? JSON.parse(options.body) : {};
         const isCod = body.paymentMethod === 'cod';
@@ -1882,6 +2016,7 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
 
     formSubmitSpy.mockRestore();
     window.fetch = originalFetch;
+    resetCodAdvanceConfigForTesting();
     unmount();
   });
 
@@ -1907,7 +2042,7 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
             advanceAmount: 0,
             balanceDue: 2400,
             paymentMethod: body.paymentMethod || 'payu',
-            couponCode: null,
+            couponCode: body.couponCode ?? null,
             lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
           })
         });
