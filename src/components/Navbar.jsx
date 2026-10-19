@@ -6,7 +6,7 @@ import SearchOverlay from './SearchOverlay';
 import BurgerMenuOverlay from './BurgerMenuOverlay';
 
 const ANNOUNCEMENT_MESSAGES = [
-  'COD AVAILABLE (₹100 ADVANCE)',
+  'COD AVAILABLE',
   'NO EXTRA FEES, TAXES INCLUDED',
   'FREE SHIPPING'
 ];
