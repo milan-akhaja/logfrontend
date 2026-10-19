@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
@@ -162,6 +162,94 @@ function getClientOrderId() {
     localStorage.setItem(CHECKOUT_ORDER_KEY, value);
   }
   return value;
+}
+
+function CheckoutTags({ cart, cartHasDrop }) {
+  const [idx, setIdx] = useState(0);
+  const scrollerRef = useRef(null);
+  const count = cart.length;
+  const multi = count > 1;
+  const active = Math.min(idx, Math.max(count - 1, 0));
+
+  const getStep = (el) => {
+    const slides = el.children;
+    return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : (el.clientWidth || 1);
+  };
+
+  const handleScroll = (e) => {
+    const el = e.currentTarget;
+    const next = Math.max(0, Math.min(count - 1, Math.round(el.scrollLeft / getStep(el))));
+    setIdx((prev) => (prev === next ? prev : next));
+  };
+
+  const goTo = (i) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const target = Math.max(0, Math.min(count - 1, i));
+    el.scrollTo({ left: target * getStep(el), behavior: 'smooth' });
+  };
+
+  if (count === 0) return null;
+
+  return (
+    <div className="checkout-tags">
+      <div className="checkout-tags-scroller" ref={scrollerRef} onScroll={handleScroll}>
+        {cart.map((item, i) => {
+          const qty = Number(item.quantity) || 1;
+          return (
+            <div
+              className={`checkout-tag-slide${i === active ? ' is-active' : ''}`}
+              key={item.cartItemId}
+              role="group"
+              aria-label={`Piece ${i + 1} of ${count}`}
+            >
+              <div className="checkout-tag">
+                <span className="checkout-tag-nail" aria-hidden="true"></span>
+                <span className="checkout-tag-string" aria-hidden="true"></span>
+                <span className="checkout-tag-eyelet" aria-hidden="true"><span></span></span>
+                <div className="checkout-tag-body">
+                  <div className="checkout-tag-top">
+                    <span>{cartHasDrop ? 'NUMBERED DROP' : 'LOGCLOTH'}</span>
+                    {multi && <span className="checkout-tag-count">{i + 1} / {count}</span>}
+                  </div>
+                  <div className="checkout-tag-name">{item.name}</div>
+                  <div className="checkout-tag-meta">
+                    <div>
+                      <span className="checkout-tag-k">SIZE</span>
+                      <span className="checkout-tag-v">{item.selectedSize}{qty > 1 ? ` × ${qty}` : ''}</span>
+                    </div>
+                    <div>
+                      <span className="checkout-tag-k">PRICE</span>
+                      <span className="checkout-tag-v">{formatCurrency((Number(item.price) || 0) * qty)}</span>
+                    </div>
+                  </div>
+                  <div className="checkout-tag-barcode" aria-hidden="true"></div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {multi && (
+        <div className="checkout-tags-nav">
+          <button type="button" className="checkout-tags-arrow" aria-label="Previous piece" disabled={active === 0} onClick={() => goTo(active - 1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <div className="checkout-tags-nav-mid">
+            <div className="checkout-tags-dots" aria-hidden="true">
+              {cart.map((item, i) => (
+                <span className={`checkout-tags-dot${i === active ? ' is-active' : ''}`} key={item.cartItemId}></span>
+              ))}
+            </div>
+            <span className="checkout-tags-hint" aria-live="polite">PIECE {active + 1} OF {count} · SWIPE</span>
+          </div>
+          <button type="button" className="checkout-tags-arrow" aria-label="Next piece" disabled={active === count - 1} onClick={() => goTo(active + 1)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CartDrawer({
@@ -860,7 +948,11 @@ export default function CartDrawer({
         <div className={`cart-body${showCheckoutForm ? '' : ' cart-body-bag'}`}>
           {showCheckoutForm ? (
             <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
+              <CheckoutTags cart={cart} cartHasDrop={cartHasDrop} />
+
               <h3 className="checkout-delivery-title">Delivery</h3>
+
+              <div className="checkout-ship-card">
 
               <div className="checkout-field">
                 <label>Country/Region</label>
@@ -962,6 +1054,8 @@ export default function CartDrawer({
                 <input type="checkbox" name="saveInfo" checked={customerInfo.saveInfo} onChange={handleInputChange} />
                 <span>Save this information for next time</span>
               </label>
+
+              </div>
 
               <div className="checkout-shipping-method">
                 <h4>Shipping method</h4>
@@ -1092,7 +1186,8 @@ export default function CartDrawer({
                   : '7-day returns. refunds minus ₹23 (goes to the LOG Fund). full refund if we got it wrong.'}
               </p>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+              <div className="checkout-actions-bar">
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="button"
                   className="btn btn-outline"
@@ -1126,6 +1221,7 @@ export default function CartDrawer({
                   </button>
                 </p>
               )}
+              </div>
               <p className="checkout-contact">
                 Questions? <a href="mailto:contact@logcloth.com">contact@logcloth.com</a>
               </p>
