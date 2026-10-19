@@ -271,6 +271,10 @@ export function OrderReceiptModal({ order, onClose }) {
 
   if (!order) return null;
 
+  const advanceAmount = Number(order.advanceAmount ?? order.advance_amount ?? 0);
+  const balanceDue = Number(order.balanceDue ?? order.balance_due ?? (Number(order.total || 0) - advanceAmount));
+  const isCodAdvance = advanceAmount > 0 && balanceDue > 0;
+
   return (
     <div
       style={{
@@ -300,7 +304,11 @@ export function OrderReceiptModal({ order, onClose }) {
       >
         <div style={{ textAlign: 'center', marginBottom: '22px' }}>
           <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 900, textTransform: 'uppercase' }}>Order placed successfully</h2>
-          <p style={{ margin: 0, color: '#388e3c', fontWeight: 700 }}>Your payment and order details are confirmed.</p>
+          <p style={{ margin: 0, color: '#388e3c', fontWeight: 700 }}>
+            {isCodAdvance
+              ? `Your ${formatCurrency(advanceAmount)} advance is confirmed. Pay ${formatCurrency(balanceDue)} on delivery.`
+              : 'Your payment and order details are confirmed.'}
+          </p>
         </div>
 
         <div className="order-success-summary">
@@ -370,7 +378,7 @@ export function OrderReceiptModal({ order, onClose }) {
               <div className="order-success-line"><span>Discount</span><strong>-{formatCurrency(order.discount)}</strong></div>
             )}
             <div className="order-success-line"><span>Shipping</span><strong>{formatCurrency(order.shipping)}</strong></div>
-            <div className="order-success-line"><span>Donation</span><strong>{formatCurrency(order.donation)}</strong></div>
+            <div className="order-success-line"><span>Donation by LOG</span><strong>{formatCurrency(order.donation)}</strong></div>
             <div className="order-success-line order-success-grand"><span>Grand Total</span><strong>{formatCurrency(order.total)}</strong></div>
             {Number(order.advanceAmount ?? order.advance_amount ?? 0) > 0 && (
               <>

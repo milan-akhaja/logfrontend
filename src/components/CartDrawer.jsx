@@ -1397,7 +1397,7 @@ export default function CartDrawer({
                     <strong>{formatCurrency(lastOrderSummary.shipping)}</strong>
                   </div>
                   <div className="order-success-line">
-                    <span>Donation</span>
+                    <span>Donation by LOG</span>
                     <strong>{formatCurrency(lastOrderSummary.donation || lastDonation)}</strong>
                   </div>
                   <div className="order-success-line order-success-grand">

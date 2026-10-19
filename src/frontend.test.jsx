@@ -2138,6 +2138,133 @@ describe('Phase 2 COD with Advance Frontend Tests', () => {
     expect(screen.getByText('Pay on delivery:')).toBeDefined();
     expect(screen.getByText('₹2,300')).toBeDefined();
 
+    // 4. Confirmation sentence and donation label
+    expect(screen.getByText('Your ₹100 advance is confirmed. Pay ₹2,300 on delivery.')).toBeDefined();
+    expect(screen.getByText('Donation by LOG')).toBeDefined();
+
+    unmount();
+  }, 30000);
+
+  it('COD-advance success screen shows the new sentence with real advance and balance numbers, and prepaid order still shows the old sentence', async () => {
+    const { OrderReceiptModal } = await import('./App');
+    const { render, screen, cleanup } = await import('@testing-library/react');
+
+    // COD with advance: advanceAmount > 0 and balanceDue > 0
+    // Test with non-hardcoded values (e.g. advance 150, balance 2250)
+    const codAdvanceOrder = {
+      id: 'ord-cod-adv-dynamic',
+      status: 'Pending',
+      paymentMethod: 'Cash on Delivery (advance paid)',
+      advanceAmount: 150,
+      balanceDue: 2250,
+      subtotal: 2400,
+      shipping: 0,
+      donation: 23,
+      total: 2400,
+      customerInfo: { name: 'Sahaj', phone: '9876543210', address: '123 Main St' },
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const { unmount: unmountCod } = render(
+      <OrderReceiptModal order={codAdvanceOrder} onClose={() => {}} />
+    );
+
+    expect(screen.getByText('Your ₹150 advance is confirmed. Pay ₹2,250 on delivery.')).toBeDefined();
+    expect(screen.queryByText('Your payment and order details are confirmed.')).toBeNull();
+
+    unmountCod();
+    cleanup();
+
+    // Prepaid order: advanceAmount = 0
+    const prepaidOrder = {
+      id: 'ord-prepaid-full',
+      status: 'Paid',
+      paymentMethod: 'UPI',
+      advanceAmount: 0,
+      balanceDue: 0,
+      subtotal: 2400,
+      shipping: 0,
+      donation: 23,
+      total: 2400,
+      customerInfo: { name: 'Sahaj', phone: '9876543210', address: '123 Main St' },
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const { unmount: unmountPrepaid } = render(
+      <OrderReceiptModal order={prepaidOrder} onClose={() => {}} />
+    );
+
+    expect(screen.getByText('Your payment and order details are confirmed.')).toBeDefined();
+    expect(screen.queryByText(/advance is confirmed/i)).toBeNull();
+
+    unmountPrepaid();
+    cleanup();
+
+    // Legacy direct-COD (advance flag off): advanceAmount = 0, balanceDue = total
+    const legacyCodOrder = {
+      id: 'ord-legacy-cod',
+      status: 'Pending',
+      paymentMethod: 'Cash on Delivery',
+      advanceAmount: 0,
+      balanceDue: 2400,
+      subtotal: 2400,
+      shipping: 0,
+      donation: 23,
+      total: 2400,
+      customerInfo: { name: 'Sahaj', phone: '9876543210', address: '123 Main St' },
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const { unmount: unmountLegacy } = render(
+      <OrderReceiptModal order={legacyCodOrder} onClose={() => {}} />
+    );
+
+    expect(screen.getByText('Your payment and order details are confirmed.')).toBeDefined();
+    expect(screen.queryByText(/advance is confirmed/i)).toBeNull();
+
+    unmountLegacy();
+  }, 30000);
+
+  it('the donation label reads "Donation by LOG" and the grand total is unchanged', async () => {
+    const { OrderReceiptModal } = await import('./App');
+    const { render, screen } = await import('@testing-library/react');
+
+    const mockOrder = {
+      id: 'ord-donation-check',
+      status: 'Pending',
+      paymentMethod: 'Cash on Delivery (advance paid)',
+      advanceAmount: 100,
+      balanceDue: 2300,
+      subtotal: 2400,
+      shipping: 0,
+      donation: 23,
+      total: 2400,
+      customerInfo: { name: 'Sahaj', phone: '9876543210', address: '123 Main St' },
+      items: [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }]
+    };
+
+    const { container, unmount } = render(
+      <OrderReceiptModal order={mockOrder} onClose={() => {}} />
+    );
+
+    // 1. Label is "Donation by LOG"
+    expect(screen.getByText('Donation by LOG')).toBeDefined();
+
+    // 2. The old standalone "Donation" label is NOT rendered
+    const lineLabels = Array.from(container.querySelectorAll('.order-success-line span')).map(el => el.textContent.trim());
+    expect(lineLabels).toContain('Donation by LOG');
+    expect(lineLabels).not.toContain('Donation');
+
+    // 3. Amount is ₹23
+    expect(screen.getByText('₹23')).toBeDefined();
+
+    // 4. Grand total is unchanged at ₹2,400 (donation is not added to total)
+    const grandTotalRow = container.querySelector('.order-success-grand');
+    expect(grandTotalRow).not.toBeNull();
+    expect(grandTotalRow.textContent).toContain('Grand Total');
+    expect(grandTotalRow.textContent).toContain('₹2,400');
+    expect(mockOrder.total).toBe(2400);
+
     unmount();
   }, 30000);
 });
