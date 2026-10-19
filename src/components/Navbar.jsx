@@ -12,6 +12,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
   const navigate = useNavigate();
   const isHome = location.pathname === '/';
   const cleanPath = location.pathname.toLowerCase().replace(/\/+$/, '');
+  const isProductDetail = cleanPath === '/product' || cleanPath.startsWith('/product/');
   const isDarkPage = isHome || 
                      cleanPath === '/our-mission' ||  
                      cleanPath.startsWith('/blog');
@@ -168,7 +169,7 @@ export default function Navbar({ onCartOpen, cartCount, onShopNow }) {
       {/* Floating Bottom Nav for Mobile Only */}
       <div className={`mobile-bottom-navbar mobile-only ${showBottomNav ? 'visible' : 'hidden'}`}>
         <div className="mobile-bottom-nav-inner">
-          {!isHome && (
+          {!isHome && !isProductDetail && (
             <button
               type="button"
               className="mobile-bottom-nav-btn mobile-bottom-back-btn"
