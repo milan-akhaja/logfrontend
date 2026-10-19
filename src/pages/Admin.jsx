@@ -787,7 +787,6 @@ export default function Admin({ onToast }) {
   const videoCount = (galleryItems || []).filter(item => (item.media_type || item.mediaType) === 'video').length;
   const MAX_GALLERY_VIDEOS = 10;
   const [contentBlocks, setContentBlocks] = useState(() => mergeContentBlocks(DEFAULT_CONTENT_BLOCKS));
-  const [newInConfig, setNewInConfig] = useState({ tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
 
   // Autocomplete Suggestions State
   const [suggestions, setSuggestions] = useState([]);
@@ -819,7 +818,7 @@ export default function Admin({ onToast }) {
   // Fetch all data
   const fetchData = async () => {
     try {
-      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes] = await Promise.all([
+      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes] = await Promise.all([
         fetch('/api/analytics'),
         fetch('/api/analytics-config'),
         fetch('/api/orders'),
@@ -831,7 +830,6 @@ export default function Admin({ onToast }) {
         fetch('/api/gallery'),
         fetch('/api/hero-config'),
         fetch('/api/returns'),
-        fetch('/api/new-in-config'),
         fetch('/api/content-blocks-config')
       ]);
 
@@ -854,7 +852,7 @@ export default function Admin({ onToast }) {
       }
 
       const otherResults = await Promise.all(
-        [analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, newInRes, contentBlocksRes].map(async (res) => {
+        [analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes].map(async (res) => {
           if (!res.ok) return null;
           try {
             return await res.json();
@@ -864,7 +862,7 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, newInData, contentBlocksData] = otherResults;
+      const [analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, contentBlocksData] = otherResults;
 
       setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(analyticsConfigData || {}) });
       if (ordersData) setOrders(ordersData);
@@ -876,7 +874,6 @@ export default function Admin({ onToast }) {
       if (returnsData) setReturns(returnsData);
       setGalleryItems(galleryData || []);
       setContentBlocks(mergeContentBlocks(contentBlocksData || DEFAULT_CONTENT_BLOCKS));
-      setNewInConfig(newInData || { tagline: '', title: '', desc: '', buttonText: '', buttonLink: '', imageUrl: '' });
       setHeroConfig(heroData || {
         tagline: '',
         title: '',
@@ -2273,7 +2270,6 @@ export default function Admin({ onToast }) {
               {activeTab === 'blogs' && 'Log Book Blogs Manager'}
               {activeTab === 'gallery' && 'Homepage Gallery Lookbook'}
               {activeTab === 'contentblocks' && 'Banners & Quotes'}
-              {activeTab === 'newinconfig' && 'New In Page Settings'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
               {activeTab === 'subscribers' && 'Drop List'}
               {activeTab === 'goaffpro' && 'GoAffPro Affiliate Marketing'}
@@ -4416,122 +4412,6 @@ export default function Admin({ onToast }) {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {activeTab === 'newinconfig' && (
-          <div className="admin-card">
-            <div className="admin-card-header">
-              <h2 className="admin-card-title">Manage New In Page Editorial Hero</h2>
-            </div>
-
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                const res = await fetch('/api/new-in-config', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(newInConfig)
-                });
-                if (res.ok) {
-                  onToast('New In configuration updated successfully!');
-                  fetchData();
-                } else {
-                  onToast(await getApiError(res, 'Failed to update New In configuration.'));
-                }
-              } catch (err) {
-                console.error(err);
-                onToast('Error saving New In configuration.');
-              }
-            }} style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', maxWidth: '600px' }}>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Hero Tagline</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    placeholder="e.g. Summer Drop 2026"
-                    value={newInConfig.tagline || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, tagline: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Hero Title (supports newline \n)</label>
-                  <textarea
-                    className="admin-textarea"
-                    placeholder="e.g. The Racing &\nRebirth Drop."
-                    value={newInConfig.title || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, title: e.target.value }))}
-                    rows="3"
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Hero Description</label>
-                  <textarea
-                    className="admin-textarea"
-                    placeholder="Describe this new drop..."
-                    value={newInConfig.desc || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, desc: e.target.value }))}
-                    rows="4"
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Button Text</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    placeholder="e.g. Explore Drops"
-                    value={newInConfig.buttonText || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, buttonText: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Button Link Target</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    placeholder="e.g. #new-drops-catalog"
-                    value={newInConfig.buttonLink || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, buttonLink: e.target.value }))}
-                    required
-                  />
-                </div>
-
-                <div className="admin-form-group">
-                  <label className="admin-label">Hero Image Link / Upload</label>
-                  <input
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.gif,.avif,image/jpeg,image/png,image/webp,image/gif,image/avif"
-                    onChange={(e) => handleDirectUpload(e, (url) => setNewInConfig(prev => ({ ...prev, imageUrl: url })))}
-                    style={{ marginBottom: '5px', display: 'block' }}
-                  />
-                  <input
-                    type="text"
-                    className="admin-input"
-                    placeholder="Or enter image URL"
-                    value={newInConfig.imageUrl || ''}
-                    onChange={(e) => setNewInConfig(prev => ({ ...prev, imageUrl: e.target.value }))}
-                  />
-                  {newInConfig.imageUrl && (
-                    <div style={{ marginTop: '10px' }}>
-                      <label className="admin-label">Image Preview:</label>
-                      <img src={mediaUrl(newInConfig.imageUrl)} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--admin-border)' }} />
-                    </div>
-                  )}
-                </div>
-
-                <button type="submit" className="btn btn-accent" style={{ alignSelf: 'flex-start', padding: '10px 24px' }}>Save Settings</button>
-              </div>
-            </form>
           </div>
         )}
 
