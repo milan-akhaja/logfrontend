@@ -351,9 +351,15 @@ export default function CartDrawer({
         })
         .catch((err) => {
           if (err?.name !== 'AbortError') {
-            if (err?.message?.includes('first order') || err?.code === 'FIRST_ORDER_ONLY') {
-              onToast('This coupon is only valid on your first order.');
+            const errCode = err?.data?.code || err?.code;
+            const isFirstOrderError = errCode === 'FIRST_ORDER_ONLY' || err?.message?.includes('first order');
+            const isCouponError = isFirstOrderError
+              || ['PHONE_REQUIRED_FOR_COUPON', 'COUPON_PREPAID_ONLY', 'COUPON_PREORDER_CONFLICT', 'INVALID_COUPON', 'FIRST_ORDER_CHECK_FAILED'].includes(errCode)
+              || (Boolean(expectedCoupon) && err?.status >= 400 && err?.status < 500);
+            if (isCouponError) {
+              onToast(isFirstOrderError ? 'This coupon is only valid on your first order.' : (err?.message || 'This offer cannot be applied to this order.'));
               setSelectedCoupon(null);
+              return;
             }
             setQuote(null);
             setQuoteError(true);

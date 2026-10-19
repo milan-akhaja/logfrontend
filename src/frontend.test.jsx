@@ -1625,6 +1625,50 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       unmount();
     });
 
+    it('a coupon rejected by the server is removed with a message and the total never sticks on pending', async () => {
+      const { screen, waitFor, fireEvent } = await import('@testing-library/react');
+      const CartDrawer = (await import('./components/CartDrawer')).default;
+      const { render } = await import('@testing-library/react');
+      const { MemoryRouter } = await import('react-router-dom');
+      const baseFetch = window.fetch;
+      window.fetch = vi.fn().mockImplementation((url, options) => {
+        const body = options?.body ? JSON.parse(options.body) : {};
+        if (typeof url === 'string' && url.includes('/api/orders/quote') && body.couponCode === 'PREPAID15') {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: 'This offer is for online payment only.', code: 'COUPON_PREPAID_ONLY' })
+          });
+        }
+        return baseFetch(url, options);
+      });
+      const onToast = vi.fn();
+      const { container, unmount } = render(
+        <MemoryRouter>
+          <CartDrawer
+            isOpen={true}
+            onClose={() => {}}
+            cart={bagCart}
+            onQtyChange={() => {}}
+            onRemove={() => {}}
+            onClearCart={() => {}}
+            onPurchase={() => {}}
+            onToast={onToast}
+          />
+        </MemoryRouter>
+      );
+      const tile = (code) => container.querySelector(`.bag-offer-tile[data-coupon="${code}"]`);
+
+      await waitFor(() => expect(tile('PREPAID15')).not.toBeNull());
+      fireEvent.click(tile('PREPAID15').querySelector('.bag-offer-btn'));
+      await waitFor(() => {
+        expect(onToast).toHaveBeenCalledWith('This offer is for online payment only.');
+        expect(container.querySelector('.bag-offer-tile.selected')).toBeNull();
+        expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,400/ })).toBeDefined();
+      });
+      unmount();
+    });
+
     it('REMOVE on a bag tile clears the offer and the total goes back', async () => {
       const { screen, waitFor, fireEvent } = await import('@testing-library/react');
       const { container, unmount } = await mountDrawer();
