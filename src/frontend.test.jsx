@@ -1104,7 +1104,6 @@ describe('ConsentBanner and Consent Management', () => {
             founderDeliveryFee: 0,
             total: 2160,
             paymentMethod: 'payu',
-            couponCode: 'PREPAID15',
             hasPreorder: false,
             lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
           })
@@ -1494,10 +1493,10 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       expect(screen.getByText('Offers & Coupons')).toBeDefined();
     });
 
-    // Best offer for prepaid (PREPAID15) is auto-applied before the customer picks anything
+    // Initial quote had couponCode: null
     await waitFor(() => {
       expect(quoteRequests.length).toBeGreaterThan(0);
-      expect(quoteRequests[0].couponCode).toBe('PREPAID15');
+      expect(quoteRequests[0].couponCode).toBeNull();
     });
 
     // Select FIRST10 while phone is empty
@@ -1539,7 +1538,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     unmount();
   });
 
-  describe('bag offers and auto-applied best offer', () => {
+  describe('bag offers', () => {
     const bagCart = [{ id: 'tee-1', name: 'LOG Oversized Tee', price: 2400, quantity: 1, selectedSize: 'M' }];
     let quoteRequests;
     let originalFetch;
@@ -1596,13 +1595,22 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       window.fetch = originalFetch;
     });
 
-    it('bag shows both offers with PREPAID15 auto-applied and the checkout button carries the total', async () => {
+    it('bag shows both offers unapplied, and APPLY in the bag updates the total on the checkout button', async () => {
       const { screen, waitFor, fireEvent } = await import('@testing-library/react');
       const { container, unmount } = await mountDrawer();
+      const card = (code) => container.querySelector(`.checkout-coupon-card[data-coupon="${code}"]`);
 
       await waitFor(() => {
-        expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true);
-        expect(container.querySelector('.checkout-coupon-card[data-coupon="FIRST10"]').classList.contains('selected')).toBe(false);
+        expect(card('PREPAID15')).not.toBeNull();
+        expect(card('FIRST10')).not.toBeNull();
+        expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,400/ })).toBeDefined();
+      });
+      expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
+      expect(quoteRequests[quoteRequests.length - 1].couponCode).toBeNull();
+
+      fireEvent.click(card('PREPAID15').querySelector('.checkout-coupon-action-btn'));
+      await waitFor(() => {
+        expect(card('PREPAID15').classList.contains('selected')).toBe(true);
         expect(screen.getByText('-₹360')).toBeDefined();
         expect(screen.getByRole('button', { name: /Proceed to Checkout · ₹2,040/ })).toBeDefined();
       });
@@ -1610,49 +1618,31 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /Proceed to Checkout/ }));
       await waitFor(() => {
-        expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true);
+        expect(card('PREPAID15').classList.contains('selected')).toBe(true);
       });
       unmount();
     });
 
-    it('switching payment method moves the auto-applied offer between PREPAID15 and FIRST10', async () => {
+    it('no offer is applied on its own when the payment method changes', async () => {
       const { waitFor, fireEvent } = await import('@testing-library/react');
       const { container, unmount } = await mountDrawer();
-      const card = (code) => container.querySelector(`.checkout-coupon-card[data-coupon="${code}"]`);
 
       fireEvent.click(container.querySelector('.checkout-btn'));
       await waitFor(() => expect(container.querySelector('input[type="radio"][value="cod"]')).not.toBeNull());
 
       fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
       await waitFor(() => {
-        expect(card('FIRST10').classList.contains('selected')).toBe(true);
-        expect(card('PREPAID15').classList.contains('selected')).toBe(false);
+        expect(quoteRequests[quoteRequests.length - 1].paymentMethod).toBe('cod');
       });
+      expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
+      expect(quoteRequests.every((q) => q.couponCode === null)).toBe(true);
 
       fireEvent.click(container.querySelector('input[type="radio"][value="payu"]'));
       await waitFor(() => {
-        expect(card('PREPAID15').classList.contains('selected')).toBe(true);
-        expect(card('FIRST10').classList.contains('selected')).toBe(false);
+        expect(quoteRequests[quoteRequests.length - 1].paymentMethod).toBe('payu');
       });
-      unmount();
-    });
-
-    it('an offer the customer removed stays removed when the payment method changes', async () => {
-      const { waitFor, fireEvent } = await import('@testing-library/react');
-      const { container, unmount } = await mountDrawer();
-
-      await waitFor(() => expect(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"]').classList.contains('selected')).toBe(true));
-      fireEvent.click(container.querySelector('.checkout-coupon-card[data-coupon="PREPAID15"] .checkout-coupon-remove-btn'));
-      await waitFor(() => expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull());
-
-      fireEvent.click(container.querySelector('.checkout-btn'));
-      await waitFor(() => expect(container.querySelector('input[type="radio"][value="cod"]')).not.toBeNull());
-      fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
-
-      await waitFor(() => {
-        expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
-        expect(quoteRequests[quoteRequests.length - 1].couponCode).toBeNull();
-      });
+      expect(container.querySelector('.checkout-coupon-card.selected')).toBeNull();
+      expect(quoteRequests.every((q) => q.couponCode === null)).toBe(true);
       unmount();
     });
 

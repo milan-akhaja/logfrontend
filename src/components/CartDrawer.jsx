@@ -213,12 +213,6 @@ export default function CartDrawer({
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
-  // true once the customer applies or removes an offer themselves; until then the best offer is auto-picked.
-  const [couponManual, setCouponManual] = useState(false);
-  const pickCoupon = (code) => {
-    setCouponManual(true);
-    setSelectedCoupon(code);
-  };
   const { enabled: codAdvanceOn } = useCodAdvance();
 
   // Scroll locking & COD advance config refresh
@@ -349,7 +343,6 @@ export default function CartDrawer({
           } else {
             if (data?.code === 'FIRST_ORDER_ONLY') {
               onToast('This coupon is only valid on your first order.');
-              setCouponManual(true);
               setSelectedCoupon(null);
             }
             setQuote(null);
@@ -360,7 +353,6 @@ export default function CartDrawer({
           if (err?.name !== 'AbortError') {
             if (err?.message?.includes('first order') || err?.code === 'FIRST_ORDER_ONLY') {
               onToast('This coupon is only valid on your first order.');
-              setCouponManual(true);
               setSelectedCoupon(null);
             }
             setQuote(null);
@@ -377,7 +369,6 @@ export default function CartDrawer({
   useEffect(() => {
     if (selectedCoupon && (isCouponDisabled || (isPrepaidCouponDisabled && selectedCoupon === 'PREPAID15'))) {
       setSelectedCoupon(null);
-      setCouponManual(false);
     }
   }, [isCouponDisabled, isPrepaidCouponDisabled, selectedCoupon]);
 
@@ -385,16 +376,8 @@ export default function CartDrawer({
     if (!isOpen) {
       setPaymentMethod('payu');
       setSelectedCoupon(null);
-      setCouponManual(false);
     }
   }, [isOpen]);
-
-  // Best offer for the chosen payment method: PREPAID15 on prepaid, FIRST10 on COD. Backend still decides the price.
-  const bestCoupon = isCouponDisabled ? null : (isCodPayment ? 'FIRST10' : 'PREPAID15');
-  useEffect(() => {
-    if (!isOpen || cart.length === 0 || couponManual) return;
-    setSelectedCoupon(bestCoupon);
-  }, [isOpen, cart.length, couponManual, bestCoupon]);
 
   // Donation calculation (₹23 per product quantity)
   const totalItemsQty = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -694,7 +677,7 @@ export default function CartDrawer({
               <div className="checkout-coupon-section">
                 <h4>Offers & Coupons</h4>
                 <p style={{ fontSize: '11px', color: 'var(--grey-muted)', margin: '0 0 8px' }}>
-                  {selectedCoupon && !couponManual ? 'Best offer picked for you. One offer per order.' : 'One offer per order.'}
+                  One offer per order. Tap APPLY to use it.
                 </p>
 
                 {isPrepaidCouponDisabled && (
@@ -712,7 +695,7 @@ export default function CartDrawer({
                     data-coupon="PREPAID15"
                     onClick={() => {
                       if (isPrepaidCouponDisabled || selectedCoupon === 'PREPAID15') return;
-                      pickCoupon('PREPAID15');
+                      setSelectedCoupon('PREPAID15');
                     }}
                   >
                     <div className="checkout-coupon-card-content">
@@ -737,7 +720,7 @@ export default function CartDrawer({
                             className="checkout-coupon-remove-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              pickCoupon(null);
+                              setSelectedCoupon(null);
                             }}
                           >
                             REMOVE
@@ -751,7 +734,7 @@ export default function CartDrawer({
                           onClick={(e) => {
                             e.stopPropagation();
                             if (isPrepaidCouponDisabled) return;
-                            pickCoupon('PREPAID15');
+                            setSelectedCoupon('PREPAID15');
                           }}
                         >
                           APPLY
@@ -769,7 +752,7 @@ export default function CartDrawer({
                       if (!hasValidPhone) {
                         if (showCheckoutForm) onToast('Enter your phone number to apply FIRST10.');
                       }
-                      pickCoupon('FIRST10');
+                      setSelectedCoupon('FIRST10');
                     }}
                   >
                     <div className="checkout-coupon-card-content">
@@ -803,7 +786,7 @@ export default function CartDrawer({
                             className="checkout-coupon-remove-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              pickCoupon(null);
+                              setSelectedCoupon(null);
                             }}
                           >
                             REMOVE
@@ -820,7 +803,7 @@ export default function CartDrawer({
                             if (!hasValidPhone) {
                               if (showCheckoutForm) onToast('Enter your phone number to apply FIRST10.');
                             }
-                            pickCoupon('FIRST10');
+                            setSelectedCoupon('FIRST10');
                           }}
                         >
                           APPLY
