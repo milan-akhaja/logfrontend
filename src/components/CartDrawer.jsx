@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
+import { fetchCodAdvanceConfig } from '../hooks/useCodAdvance';
 import { getProducts } from '../lib/products';
 import { canTrackGA4, trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
@@ -213,10 +214,11 @@ export default function CartDrawer({
   const [orderEmailSent, setOrderEmailSent] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
 
-  // Scroll locking
+  // Scroll locking & COD advance config refresh
   useEffect(() => {
     if (isOpen) {
       lockBodyScroll();
+      fetchCodAdvanceConfig();
     }
     return () => {
       if (isOpen) unlockBodyScroll();

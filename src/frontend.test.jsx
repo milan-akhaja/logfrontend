@@ -9,6 +9,8 @@ import Terms from './pages/Terms';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import RefundPolicy from './pages/RefundPolicy';
 import ShippingPolicy from './pages/ShippingPolicy';
+import FAQs from './pages/FAQs';
+import { resetCodAdvanceConfigForTesting } from './hooks/useCodAdvance';
 import Footer from './components/Footer';
 import ProductDetail from './pages/ProductDetail';
 import * as productsModule from './lib/products';
@@ -2251,38 +2253,65 @@ describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
 
   it('FAQs page renders ₹100 COD advance question and answer', async () => {
     const FAQs = (await import('./pages/FAQs')).default;
-    const { render, screen, fireEvent } = await import('@testing-library/react');
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ enabled: true, amountInr: 100 })
+    });
 
     const { unmount } = render(<FAQs />);
 
-    const questionButton = screen.getByRole('button', { name: /Why is there a ₹100 advance on Cash on Delivery\?/i });
-    expect(questionButton).toBeDefined();
+    let questionButton;
+    await waitFor(() => {
+      questionButton = screen.getByRole('button', { name: /Why is there a ₹100 advance on Cash on Delivery\?/i });
+      expect(questionButton).toBeDefined();
+    });
 
     // Click accordion item to expand answer
     fireEvent.click(questionButton);
 
-    expect(screen.getByText('To confirm your order and avoid failed deliveries, we collect a ₹100 advance online. It is deducted from your total, and you pay the remaining balance on delivery.')).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('To confirm your order and avoid failed deliveries, we collect a ₹100 advance online. It is deducted from your total, and you pay the remaining balance on delivery.')).toBeDefined();
+    });
 
+    window.fetch = originalFetch;
     unmount();
   });
 
   it('ShippingPolicy renders the required Cash on Delivery confirmation advance paragraph', async () => {
     const ShippingPolicy = (await import('./pages/ShippingPolicy')).default;
-    const { render, screen } = await import('@testing-library/react');
+    const { render, screen, waitFor } = await import('@testing-library/react');
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ enabled: true, amountInr: 100 })
+    });
 
     const { unmount } = render(<ShippingPolicy />);
 
-    expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
-    expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
-    expect(screen.getByText(/The advance is not refunded if delivery is refused or the order is not accepted at the doorstep without a valid reason, because we bear the shipping cost\./i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+      expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
+      expect(screen.getByText(/The advance is not refunded if delivery is refused or the order is not accepted at the doorstep without a valid reason, because we bear the shipping cost\./i)).toBeDefined();
+    });
 
+    window.fetch = originalFetch;
     unmount();
   });
 
   it('RefundPolicy renders Cash on Delivery confirmation advance paragraph and non-contradictory cancellation terms', async () => {
     const RefundPolicy = (await import('./pages/RefundPolicy')).default;
-    const { render, screen } = await import('@testing-library/react');
+    const { render, screen, waitFor } = await import('@testing-library/react');
     const { MemoryRouter } = await import('react-router-dom');
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ enabled: true, amountInr: 100 })
+    });
 
     const { unmount } = render(
       <MemoryRouter>
@@ -2290,12 +2319,15 @@ describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Cash on Delivery Confirmation Advance')).toBeDefined();
-    expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
-    expect(screen.getByText(/The advance is refunded in full if you cancel before the order is dispatched/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery Confirmation Advance')).toBeDefined();
+      expect(screen.getByText(/On Cash on Delivery orders, a ₹100 confirmation advance is collected online\. It is part of your order total and is deducted from the amount payable on delivery\./i)).toBeDefined();
+      expect(screen.getByText(/The advance is refunded in full if you cancel before the order is dispatched/i)).toBeDefined();
+    });
     // Verify contradiction was eliminated
     expect(screen.queryByText(/you may reject the shipment at the doorstep where applicable/i)).toBeNull();
 
+    window.fetch = originalFetch;
     unmount();
   });
 
@@ -2370,4 +2402,342 @@ describe('Phase 2 COD Advance Copy, Policies & Admin Tests', () => {
     window.fetch = originalFetch;
     unmount();
   });
+
+  it('Admin Orders area renders COD Advance card with ON state and read-only amount, shows confirmation dialog, calls PUT with boolean on confirm, and shows toast', async () => {
+    const Admin = (await import('./pages/Admin')).default;
+    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+
+    sessionStorage.setItem('admin_token', 'test-token');
+    localStorage.setItem('log_admin_active_tab', 'orders');
+
+    const onToast = vi.fn();
+    let putPayload = null;
+
+    const originalFetch = window.fetch;
+    window.fetch = vi.fn().mockImplementation((url, options = {}) => {
+      const u = String(url);
+      if (u.includes('/api/admin/cod-advance')) {
+        if (options.method === 'PUT') {
+          putPayload = JSON.parse(options.body);
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve({
+              success: true,
+              codAdvanceEnabled: putPayload.codAdvanceEnabled,
+              enabled: putPayload.codAdvanceEnabled,
+              amount: 100,
+              source: 'db'
+            })
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({
+            success: true,
+            codAdvanceEnabled: true,
+            enabled: true,
+            amount: 100,
+            source: 'db'
+          })
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([])
+      });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={onToast} />
+      </MemoryRouter>
+    );
+
+    // 1. Renders the state and amount
+    await waitFor(() => {
+      expect(screen.getByText('COD Advance')).toBeDefined();
+      expect(screen.getByText('ON')).toBeDefined();
+      expect(screen.getByText(/₹100/)).toBeDefined();
+    });
+
+    // 2. Click toggle button
+    const toggleButton = screen.getByRole('button', { name: /turn off/i });
+    fireEvent.click(toggleButton);
+
+    // 3. Confirmation dialog opens
+    await waitFor(() => {
+      expect(screen.getByText('Confirm COD Advance Change')).toBeDefined();
+      expect(screen.getByText(/Are you sure you want to switch COD Advance/i)).toBeDefined();
+    });
+
+    // 4. Confirm the dialog
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
+    fireEvent.click(confirmButton);
+
+    // 5. Calls PUT with a boolean and shows the toast
+    await waitFor(() => {
+      expect(putPayload).toEqual({ codAdvanceEnabled: false });
+      expect(typeof putPayload.codAdvanceEnabled).toBe('boolean');
+      expect(onToast).toHaveBeenCalledWith(expect.stringMatching(/COD advance turned OFF successfully/i));
+    });
+
+    // 6. Renders new state OFF and toggle button Turn ON
+    await waitFor(() => {
+      expect(screen.getByText('OFF')).toBeDefined();
+      expect(screen.getByRole('button', { name: /turn on/i })).toBeDefined();
+    });
+
+    window.fetch = originalFetch;
+    unmount();
+  });
 });
+
+describe('Policy Pages COD Advance Switch & Dynamic Amount', () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = window.fetch;
+    resetCodAdvanceConfigForTesting();
+  });
+
+  afterEach(() => {
+    window.fetch = originalFetch;
+    cleanup();
+    resetCodAdvanceConfigForTesting();
+  });
+
+  // FAQs
+  it('FAQs: renders dynamic advance question and answer in ON state with non-100 amount', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: true, amountInr: 150 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <FAQs />
+      </MemoryRouter>
+    );
+
+    let questionButton;
+    await waitFor(() => {
+      questionButton = screen.getByRole('button', { name: /Why is there a ₹150 advance on Cash on Delivery\?/i });
+      expect(questionButton).toBeDefined();
+    });
+
+    fireEvent.click(questionButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('To confirm your order and avoid failed deliveries, we collect a ₹150 advance online. It is deducted from your total, and you pay the remaining balance on delivery.')).toBeDefined();
+    });
+
+    // Proves nothing is hardcoded to 100
+    expect(screen.queryByText(/₹100/)).toBeNull();
+  });
+
+  it('FAQs: omits advance question and answer in OFF state', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: false, amountInr: 100 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <FAQs />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Frequently Asked Questions')).toBeDefined();
+    });
+
+    expect(screen.queryByText(/advance on Cash on Delivery/i)).toBeNull();
+    expect(screen.queryByText(/advance online/i)).toBeNull();
+  });
+
+  it('FAQs: falls back to OFF state when fetch fails', async () => {
+    window.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    render(
+      <MemoryRouter>
+        <FAQs />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Frequently Asked Questions')).toBeDefined();
+    });
+
+    expect(screen.queryByText(/advance on Cash on Delivery/i)).toBeNull();
+    expect(screen.queryByText(/advance online/i)).toBeNull();
+  });
+
+  // ShippingPolicy
+  it('ShippingPolicy: renders COD section with non-100 amount in ON state', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: true, amountInr: 250 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <ShippingPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+      expect(screen.getByText(/On Cash on Delivery orders, a ₹250 confirmation advance is collected online/i)).toBeDefined();
+    });
+
+    // Proves nothing is hardcoded to 100
+    expect(screen.queryByText(/₹100/)).toBeNull();
+  });
+
+  it('ShippingPolicy: omits COD section in OFF state (pre-advance text)', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: false, amountInr: 100 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <ShippingPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Shipping Policy')).toBeDefined();
+    });
+
+    expect(screen.queryByText('Cash on Delivery (COD)')).toBeNull();
+    expect(screen.queryByText(/confirmation advance is collected online/i)).toBeNull();
+  });
+
+  it('ShippingPolicy: falls back to OFF state when fetch fails', async () => {
+    window.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500
+    });
+
+    render(
+      <MemoryRouter>
+        <ShippingPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Shipping Policy')).toBeDefined();
+    });
+
+    expect(screen.queryByText('Cash on Delivery (COD)')).toBeNull();
+    expect(screen.queryByText(/confirmation advance is collected online/i)).toBeNull();
+  });
+
+  // RefundPolicy
+  it('RefundPolicy: renders COD advance section with non-100 amount and advance cancellation text in ON state', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: true, amountInr: 175 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <RefundPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Cash on Delivery Confirmation Advance')).toBeDefined();
+      expect(screen.getByText(/On Cash on Delivery orders, a ₹175 confirmation advance is collected online/i)).toBeDefined();
+      expect(screen.getByText(/Refusing delivery or not accepting the order at the doorstep without a valid reason does not qualify for a refund of the Cash on Delivery advance/i)).toBeDefined();
+    });
+
+    // Proves nothing is hardcoded to 100
+    expect(screen.queryByText(/₹100/)).toBeNull();
+  });
+
+  it('RefundPolicy: omits COD advance section and restores pre-advance cancellation text in OFF state', async () => {
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (String(url).includes('/api/cod-advance-config')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ enabled: false, amountInr: 100 })
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    render(
+      <MemoryRouter>
+        <RefundPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Cancellation Policy')).toBeDefined();
+    });
+
+    // COD advance section is omitted
+    expect(screen.queryByText('Cash on Delivery Confirmation Advance')).toBeNull();
+    // Pre-advance 7-days cancellation text is restored
+    expect(screen.getByText(/Cancellation requests are considered only if they are raised within 7 days of placing the order/i)).toBeDefined();
+    expect(screen.queryByText(/qualify for a refund of the Cash on Delivery advance/i)).toBeNull();
+  });
+
+  it('RefundPolicy: falls back to OFF state when fetch fails', async () => {
+    window.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    render(
+      <MemoryRouter>
+        <RefundPolicy />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Cancellation Policy')).toBeDefined();
+    });
+
+    // COD advance section is omitted
+    expect(screen.queryByText('Cash on Delivery Confirmation Advance')).toBeNull();
+    // Pre-advance 7-days cancellation text is shown
+    expect(screen.getByText(/Cancellation requests are considered only if they are raised within 7 days of placing the order/i)).toBeDefined();
+    expect(screen.queryByText(/qualify for a refund of the Cash on Delivery advance/i)).toBeNull();
+  });
+});
+

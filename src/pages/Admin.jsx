@@ -32,6 +32,7 @@ import { DEFAULT_PRICE_DISPLAY_OPTIONS } from '../lib/pricing';
 import { DEFAULT_CONTENT_BLOCKS, FONT_OPTIONS, mergeContentBlocks } from '../lib/contentBlocks';
 import { invalidateProducts } from '../lib/products';
 import { productSizes } from '../lib/sizes';
+import { fetchCodAdvanceConfig } from '../hooks/useCodAdvance';
 
 const DEFAULT_DETAILS = "Fabric: 240 GSM French Terry cotton · Double Bio Washed\nDesign: DTF printing\nStyle: Oversize and Half sleeve\n* Designed for a relaxed drop-shoulder streetwear fit. Order your usual size.";
 const DEFAULT_WASHCARE = "Cold machine wash inside out.\nDo not bleach or dry clean.\nIron inside out on low heat settings.\nDo not tumble dry.";
@@ -661,6 +662,13 @@ export default function Admin({ onToast }) {
   const [subscribers, setSubscribers] = useState([]);
   const [collections, setCollections] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [codAdvanceConfig, setCodAdvanceConfig] = useState({
+    enabled: true,
+    amount: 100,
+    source: 'env'
+  });
+  const [codAdvanceSaving, setCodAdvanceSaving] = useState(false);
+  const [showCodConfirm, setShowCodConfirm] = useState(false);
 
   // Modals / Editing states
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -818,7 +826,7 @@ export default function Admin({ onToast }) {
   // Fetch all data
   const fetchData = async () => {
     try {
-      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes] = await Promise.all([
+      const [analyticsRes, analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes, codAdvanceRes] = await Promise.all([
         fetch('/api/analytics'),
         fetch('/api/analytics-config'),
         fetch('/api/orders'),
@@ -830,7 +838,8 @@ export default function Admin({ onToast }) {
         fetch('/api/gallery'),
         fetch('/api/hero-config'),
         fetch('/api/returns'),
-        fetch('/api/content-blocks-config')
+        fetch('/api/content-blocks-config'),
+        fetch('/api/admin/cod-advance')
       ]);
 
       if (!analyticsRes.ok) {
@@ -852,8 +861,8 @@ export default function Admin({ onToast }) {
       }
 
       const otherResults = await Promise.all(
-        [analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes].map(async (res) => {
-          if (!res.ok) return null;
+        [analyticsConfigRes, ordersRes, productsRes, subscribersRes, storiesRes, collectionsRes, blogsRes, galleryRes, heroRes, returnsRes, contentBlocksRes, codAdvanceRes].map(async (res) => {
+          if (!res || !res.ok) return null;
           try {
             return await res.json();
           } catch {
@@ -862,9 +871,16 @@ export default function Admin({ onToast }) {
         })
       );
 
-      const [analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, contentBlocksData] = otherResults;
+      const [analyticsConfigData, ordersData, productsData, subscribersData, storiesData, collectionsData, blogsData, galleryData, heroData, returnsData, contentBlocksData, codAdvanceData] = otherResults;
 
       setAnalyticsConfig({ ...DEFAULT_ANALYTICS_CONFIG, ...(analyticsConfigData || {}) });
+      if (codAdvanceData) {
+        setCodAdvanceConfig({
+          enabled: Boolean(codAdvanceData.codAdvanceEnabled ?? codAdvanceData.enabled),
+          amount: codAdvanceData.amount !== undefined ? Number(codAdvanceData.amount) : 100,
+          source: codAdvanceData.source || 'env'
+        });
+      }
       if (ordersData) setOrders(ordersData);
       if (productsData) setProducts(productsData);
       if (subscribersData) setSubscribers(subscribersData);
@@ -960,6 +976,37 @@ export default function Admin({ onToast }) {
     } catch (err) {
       console.error(err);
       onToast('Error saving banners and quotes.');
+    }
+  };
+
+  const handleToggleCodAdvance = async () => {
+    const nextState = !codAdvanceConfig.enabled;
+    setCodAdvanceSaving(true);
+    try {
+      const res = await fetch('/api/admin/cod-advance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codAdvanceEnabled: nextState })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCodAdvanceConfig({
+          enabled: Boolean(data.codAdvanceEnabled ?? data.enabled),
+          amount: data.amount !== undefined ? Number(data.amount) : 100,
+          source: data.source || 'db'
+        });
+        setShowCodConfirm(false);
+        fetchCodAdvanceConfig();
+        onToast(`COD advance turned ${nextState ? 'ON' : 'OFF'} successfully.`);
+      } else {
+        const errorMsg = await getApiError(res, 'Error updating COD advance setting.');
+        onToast(errorMsg);
+      }
+    } catch (err) {
+      console.error(err);
+      onToast('Network error while saving COD advance setting.');
+    } finally {
+      setCodAdvanceSaving(false);
     }
   };
 
@@ -3420,7 +3467,115 @@ export default function Admin({ onToast }) {
 
         {/* Orders */}
         {activeTab === 'orders' && (
-          <div className="admin-card">
+          <>
+            <div className="admin-card" style={{ marginBottom: '24px' }}>
+              <div className="admin-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <h2 className="admin-card-title" style={{ margin: 0 }}>COD Advance</h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#666' }}>
+                    Control whether Cash on Delivery requires an online advance payment via PayU.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#444' }}>Status:</span>
+                    <span
+                      className={`admin-badge ${codAdvanceConfig.enabled ? 'badge-paid' : 'badge-cancelled'}`}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        borderRadius: '4px',
+                        backgroundColor: codAdvanceConfig.enabled ? '#dcfce7' : '#fee2e2',
+                        color: codAdvanceConfig.enabled ? '#15803d' : '#b91c1c'
+                      }}
+                    >
+                      {codAdvanceConfig.enabled ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#444' }}>Amount:</span>
+                    <span
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        borderRadius: '4px',
+                        backgroundColor: '#f3f4f6',
+                        color: '#111827',
+                        border: '1px solid #e5e7eb'
+                      }}
+                    >
+                      ₹{codAdvanceConfig.amount || 100} (read-only)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={`admin-btn ${codAdvanceConfig.enabled ? 'admin-btn-secondary' : 'admin-btn-primary'}`}
+                    onClick={() => setShowCodConfirm(true)}
+                    disabled={codAdvanceSaving}
+                  >
+                    {codAdvanceConfig.enabled ? 'Turn OFF' : 'Turn ON'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {showCodConfirm && (
+              <div
+                className="admin-modal-overlay"
+                onClick={() => setShowCodConfirm(false)}
+                role="dialog"
+                aria-modal="true"
+              >
+                <div
+                  className="admin-modal"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ maxWidth: '480px', padding: '24px' }}
+                >
+                  <div className="admin-modal-header" style={{ marginBottom: '16px' }}>
+                    <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>Confirm COD Advance Change</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowCodConfirm(false)}
+                      style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  <div className="admin-modal-body" style={{ marginBottom: '20px' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: '14px', lineHeight: '1.5' }}>
+                      Are you sure you want to switch COD Advance <strong>{codAdvanceConfig.enabled ? 'OFF' : 'ON'}</strong>?
+                    </p>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
+                      {codAdvanceConfig.enabled
+                        ? `When switched OFF, customers can place COD orders directly without paying the ₹${codAdvanceConfig.amount || 100} advance.`
+                        : `When switched ON, customers must pay the ₹${codAdvanceConfig.amount || 100} advance online via PayU before their COD order is confirmed.`}
+                    </p>
+                  </div>
+                  <div className="admin-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-secondary"
+                      onClick={() => setShowCodConfirm(false)}
+                      disabled={codAdvanceSaving}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className={`admin-btn ${codAdvanceConfig.enabled ? 'admin-btn-danger' : 'admin-btn-primary'}`}
+                      onClick={handleToggleCodAdvance}
+                      disabled={codAdvanceSaving}
+                    >
+                      {codAdvanceSaving ? 'Saving...' : 'Confirm'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="admin-card">
             <div className="admin-card-header">
               <h2 className="admin-card-title">Order Records</h2>
               <button
@@ -3493,7 +3648,8 @@ export default function Admin({ onToast }) {
               </table>
             </div>
           </div>
-        )}
+        </>
+      )}
 
         {activeTab === 'products' && (
           <div className="admin-card">

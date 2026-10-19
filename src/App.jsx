@@ -22,6 +22,7 @@ import CartDrawer from './components/CartDrawer';
 import SizePopup from './components/SizePopup';
 import ConsentBanner from './components/ConsentBanner';
 import SEO from './components/SEO';
+import { fetchCodAdvanceConfig } from './hooks/useCodAdvance';
 
 // Pages (Core & Code-Split)
 import Shop from './pages/Shop';
@@ -924,6 +925,19 @@ export default function App() {
       }
     }
   }, []);
+
+  // Fetch COD advance config on app load
+  useEffect(() => {
+    fetchCodAdvanceConfig();
+  }, []);
+
+  // Refetch COD advance config when cart drawer opens
+  useEffect(() => {
+    if (cartOpen) {
+      fetchCodAdvanceConfig();
+    }
+  }, [cartOpen]);
+
   const saveCartState = (newCart) => {
     setCart(newCart);
     localStorage.setItem('log_react_cart', JSON.stringify(newCart));
