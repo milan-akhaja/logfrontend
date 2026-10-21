@@ -2114,3 +2114,55 @@ describe('Navbar copy and policy pages', () => {
 
 });
 
+describe('Homepage product grid and Home collection', () => {
+  const mk = (id, name) => ({
+    id, name, category: 'top', price: 1199, images: ['a.webp'], desc: '',
+    stock: { M: 5 }, sizes: ['M'], subCategories: []
+  });
+  const products = [mk('p1', 'Alpha Tee'), mk('p2', 'Bravo Tee'), mk('p3', 'Charlie Tee')];
+
+  const renderHome = async (collections) => {
+    const { default: Shop, resetCachedHeroConfig } = await import('./pages/Shop');
+    const { invalidateProducts } = await import('./lib/products');
+    const { render, screen } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+    resetCachedHeroConfig();
+    invalidateProducts();
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/products')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(products) });
+      }
+      if (typeof url === 'string' && url.includes('/api/collections')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(collections) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    const utils = render(<MemoryRouter><Shop onAddToCart={() => {}} /></MemoryRouter>);
+    await screen.findByText('Alpha Tee');
+    return utils;
+  };
+
+  it('shows only the products in the "Home" collection on the homepage', async () => {
+    const { container, unmount } = await renderHome([{ id: 'c1', name: 'Home', productIds: ['p1', 'p3'] }]);
+    expect(container.textContent).toContain('Alpha Tee');
+    expect(container.textContent).toContain('Charlie Tee');
+    expect(container.textContent).not.toContain('Bravo Tee');
+    unmount();
+  });
+
+  it('falls back to every product when no "Home" collection exists', async () => {
+    const { container, unmount } = await renderHome([{ id: 'c2', name: 'Other', productIds: ['p2'] }]);
+    expect(container.textContent).toContain('Alpha Tee');
+    expect(container.textContent).toContain('Bravo Tee');
+    expect(container.textContent).toContain('Charlie Tee');
+    unmount();
+  });
+
+  it('shows a Shop all designs link to /shop under the grid', async () => {
+    const { container, unmount } = await renderHome([]);
+    const link = container.querySelector('.home-shop-all a');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toContain('/shop');
+    unmount();
+  });
+});
