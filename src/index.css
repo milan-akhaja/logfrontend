@@ -7644,3 +7644,46 @@ header.scrolled .nav-action-icon-btn {
   .nav-action-icon-btn.header-bag-mobile { display: inline-flex; }
   .nav-right-actions { gap: 12px; }
 }
+
+.coupon-code-box {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.coupon-code-input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 15, 17, 0.25);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.coupon-code-input::placeholder {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.coupon-code-btn {
+  padding: 10px 14px;
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.coupon-code-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

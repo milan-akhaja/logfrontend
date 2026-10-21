@@ -6,6 +6,7 @@ import ProductPrice from '../components/ProductPrice';
 import { ProductGridCard } from './Shop';
 import { mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { getProducts, getCachedProducts } from '../lib/products';
+import { FALLBACK_COUPONS, getCoupons, couponBadge, couponPill, couponOfferWhere, couponAppliesToProduct } from '../lib/coupons';
 import { productSizes } from '../lib/sizes';
 import { scrollToTopInstant } from '../lib/scrollRestoration';
 import { trackGA4Event, trackMetaEvent, canTrackGA4, canTrackMeta } from '../lib/analytics';
@@ -42,6 +43,15 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   });
   
   const [slideIdx, setSlideIdx] = useState(0);
+  const [offerCoupons, setOfferCoupons] = useState(FALLBACK_COUPONS);
+
+  useEffect(() => {
+    let active = true;
+    getCoupons().then((list) => {
+      if (active) setOfferCoupons(list);
+    });
+    return () => { active = false; };
+  }, []);
   const mobileGalleryRef = useRef(null);
 
   // Guarantee scroll starts at top instantly on route change & when product is ready
@@ -614,24 +624,18 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
                 : 'free shipping · free pan-india exchange · 7-day returns (refunds minus ₹23 for LOG Fund; full refund if defective).'}
             </p>
 
-            {/* PRODUCT OFFER CARDS (OPTION A: PREPAID15 & FIRST10, NO DROP FACTS) */}
-            {showOfferCard && (
+            {/* PRODUCT OFFER CARDS - the coupons managed in Admin > Coupons, no drop facts */}
+            {showOfferCard && offerCoupons.some((def) => couponAppliesToProduct(def, product.id)) && (
               <div className="product-offer-cards-container">
-                <div className="product-offer-card product-offer-card-promo">
-                  <div className="product-offer-pill">PREPAID OFFER</div>
-                  <h3 className="product-offer-headline">15% OFF</h3>
-                  <p className="product-offer-text">
-                    Use code <span className="product-offer-highlight">PREPAID15</span> at checkout on prepaid orders.
-                  </p>
-                </div>
-
-                <div className="product-offer-card product-offer-card-promo">
-                  <div className="product-offer-pill">FIRST ORDER</div>
-                  <h3 className="product-offer-headline">10% OFF</h3>
-                  <p className="product-offer-text">
-                    Use code <span className="product-offer-highlight">FIRST10</span> at checkout on your first order (COD or prepaid).
-                  </p>
-                </div>
+                {offerCoupons.filter((def) => couponAppliesToProduct(def, product.id)).map((def) => (
+                  <div className="product-offer-card product-offer-card-promo" key={def.code}>
+                    <div className="product-offer-pill">{couponPill(def)}</div>
+                    <h3 className="product-offer-headline">{couponBadge(def)}</h3>
+                    <p className="product-offer-text">
+                      Use code <span className="product-offer-highlight">{def.code}</span> at checkout{couponOfferWhere(def)}.
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
 
