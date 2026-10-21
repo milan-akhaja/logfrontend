@@ -611,6 +611,68 @@ describe('ONE OF ONE badge', () => {
   });
 });
 
+describe('Admin Coupons tab', () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    sessionStorage.setItem('admin_token', 'test_admin_token');
+    localStorage.setItem('log_admin_active_tab', 'coupons');
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    global.fetch = originalFetch;
+  });
+
+  it('lists coupons and sends a new coupon with the admin token', async () => {
+    const calls = [];
+    global.fetch = vi.fn().mockImplementation((url, opts = {}) => {
+      const u = String(url);
+      calls.push({ u, method: opts.method || 'GET', headers: opts.headers, body: opts.body });
+      if (u.includes('/api/admin/coupons')) {
+        if ((opts.method || 'GET') === 'GET') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{
+              code: 'FIRST10', label: '', discountType: 'percent', discountValue: 10,
+              allowCod: true, allowPrepaid: true, firstOrderOnly: true, productIds: [],
+              minOrderValue: 0, maxUses: null, startsAt: null, endsAt: null,
+              isActive: true, isVisible: true, usedCount: 2
+            }]
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('FIRST10')).toBeDefined();
+    expect(screen.getByText('10% off')).toBeDefined();
+
+    fireEvent.change(screen.getByPlaceholderText('e.g. ROHAN10'), { target: { value: 'rohan10' } });
+    fireEvent.change(document.querySelector('input[step="any"][required]'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Coupon' }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST')).toBe(true));
+    const post = calls.find((c) => c.method === 'POST');
+    expect(post.headers.Authorization).toBe('Bearer test_admin_token');
+    const body = JSON.parse(post.body);
+    expect(body.code).toBe('ROHAN10');
+    expect(body.discountType).toBe('percent');
+    expect(body.discountValue).toBe(12);
+    expect(body.productIds).toEqual([]);
+    unmount();
+  });
+});
+
 describe('Admin Analytics Dashboard', () => {
   let originalFetch;
 
@@ -2215,7 +2277,8 @@ describe('Gallery video slides wait for the video to finish', () => {
     const { container, unmount } = r(<MemoryRouter><Shop onAddToCart={() => {}} /></MemoryRouter>);
     await waitFor(() => expect(container.querySelectorAll('.gallery-slide').length).toBe(2));
     const activeIsVideo = () => Boolean(container.querySelector('.gallery-slide.active video'));
-    expect(activeIsVideo()).toBe(true);
+    // the video card is lazy-loaded, so wait for it instead of assuming it is there
+    await waitFor(() => expect(activeIsVideo()).toBe(true));
 
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     try {

@@ -3,6 +3,16 @@ import { apiUrl, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
 import { apiJson } from '../lib/apiClient';
 import { lockBodyScroll, unlockBodyScroll } from '../lib/scrollLock';
 import { getProducts } from '../lib/products';
+import {
+  FALLBACK_COUPONS,
+  getCoupons,
+  lookupCoupon,
+  couponBadge,
+  couponBlockedForPayment,
+  couponAppliesToCart,
+  couponTileNote,
+  couponSubtitle
+} from '../lib/coupons';
 import { canTrackGA4, trackGA4Event, trackMetaEvent } from '../lib/analytics';
 
 const WALL_TEXT_MAX = 20;
@@ -274,6 +284,10 @@ export default function CartDrawer({
   const [emailHtml, setEmailHtml] = useState('');
   const [orderEmailSent, setOrderEmailSent] = useState(false);
   const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [coupons, setCoupons] = useState(FALLBACK_COUPONS);
+  const [typedCoupons, setTypedCoupons] = useState([]);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
 
   // Scroll locking
   useEffect(() => {
@@ -303,6 +317,15 @@ export default function CartDrawer({
     return () => { active = false; };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let active = true;
+    getCoupons().then((list) => {
+      if (active) setCoupons(list);
+    });
+    return () => { active = false; };
+  }, [isOpen]);
+
   // A drop cart never offers COD - decided from the product list, and also
   // from the server quote, so either one alone is enough to hide it.
   const cartHasDrop = cart.some((item) => dropIds.has(String(item.id))) || quote?.hasPreorder === true;
@@ -322,14 +345,15 @@ export default function CartDrawer({
   const isPreorderActive = cartHasDrop && !isDropWindowClosed;
   const isCodPayment = paymentMethod === 'cod';
   const isCouponDisabled = paymentMethod === 'founder_delivery' || isPreorderActive;
-  const isPrepaidCouponDisabled = isCouponDisabled || isCodPayment;
   const hasValidPhone = String(customerInfo.phone || '').replace(/\D/g, '').length >= 10;
 
   // Only trust the quote while it describes the exact cart, payment method, and coupon on screen.
   const normalizedPaymentMethod = String(paymentMethod || '').trim().toLowerCase();
+  const tileCoupons = [...coupons, ...typedCoupons.filter((t) => !coupons.some((c) => c.code === t.code))];
+  const selectedDef = tileCoupons.find((c) => c.code === selectedCoupon) || null;
   const expectedCoupon = isCouponDisabled
-    || (selectedCoupon === 'PREPAID15' && isCodPayment)
-    || (selectedCoupon === 'FIRST10' && !hasValidPhone)
+    || couponBlockedForPayment(selectedDef, isCodPayment)
+    || (selectedDef?.firstOrderOnly && !hasValidPhone)
     ? null
     : (selectedCoupon || null);
   const quoteMatchesCart = Boolean(quote)
@@ -425,15 +449,17 @@ export default function CartDrawer({
   }, [isOpen, cart, paymentMethod, customerInfo.city, customerInfo.phone, selectedCoupon, isCouponDisabled, hasValidPhone, quoteRetry]);
 
   useEffect(() => {
-    if (selectedCoupon && (isCouponDisabled || (isPrepaidCouponDisabled && selectedCoupon === 'PREPAID15'))) {
+    if (selectedCoupon && (isCouponDisabled || couponBlockedForPayment(selectedDef, isCodPayment))) {
       setSelectedCoupon(null);
     }
-  }, [isCouponDisabled, isPrepaidCouponDisabled, selectedCoupon]);
+  }, [isCouponDisabled, isCodPayment, selectedCoupon, coupons, typedCoupons]);
 
   useEffect(() => {
     if (!isOpen) {
       setPaymentMethod('payu');
       setSelectedCoupon(null);
+      setTypedCoupons([]);
+      setCouponInput('');
       setShowCheckoutForm(false);
     }
   }, [isOpen]);
@@ -695,216 +721,225 @@ export default function CartDrawer({
     }
   };
 
+  const couponProblem = (def) => {
+    if (couponBlockedForPayment(def, isCodPayment)) {
+      return isCodPayment ? `${def.code} is valid on prepaid orders only.` : `${def.code} is valid on Cash on Delivery orders only.`;
+    }
+    if (!couponAppliesToCart(def, cart)) return 'This coupon does not apply to the items in your bag.';
+    if (Number(def.minOrderValue) > 0 && clientSubtotal < Number(def.minOrderValue)) {
+      return `This coupon needs a minimum order of \u20B9${Number(def.minOrderValue)}.`;
+    }
+    return '';
+  };
+  const isTileDisabled = (def) => isCouponDisabled || Boolean(couponProblem(def));
+
+  const couponDisabledNote = (() => {
+    if (isCouponDisabled) {
+      return cartHasDrop && !isDropWindowClosed
+        ? 'Coupons cannot be combined with drop pre-order discount.'
+        : 'Coupons are only valid on prepaid orders.';
+    }
+    const blocked = tileCoupons.filter((c) => couponBlockedForPayment(c, isCodPayment)).map((c) => c.code);
+    if (!blocked.length) return '';
+    return `${blocked.join(', ')} ${blocked.length > 1 ? 'are' : 'is'} valid on ${isCodPayment ? 'prepaid' : 'Cash on Delivery'} orders only.`;
+  })();
+
+  const selectCoupon = (def) => {
+    if (isTileDisabled(def) || selectedCoupon === def.code) return;
+    if (def.firstOrderOnly && !hasValidPhone && showCheckoutForm) {
+      onToast(`Enter your phone number to apply ${def.code}.`);
+    }
+    setSelectedCoupon(def.code);
+  };
+
+  const applyTypedCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code || couponChecking || isCouponDisabled) return;
+    const known = tileCoupons.find((c) => c.code === code);
+    if (known) {
+      setCouponInput('');
+      const problem = couponProblem(known);
+      if (problem) onToast(problem);
+      else selectCoupon(known);
+      return;
+    }
+    setCouponChecking(true);
+    const result = await lookupCoupon(code);
+    setCouponChecking(false);
+    if (!result.coupon) {
+      onToast(result.error || 'This coupon code is not valid.');
+      return;
+    }
+    setTypedCoupons((prev) => [...prev.filter((c) => c.code !== result.coupon.code), result.coupon]);
+    setCouponInput('');
+    const problem = couponProblem(result.coupon);
+    if (problem) {
+      onToast(problem);
+      return;
+    }
+    if (result.coupon.firstOrderOnly && !hasValidPhone && showCheckoutForm) {
+      onToast(`Enter your phone number to apply ${result.coupon.code}.`);
+    }
+    setSelectedCoupon(result.coupon.code);
+  };
+
+  const couponCodeBox = (
+    <div className="coupon-code-box">
+      <input
+        type="text"
+        className="coupon-code-input"
+        value={couponInput}
+        placeholder="Have a code?"
+        maxLength={30}
+        autoCapitalize="characters"
+        autoComplete="off"
+        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyTypedCoupon();
+          }
+        }}
+      />
+      <button
+        type="button"
+        className="coupon-code-btn"
+        disabled={couponChecking || isCouponDisabled || !couponInput.trim()}
+        onClick={applyTypedCoupon}
+      >
+        ADD CODE
+      </button>
+    </div>
+  );
+
+  const phoneHintNeeded = Boolean(selectedDef?.firstOrderOnly) && !hasValidPhone;
+
   const bagOffersSection = (
     <div className="bag-offers">
       <div className="bag-offers-label">Offers · one per order</div>
-      {isPrepaidCouponDisabled && (
-        <p className="checkout-coupon-disabled-note">
-          {cartHasDrop && !isDropWindowClosed
-            ? 'Coupons cannot be combined with drop pre-order discount.'
-            : (isCouponDisabled ? 'Coupons are only valid on prepaid orders.' : 'PREPAID15 is valid on prepaid orders only.')}
-        </p>
+      {couponDisabledNote && (
+        <p className="checkout-coupon-disabled-note">{couponDisabledNote}</p>
       )}
-      <div className="bag-offers-grid">
-          <div
-            className={`bag-offer-tile ${selectedCoupon === 'PREPAID15' ? 'selected' : ''} ${isPrepaidCouponDisabled ? 'disabled' : ''}`}
-            data-coupon="PREPAID15"
-            onClick={() => {
-              if (isPrepaidCouponDisabled || selectedCoupon === 'PREPAID15') return;
-              setSelectedCoupon('PREPAID15');
-            }}
-          >
-            <div className="bag-offer-head">
-              <span className="bag-offer-code">PREPAID15</span>
-              <span className="bag-offer-badge">15% OFF</span>
-            </div>
-            <span className="bag-offer-note">When you pay online</span>
-            <button
-              type="button"
-              className="bag-offer-btn"
-              disabled={isPrepaidCouponDisabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isPrepaidCouponDisabled) return;
-                setSelectedCoupon(selectedCoupon === 'PREPAID15' ? null : 'PREPAID15');
-              }}
-            >
-              {selectedCoupon === 'PREPAID15' ? 'REMOVE' : 'APPLY'}
-            </button>
-          </div>
-          <div
-            className={`bag-offer-tile ${selectedCoupon === 'FIRST10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
-            data-coupon="FIRST10"
-            onClick={() => {
-              if (isCouponDisabled || selectedCoupon === 'FIRST10') return;
-              setSelectedCoupon('FIRST10');
-            }}
-          >
-            <div className="bag-offer-head">
-              <span className="bag-offer-code">FIRST10</span>
-              <span className="bag-offer-badge">10% OFF</span>
-            </div>
-            <span className="bag-offer-note">First order, COD or online</span>
-            <button
-              type="button"
-              className="bag-offer-btn"
-              disabled={isCouponDisabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (isCouponDisabled) return;
-                setSelectedCoupon(selectedCoupon === 'FIRST10' ? null : 'FIRST10');
-              }}
-            >
-              {selectedCoupon === 'FIRST10' ? 'REMOVE' : 'APPLY'}
-            </button>
-          </div>
-      </div>
-      {selectedCoupon === 'FIRST10' && !hasValidPhone && (
+      {tileCoupons.length > 0 && (
+        <div className="bag-offers-grid">
+          {tileCoupons.map((def) => {
+            const isSelected = selectedCoupon === def.code;
+            const disabled = isTileDisabled(def);
+            return (
+              <div
+                key={def.code}
+                className={`bag-offer-tile ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
+                data-coupon={def.code}
+                onClick={() => selectCoupon(def)}
+              >
+                <div className="bag-offer-head">
+                  <span className="bag-offer-code">{def.code}</span>
+                  <span className="bag-offer-badge">{couponBadge(def)}</span>
+                </div>
+                <span className="bag-offer-note">{couponTileNote(def)}</span>
+                <button
+                  type="button"
+                  className="bag-offer-btn"
+                  disabled={disabled}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (disabled) return;
+                    setSelectedCoupon(isSelected ? null : def.code);
+                  }}
+                >
+                  {isSelected ? 'REMOVE' : 'APPLY'}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {couponCodeBox}
+      {phoneHintNeeded && (
         <div className="coupon-phone-hint">Applies at checkout once you enter your phone number</div>
       )}
     </div>
   );
 
   const offersSection = (
-              <div className="checkout-coupon-section">
-                <h4>Offers & Coupons</h4>
-                <p style={{ fontSize: '11px', color: 'var(--grey-muted)', margin: '0 0 8px' }}>
-                  One offer per order. Tap APPLY to use it.
-                </p>
+    <div className="checkout-coupon-section">
+      <h4>Offers & Coupons</h4>
+      <p style={{ fontSize: '11px', color: 'var(--grey-muted)', margin: '0 0 8px' }}>
+        One offer per order. Tap APPLY to use it.
+      </p>
 
-                {isPrepaidCouponDisabled && (
-                  <p className="checkout-coupon-disabled-note">
-                    {cartHasDrop && !isDropWindowClosed
-                      ? 'Coupons cannot be combined with drop pre-order discount.'
-                      : (isCouponDisabled ? 'Coupons are only valid on prepaid orders.' : 'PREPAID15 is valid on prepaid orders only.')}
-                  </p>
-                )}
+      {couponDisabledNote && (
+        <p className="checkout-coupon-disabled-note">{couponDisabledNote}</p>
+      )}
 
-                <div className={`checkout-coupon-options ${isCouponDisabled ? 'coupons-disabled' : ''}`}>
-                  {/* PREPAID15 */}
-                  <div
-                    className={`checkout-coupon-card ${selectedCoupon === 'PREPAID15' ? 'selected' : ''} ${isPrepaidCouponDisabled ? 'disabled' : ''}`}
-                    data-coupon="PREPAID15"
-                    onClick={() => {
-                      if (isPrepaidCouponDisabled || selectedCoupon === 'PREPAID15') return;
-                      setSelectedCoupon('PREPAID15');
-                    }}
-                  >
-                    <div className="checkout-coupon-card-content">
-                      <div className="checkout-coupon-card-header">
-                        <span className="checkout-coupon-code">PREPAID15</span>
-                        <span className="checkout-coupon-badge">15% OFF</span>
-                      </div>
-                      <div className="checkout-coupon-card-subtitle">15% OFF on prepaid orders</div>
-                    </div>
-                    <div className="checkout-coupon-card-action">
-                      {selectedCoupon === 'PREPAID15' ? (
-                        <div className="checkout-coupon-applied-wrap">
-                          <button
-                            type="button"
-                            className="checkout-coupon-action-btn applied"
-                            disabled
-                          >
-                            APPLIED
-                          </button>
-                          <button
-                            type="button"
-                            className="checkout-coupon-remove-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCoupon(null);
-                            }}
-                          >
-                            REMOVE
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="checkout-coupon-action-btn"
-                          disabled={isPrepaidCouponDisabled}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isPrepaidCouponDisabled) return;
-                            setSelectedCoupon('PREPAID15');
-                          }}
-                        >
-                          APPLY
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* FIRST10 */}
-                  <div
-                    className={`checkout-coupon-card ${selectedCoupon === 'FIRST10' ? 'selected' : ''} ${isCouponDisabled ? 'disabled' : ''}`}
-                    data-coupon="FIRST10"
-                    onClick={() => {
-                      if (isCouponDisabled || selectedCoupon === 'FIRST10') return;
-                      if (!hasValidPhone) {
-                        if (showCheckoutForm) onToast('Enter your phone number to apply FIRST10.');
-                      }
-                      setSelectedCoupon('FIRST10');
-                    }}
-                  >
-                    <div className="checkout-coupon-card-content">
-                      <div className="checkout-coupon-card-header">
-                        <span className="checkout-coupon-code">FIRST10</span>
-                        <span className="checkout-coupon-badge">10% OFF</span>
-                      </div>
-                      <div className="checkout-coupon-card-subtitle">10% OFF on first order</div>
-                      {selectedCoupon === 'FIRST10' && !hasValidPhone && (
-                        <div className="coupon-phone-hint">{showCheckoutForm ? 'Enter phone number to activate' : 'Applies at checkout once you enter your phone number'}</div>
-                      )}
-                    </div>
-                    <div className="checkout-coupon-card-action">
-                      {selectedCoupon === 'FIRST10' ? (
-                        <div className="checkout-coupon-applied-wrap">
-                          <button
-                            type="button"
-                            className={`checkout-coupon-action-btn ${hasValidPhone ? 'applied' : ''}`}
-                            disabled={hasValidPhone}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!hasValidPhone) {
-                                if (showCheckoutForm) onToast('Enter your phone number to apply FIRST10.');
-                              }
-                            }}
-                          >
-                            {hasValidPhone ? 'APPLIED' : 'APPLY'}
-                          </button>
-                          <button
-                            type="button"
-                            className="checkout-coupon-remove-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCoupon(null);
-                            }}
-                          >
-                            REMOVE
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="checkout-coupon-action-btn"
-                          disabled={isCouponDisabled}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isCouponDisabled) return;
-                            if (!hasValidPhone) {
-                              if (showCheckoutForm) onToast('Enter your phone number to apply FIRST10.');
-                            }
-                            setSelectedCoupon('FIRST10');
-                          }}
-                        >
-                          APPLY
-                        </button>
-                      )}
-                    </div>
-                  </div>
+      <div className={`checkout-coupon-options ${isCouponDisabled ? 'coupons-disabled' : ''}`}>
+        {tileCoupons.map((def) => {
+          const isSelected = selectedCoupon === def.code;
+          const disabled = isTileDisabled(def);
+          const needsPhone = Boolean(def.firstOrderOnly);
+          const applied = needsPhone ? hasValidPhone : true;
+          return (
+            <div
+              key={def.code}
+              className={`checkout-coupon-card ${isSelected ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
+              data-coupon={def.code}
+              onClick={() => selectCoupon(def)}
+            >
+              <div className="checkout-coupon-card-content">
+                <div className="checkout-coupon-card-header">
+                  <span className="checkout-coupon-code">{def.code}</span>
+                  <span className="checkout-coupon-badge">{couponBadge(def)}</span>
                 </div>
+                <div className="checkout-coupon-card-subtitle">{couponSubtitle(def)}</div>
+                {isSelected && needsPhone && !hasValidPhone && (
+                  <div className="coupon-phone-hint">{showCheckoutForm ? 'Enter phone number to activate' : 'Applies at checkout once you enter your phone number'}</div>
+                )}
               </div>
+              <div className="checkout-coupon-card-action">
+                {isSelected ? (
+                  <div className="checkout-coupon-applied-wrap">
+                    <button
+                      type="button"
+                      className={`checkout-coupon-action-btn ${applied ? 'applied' : ''}`}
+                      disabled={applied}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!applied && showCheckoutForm) onToast(`Enter your phone number to apply ${def.code}.`);
+                      }}
+                    >
+                      {applied ? 'APPLIED' : 'APPLY'}
+                    </button>
+                    <button
+                      type="button"
+                      className="checkout-coupon-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCoupon(null);
+                      }}
+                    >
+                      REMOVE
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="checkout-coupon-action-btn"
+                    disabled={disabled}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectCoupon(def);
+                    }}
+                  >
+                    APPLY
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {couponCodeBox}
+    </div>
   );
 
   return (

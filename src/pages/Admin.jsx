@@ -44,6 +44,7 @@ const ADMIN_TABS = [
   ['products', 'Products'],
   ['inventory', 'Inventory'],
   ['collections', 'Collections'],
+  ['coupons', 'Coupons'],
   ['stories', 'Stories'],
   ['blogs', 'Blogs'],
   ['gallery', 'Gallery'],
@@ -252,6 +253,437 @@ function compressImageFile(file) {
     };
     image.src = objectUrl;
   });
+}
+
+const EMPTY_COUPON_FORM = {
+  code: '',
+  label: '',
+  discountType: 'percent',
+  discountValue: '',
+  allowCod: true,
+  allowPrepaid: true,
+  firstOrderOnly: false,
+  scope: 'all',
+  productIds: [],
+  minOrderValue: '',
+  maxUses: '',
+  startsAt: '',
+  endsAt: '',
+  isActive: true,
+  isVisible: true
+};
+
+const couponDateToInput = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+
+const couponInputToDate = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const couponToForm = (c) => ({
+  code: c.code,
+  label: c.label || '',
+  discountType: c.discountType,
+  discountValue: String(c.discountValue),
+  allowCod: c.allowCod,
+  allowPrepaid: c.allowPrepaid,
+  firstOrderOnly: c.firstOrderOnly,
+  scope: c.productIds && c.productIds.length ? 'selected' : 'all',
+  productIds: c.productIds || [],
+  minOrderValue: c.minOrderValue ? String(c.minOrderValue) : '',
+  maxUses: c.maxUses === null || c.maxUses === undefined ? '' : String(c.maxUses),
+  startsAt: couponDateToInput(c.startsAt),
+  endsAt: couponDateToInput(c.endsAt),
+  isActive: c.isActive,
+  isVisible: c.isVisible
+});
+
+const couponFormToPayload = (form) => ({
+  code: form.code,
+  label: form.label,
+  discountType: form.discountType,
+  discountValue: Number(form.discountValue),
+  allowCod: form.allowCod,
+  allowPrepaid: form.allowPrepaid,
+  firstOrderOnly: form.firstOrderOnly,
+  productIds: form.scope === 'selected' ? form.productIds : [],
+  minOrderValue: Number(form.minOrderValue || 0),
+  maxUses: form.maxUses === '' ? null : Number(form.maxUses),
+  startsAt: couponInputToDate(form.startsAt),
+  endsAt: couponInputToDate(form.endsAt),
+  isActive: form.isActive,
+  isVisible: form.isVisible
+});
+
+const couponStatus = (c) => {
+  const now = Date.now();
+  if (!c.isActive) return 'Off';
+  if (c.startsAt && now < Date.parse(c.startsAt)) return 'Scheduled';
+  if (c.endsAt && now > Date.parse(c.endsAt)) return 'Expired';
+  if (c.maxUses !== null && c.maxUses !== undefined && c.usedCount >= c.maxUses) return 'Used up';
+  return 'Live';
+};
+
+const couponAmountText = (type, value) => (type === 'flat' ? `Rs. ${Number(value)} off` : `${Number(value)}% off`);
+
+const couponPaymentText = (allowCod, allowPrepaid) => {
+  if (allowCod && allowPrepaid) return 'COD and prepaid';
+  return allowCod ? 'COD only' : 'prepaid only';
+};
+
+// Plain-language line under the form, so the rule is clear before saving.
+const couponFormSummary = (form, products) => {
+  if (!Number(form.discountValue)) return 'Enter a discount value to see the rule.';
+  const parts = [`Customer gets ${couponAmountText(form.discountType, form.discountValue)}`];
+  parts.push(`on ${couponPaymentText(form.allowCod, form.allowPrepaid)} orders`);
+  if (form.firstOrderOnly) parts.push('for first orders only');
+  if (form.scope === 'selected') {
+    const names = form.productIds.map((id) => products.find((p) => p.id === id)?.name).filter(Boolean);
+    parts.push(names.length ? `on: ${names.join(', ')}` : 'on the products you tick below');
+  } else {
+    parts.push('on all products');
+  }
+  let text = parts.join(', ') + '.';
+  if (Number(form.minOrderValue) > 0) text += ` Minimum order Rs. ${Number(form.minOrderValue)}.`;
+  if (form.maxUses !== '') text += ` Works ${Number(form.maxUses)} times in total.`;
+  return text;
+};
+
+function CouponsAdminTab({ onToast, products }) {
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [form, setForm] = useState(EMPTY_COUPON_FORM);
+  const [editingCode, setEditingCode] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const authHeaders = () => {
+    const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+  };
+
+  const readError = async (res, fallback) => {
+    try {
+      const data = await res.json();
+      return data.error || data.message || fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  const loadCoupons = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await fetch('/api/admin/coupons', { headers: authHeaders() });
+      if (!res.ok) {
+        setCoupons([]);
+        setLoadError(await readError(res, 'Coupons could not load.'));
+      } else {
+        setCoupons(await res.json());
+      }
+    } catch {
+      setCoupons([]);
+      setLoadError('Coupons could not load.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadCoupons();
+  }, []);
+
+  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+  const resetForm = () => {
+    setForm(EMPTY_COUPON_FORM);
+    setEditingCode(null);
+  };
+
+  const saveCoupon = async (payload, code) => {
+    const isEdit = Boolean(code);
+    const res = await fetch(isEdit ? `/api/admin/coupons/${encodeURIComponent(code)}` : '/api/admin/coupons', {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await readError(res, 'Coupon save failed.'));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await saveCoupon(couponFormToPayload(form), editingCode);
+      onToast(editingCode ? 'Coupon updated.' : 'Coupon created.');
+      resetForm();
+      await loadCoupons();
+    } catch (err) {
+      onToast(err.message || 'Coupon save failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEdit = (c) => {
+    setForm(couponToForm(c));
+    setEditingCode(c.code);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleToggleActive = async (c) => {
+    try {
+      await saveCoupon(couponFormToPayload({ ...couponToForm(c), isActive: !c.isActive }), c.code);
+      onToast(c.isActive ? `${c.code} switched off.` : `${c.code} switched on.`);
+      await loadCoupons();
+    } catch (err) {
+      onToast(err.message || 'Coupon update failed.');
+    }
+  };
+
+  const handleDelete = async (c) => {
+    if (!window.confirm(`Delete coupon ${c.code}?`)) return;
+    try {
+      const res = await fetch(`/api/admin/coupons/${encodeURIComponent(c.code)}`, { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) throw new Error(await readError(res, 'Coupon delete failed.'));
+      onToast('Coupon deleted.');
+      if (editingCode === c.code) resetForm();
+      await loadCoupons();
+    } catch (err) {
+      onToast(err.message || 'Coupon delete failed.');
+    }
+  };
+
+  const toggleProduct = (id) => {
+    setForm((prev) => ({
+      ...prev,
+      productIds: prev.productIds.includes(id) ? prev.productIds.filter((x) => x !== id) : [...prev.productIds, id]
+    }));
+  };
+
+  const rulesText = (c) => {
+    const parts = [couponPaymentText(c.allowCod, c.allowPrepaid)];
+    if (c.firstOrderOnly) parts.push('first order only');
+    parts.push(c.productIds && c.productIds.length ? `${c.productIds.length} product(s)` : 'all products');
+    if (c.minOrderValue > 0) parts.push(`min Rs. ${c.minOrderValue}`);
+    if (c.startsAt) parts.push(`from ${new Date(c.startsAt).toLocaleDateString()}`);
+    if (c.endsAt) parts.push(`until ${new Date(c.endsAt).toLocaleDateString()}`);
+    if (!c.isVisible) parts.push('private code');
+    return parts.join(' / ');
+  };
+
+  return (
+    <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '30px' }}>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h2 className="admin-card-title">{editingCode ? `Edit coupon ${editingCode}` : 'Create New Coupon'}</h2>
+        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="admin-form-group">
+            <label className="admin-label">Coupon Code</label>
+            <input
+              type="text"
+              className="admin-input"
+              value={form.code}
+              onChange={(e) => setField('code', e.target.value.toUpperCase().replace(/\s+/g, ''))}
+              placeholder="e.g. ROHAN10"
+              maxLength={30}
+              disabled={Boolean(editingCode)}
+              required
+            />
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Name shown on the order summary (optional)</label>
+            <input
+              type="text"
+              className="admin-input"
+              value={form.label}
+              onChange={(e) => setField('label', e.target.value)}
+              placeholder="e.g. Rohan special"
+              maxLength={120}
+            />
+          </div>
+
+          <div className="admin-form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label className="admin-label">Discount Type</label>
+              <select className="admin-input" value={form.discountType} onChange={(e) => setField('discountType', e.target.value)}>
+                <option value="percent">Percent off (%)</option>
+                <option value="flat">Flat amount off (Rs.)</option>
+              </select>
+            </div>
+            <div>
+              <label className="admin-label">{form.discountType === 'flat' ? 'Amount (Rs.)' : 'Percent (max 90)'}</label>
+              <input
+                type="number"
+                className="admin-input"
+                min="1"
+                step="any"
+                value={form.discountValue}
+                onChange={(e) => setField('discountValue', e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Works on</label>
+            <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', fontSize: '13px' }}>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="checkbox" checked={form.allowCod} onChange={(e) => setField('allowCod', e.target.checked)} />
+                COD orders
+              </label>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="checkbox" checked={form.allowPrepaid} onChange={(e) => setField('allowPrepaid', e.target.checked)} />
+                Prepaid orders
+              </label>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="checkbox" checked={form.firstOrderOnly} onChange={(e) => setField('firstOrderOnly', e.target.checked)} />
+                First order only (checked by phone number)
+              </label>
+            </div>
+          </div>
+
+          <div className="admin-form-group">
+            <label className="admin-label">Products</label>
+            <div style={{ display: 'flex', gap: '18px', fontSize: '13px', marginBottom: '8px' }}>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="radio" name="coupon-scope" checked={form.scope === 'all'} onChange={() => setField('scope', 'all')} />
+                All products
+              </label>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="radio" name="coupon-scope" checked={form.scope === 'selected'} onChange={() => setField('scope', 'selected')} />
+                Only selected products
+              </label>
+            </div>
+            {form.scope === 'selected' && (
+              <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--admin-border)', borderRadius: '4px', padding: '10px' }}>
+                {products.map((p) => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="checkbox"
+                      id={`coupon-p-${p.id}`}
+                      checked={form.productIds.includes(p.id)}
+                      onChange={() => toggleProduct(p.id)}
+                    />
+                    <label htmlFor={`coupon-p-${p.id}`} style={{ fontSize: '13px' }}>{p.name}</label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="admin-form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label className="admin-label">Minimum order (Rs., optional)</label>
+              <input type="number" className="admin-input" min="0" value={form.minOrderValue} onChange={(e) => setField('minOrderValue', e.target.value)} />
+            </div>
+            <div>
+              <label className="admin-label">Total uses allowed (blank = unlimited)</label>
+              <input type="number" className="admin-input" min="1" step="1" value={form.maxUses} onChange={(e) => setField('maxUses', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="admin-form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label className="admin-label">Starts (optional)</label>
+              <input type="datetime-local" className="admin-input" value={form.startsAt} onChange={(e) => setField('startsAt', e.target.value)} />
+            </div>
+            <div>
+              <label className="admin-label">Ends (optional)</label>
+              <input type="datetime-local" className="admin-input" value={form.endsAt} onChange={(e) => setField('endsAt', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="admin-form-group">
+            <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', fontSize: '13px' }}>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="checkbox" checked={form.isActive} onChange={(e) => setField('isActive', e.target.checked)} />
+                Active
+              </label>
+              <label style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input type="checkbox" checked={form.isVisible} onChange={(e) => setField('isVisible', e.target.checked)} />
+                Show in the bag and on product pages (untick for a private code, e.g. for a creator)
+              </label>
+            </div>
+          </div>
+
+          <p style={{ fontSize: '12px', color: 'var(--grey-muted)', margin: '0 0 12px' }}>{couponFormSummary(form, products)}</p>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button type="submit" className="btn btn-accent" style={{ flex: 1, padding: '12px' }} disabled={saving}>
+              {saving ? 'Saving...' : (editingCode ? 'Update Coupon' : 'Save Coupon')}
+            </button>
+            {editingCode && (
+              <button type="button" className="admin-btn" onClick={resetForm}>Cancel</button>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h2 className="admin-card-title">All Coupons</h2>
+        </div>
+        {loadError && (
+          <p style={{ color: '#991B1B', fontSize: '13px', margin: '0 0 12px' }}>{loadError}</p>
+        )}
+        {loading ? (
+          <p style={{ fontSize: '13px' }}>Loading coupons...</p>
+        ) : (
+          <div className="admin-table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Discount</th>
+                  <th>Rules</th>
+                  <th>Used</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coupons.map((c) => (
+                  <tr key={c.code}>
+                    <td><strong>{c.code}</strong>{c.label ? <div style={{ fontSize: '11px', color: 'var(--grey-muted)' }}>{c.label}</div> : null}</td>
+                    <td>{couponAmountText(c.discountType, c.discountValue)}</td>
+                    <td style={{ fontSize: '12px' }}>{rulesText(c)}</td>
+                    <td>{c.usedCount}{c.maxUses ? ` / ${c.maxUses}` : ''}</td>
+                    <td>{couponStatus(c)}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button type="button" className="admin-btn" onClick={() => handleToggleActive(c)}>
+                          {c.isActive ? 'Turn off' : 'Turn on'}
+                        </button>
+                        <button type="button" className="admin-icon-btn" onClick={() => handleEdit(c)} aria-label={`Edit ${c.code}`}>
+                          <Edit size={14} />
+                        </button>
+                        <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => handleDelete(c)} aria-label={`Delete ${c.code}`}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {coupons.length === 0 && !loadError && (
+                  <tr><td colSpan={6} style={{ fontSize: '13px' }}>No coupons yet.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function GoAffProAdminTab({ onToast }) {
@@ -2256,6 +2688,7 @@ export default function Admin({ onToast }) {
               {activeTab === 'products' && 'Product Manager'}
               {activeTab === 'inventory' && 'Inventory Control'}
               {activeTab === 'collections' && 'Collections Panel (Max 7)'}
+              {activeTab === 'coupons' && 'Coupons & Discounts'}
               {activeTab === 'stories' && 'Stories Publisher'}
               {activeTab === 'blogs' && 'Log Book Blogs Manager'}
               {activeTab === 'gallery' && 'Homepage Gallery Lookbook'}
@@ -4451,6 +4884,7 @@ export default function Admin({ onToast }) {
         )}
 
         {activeTab === 'goaffpro' && <GoAffProAdminTab onToast={onToast} />}
+        {activeTab === 'coupons' && <CouponsAdminTab onToast={onToast} products={products} />}
       </main>
 
 
