@@ -22,6 +22,9 @@ export default function PrivacyPolicy() {
           <p>
             We may collect information you provide during checkout, account use, return requests, or support communication, including name, date of birth, billing and shipping address, phone number, email address, order details, and payment-related information processed through payment partners.
           </p>
+          <p style={{ marginTop: '10px' }}>
+            If you start checkout but do not finish, we save the email address, phone number, and bag items you entered so we can help you complete your order. We keep this until you ask us to delete it.
+          </p>
         </section>
 
         <section style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '20px' }}>

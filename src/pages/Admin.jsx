@@ -51,6 +51,7 @@ const ADMIN_TABS = [
   ['contentblocks', 'Banners & Quotes'],
   ['heroconfig', 'Hero'],
   ['subscribers', 'Drop List'],
+  ['abandoned', 'Abandoned'],
   ['goaffpro', 'GoAffPro Affiliates']
 ];
 
@@ -682,6 +683,164 @@ function CouponsAdminTab({ onToast, products }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AbandonedAdminTab({ onToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [confirmId, setConfirmId] = useState(null);
+
+  const authHeaders = () => {
+    const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const loadRows = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await fetch('/api/admin/abandoned-checkouts', { headers: authHeaders() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setRows([]);
+        setLoadError(data.error || 'Abandoned checkouts could not load.');
+      } else {
+        setRows(await res.json());
+      }
+    } catch {
+      setRows([]);
+      setLoadError('Abandoned checkouts could not load.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRows();
+  }, []);
+
+  const removeRow = async (id) => {
+    try {
+      const res = await fetch(`/api/admin/abandoned-checkouts/${id}`, { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast(data.error || 'Could not delete this record.');
+        return;
+      }
+      setRows((prev) => prev.filter((row) => row.id !== id));
+      onToast('Record deleted.');
+    } catch {
+      onToast('Could not delete this record.');
+    } finally {
+      setConfirmId(null);
+    }
+  };
+
+  const describeItems = (items) => (items || []).map((item) => `${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity}`).join(', ');
+  const left = rows.filter((row) => !row.recovered);
+  const recovered = rows.filter((row) => row.recovered);
+  const leftValue = left.reduce((sum, row) => sum + Number(row.bagTotal || 0), 0);
+  const cell = { padding: '8px', borderBottom: '1px solid var(--admin-border)', verticalAlign: 'top' };
+
+  const downloadCsv = () => {
+    const header = ['email', 'phone', 'items', 'bag_total', 'status', 'marketing_consent', 'first_seen', 'last_seen'];
+    const lines = rows.map((row) => [
+      row.email,
+      row.phone ? '+' + row.phone : '',
+      describeItems(row.items),
+      row.bagTotal,
+      row.recovered ? 'recovered' : 'left',
+      row.marketingConsent ? 'yes' : 'no',
+      row.createdAt ? new Date(row.createdAt).toISOString() : '',
+      row.updatedAt ? new Date(row.updatedAt).toISOString() : ''
+    ]);
+    const csv = [header, ...lines]
+      .map((r) => r.map((value) => '"' + String(value).replace(/"/g, '""') + '"').join(','))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'log-abandoned-checkouts-' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="admin-section">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+        <h2 className="admin-section-title" style={{ margin: 0 }}>{left.length} left, {recovered.length} recovered</h2>
+        <span style={{ fontSize: '12px', color: 'var(--admin-muted, #666)' }}>
+          Bag value still open: Rs. {Math.round(leftValue).toLocaleString('en-IN')}
+        </span>
+        <button
+          type="button"
+          className="btn btn-outline"
+          style={{ marginLeft: 'auto', padding: '10px 16px', fontSize: '11px' }}
+          onClick={downloadCsv}
+          disabled={rows.length === 0}
+        >
+          Download CSV
+        </button>
+      </div>
+      <p style={{ fontSize: '12px', color: 'var(--admin-muted, #666)', margin: '0 0 16px' }}>
+        Saved after the checkout notice, not as marketing consent. Use these details only to help finish the order. Send promotions only to rows where Marketing consent is Yes.
+      </p>
+
+      {loading ? (
+        <p style={{ fontSize: '14px' }}>Loading...</p>
+      ) : loadError ? (
+        <p style={{ fontSize: '14px', color: 'var(--admin-danger, #b00020)' }}>{loadError}</p>
+      ) : rows.length === 0 ? (
+        <p style={{ fontSize: '14px', color: 'var(--admin-muted, #666)' }}>
+          Nothing yet. A record appears when a customer enters an email or phone at checkout.
+        </p>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr>
+                {['Email', 'Phone', 'Bag', 'Total', 'Status', 'Marketing consent', 'Last activity', ''].map((label) => (
+                  <th key={label} style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td style={cell}>{row.email || '—'}</td>
+                  <td style={cell}>{row.phone ? '+' + row.phone : '—'}</td>
+                  <td style={cell}>{describeItems(row.items) || '—'}</td>
+                  <td style={cell}>Rs. {Number(row.bagTotal || 0).toLocaleString('en-IN')}</td>
+                  <td style={cell}>{row.recovered ? 'Recovered' : 'Left'}</td>
+                  <td style={cell}>{row.marketingConsent ? 'Yes' : 'No'}</td>
+                  <td style={cell}>{row.updatedAt ? new Date(row.updatedAt).toLocaleString('en-IN') : '—'}</td>
+                  <td style={{ ...cell, whiteSpace: 'nowrap' }}>
+                    {row.phone && !row.recovered && (
+                      <a href={`https://wa.me/${row.phone}`} target="_blank" rel="noreferrer" style={{ marginRight: '10px' }}>WhatsApp</a>
+                    )}
+                    {row.email && !row.recovered && (
+                      <a href={`mailto:${row.email}`} style={{ marginRight: '10px' }}>Email</a>
+                    )}
+                    {confirmId === row.id ? (
+                      <>
+                        <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '6px' }} onClick={() => removeRow(row.id)}>Confirm delete</button>
+                        <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(null)}>Cancel</button>
+                      </>
+                    ) : (
+                      <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(row.id)}>Delete</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -2695,6 +2854,7 @@ export default function Admin({ onToast }) {
               {activeTab === 'contentblocks' && 'Banners & Quotes'}
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
               {activeTab === 'subscribers' && 'Drop List'}
+              {activeTab === 'abandoned' && 'Abandoned Checkouts'}
               {activeTab === 'goaffpro' && 'GoAffPro Affiliate Marketing'}
             </h1>
 
@@ -4885,6 +5045,7 @@ export default function Admin({ onToast }) {
 
         {activeTab === 'goaffpro' && <GoAffProAdminTab onToast={onToast} />}
         {activeTab === 'coupons' && <CouponsAdminTab onToast={onToast} products={products} />}
+        {activeTab === 'abandoned' && <AbandonedAdminTab onToast={onToast} />}
       </main>
 
 
