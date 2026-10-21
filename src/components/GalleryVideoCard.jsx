@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { mediaUrl } from '../lib/urls';
 
-export default function GalleryVideoCard({ item, isActive }) {
+export default function GalleryVideoCard({ item, isActive, loop = true, onEnded }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const stallTimerRef = useRef(null);
@@ -98,6 +98,9 @@ export default function GalleryVideoCard({ item, isActive }) {
       }
     } else {
       video.pause();
+      if (!isActive) {
+        try { video.currentTime = 0; } catch (e) {}
+      }
       setIsPlaying(false);
       setIsStalled(false);
       if (stallTimerRef.current) {
@@ -166,13 +169,14 @@ export default function GalleryVideoCard({ item, isActive }) {
         src={isNearViewport ? videoSrc : undefined}
         muted
         playsInline
-        loop
+        loop={loop}
         preload="none"
+        onEnded={() => { if (isActive && onEnded) onEnded(); }}
         onWaiting={handleWaitingOrStalled}
         onStalled={handleWaitingOrStalled}
         onPlaying={handlePlaying}
         onPause={handlePause}
-        onError={() => setIsPlaying(false)}
+        onError={() => { setIsPlaying(false); if (isActive && onEnded) onEnded(); }}
         style={{
           width: '100%',
           height: '100%',
