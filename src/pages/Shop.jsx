@@ -650,7 +650,13 @@ export default function Shop({ onAddToCart }) {
   });
 
   const isDefaultView = !searchQuery && !collectionFilter && !categoryFilter && !subCategoryFilter && !colorFilter && filter === 'all';
-  const displayedProducts = filteredProducts;
+  const homeCollection = isDefaultView
+    ? collections.find(c => (c.name || '').trim().toLowerCase() === 'home')
+    : null;
+  const homeCuratedProducts = homeCollection && Array.isArray(homeCollection.productIds)
+    ? filteredProducts.filter(p => homeCollection.productIds.includes(p.id))
+    : [];
+  const displayedProducts = homeCuratedProducts.length > 0 ? homeCuratedProducts : filteredProducts;
 
   const heroShopLink = heroConfig.button1Link || '#shop-catalog';
   const desktopHeroMediaType = ['image', 'slideshow', 'video'].includes(heroConfig.desktopMediaType) ? heroConfig.desktopMediaType : 'image';
@@ -934,7 +940,11 @@ export default function Shop({ onAddToCart }) {
           ))}
         </div>
 
-        
+        {isDefaultView && (
+          <div className="home-shop-all" style={{ textAlign: 'center', marginTop: '32px' }}>
+            <a href={appPath('/shop')} className="btn-outline">Shop all designs</a>
+          </div>
+        )}
       </section>
 
       {/* MANIFESTO SECTION */}
