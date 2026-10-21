@@ -673,6 +673,64 @@ describe('Admin Coupons tab', () => {
   });
 });
 
+describe('Admin Abandoned tab', () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    sessionStorage.setItem('admin_token', 'test_admin_token');
+    localStorage.setItem('log_admin_active_tab', 'abandoned');
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+    global.fetch = originalFetch;
+  });
+
+  it('lists saved checkouts with email and phone, and deletes one with the admin token', async () => {
+    const calls = [];
+    global.fetch = vi.fn().mockImplementation((url, opts = {}) => {
+      const u = String(url);
+      calls.push({ u, method: opts.method || 'GET', headers: opts.headers });
+      if (u.includes('/api/admin/abandoned-checkouts')) {
+        if ((opts.method || 'GET') === 'GET') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{
+              id: 7, email: 'buyer@example.com', phone: '919876543210',
+              items: [{ name: 'Tee', size: 'L', quantity: 2, price: 1299 }],
+              bagTotal: 2598, recovered: false, marketingConsent: false,
+              createdAt: '2026-10-21T10:00:00.000Z', updatedAt: '2026-10-21T10:05:00.000Z'
+            }]
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => [] });
+    });
+
+    const { unmount } = render(
+      <MemoryRouter>
+        <Admin onToast={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('buyer@example.com')).toBeDefined();
+    expect(screen.getByText('+919876543210')).toBeDefined();
+    expect(screen.getByText('1 left, 0 recovered')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm delete' }));
+
+    await waitFor(() => expect(calls.some((c) => c.method === 'DELETE')).toBe(true));
+    const del = calls.find((c) => c.method === 'DELETE');
+    expect(del.u).toContain('/api/admin/abandoned-checkouts/7');
+    expect(del.headers.Authorization).toBe('Bearer test_admin_token');
+    unmount();
+  });
+});
+
 describe('Admin Analytics Dashboard', () => {
   let originalFetch;
 

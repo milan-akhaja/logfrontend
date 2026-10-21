@@ -385,6 +385,48 @@ export default function CartDrawer({
   // When quote is loading or not yet matched, totals are pending.
   const totalPending = !useServerTotals;
 
+  // Saves the email and phone typed at checkout so an unfinished order can be
+  // followed up. Best effort: a failed save must never get in the way of buying.
+  const captureKeyRef = useRef('');
+  const lastCaptureRef = useRef('');
+  useEffect(() => {
+    if (cart.length === 0) {
+      captureKeyRef.current = '';
+      lastCaptureRef.current = '';
+      return undefined;
+    }
+    if (!showCheckoutForm) return undefined;
+    const email = String(customerInfo.email || '').trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const localDigits = String(customerInfo.phone || '').replace(/\D/g, '');
+    const phoneOk = localDigits.length >= 10;
+    if (!emailOk && !phoneOk) return undefined;
+    const timer = setTimeout(() => {
+      if (!captureKeyRef.current) {
+        const raw = globalThis.crypto?.randomUUID?.() || `${Date.now()}${Math.random().toString(36).slice(2)}`;
+        captureKeyRef.current = raw.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+      }
+      const body = {
+        sessionKey: captureKeyRef.current,
+        email: emailOk ? email : '',
+        phone: phoneOk ? `${String(customerInfo.phoneCountryCode || '+91').replace(/\D/g, '')}${localDigits}` : '',
+        items: cart.map((item) => ({
+          name: item.name,
+          size: item.selectedSize || item.selectedSize1 || '',
+          quantity: item.quantity,
+          price: item.price
+        })),
+        bagTotal: clientSubtotal
+      };
+      const fingerprint = JSON.stringify(body);
+      if (fingerprint === lastCaptureRef.current) return;
+      apiJson('/api/abandoned-checkouts', { method: 'POST', body: fingerprint })
+        .then(() => { lastCaptureRef.current = fingerprint; })
+        .catch(() => { });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [showCheckoutForm, cart, customerInfo.email, customerInfo.phone, customerInfo.phoneCountryCode, clientSubtotal]);
+
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
       setQuote(null);
@@ -1054,6 +1096,10 @@ export default function CartDrawer({
                   />
                 </div>
               </div>
+
+              <p style={{ margin: '-4px 0 12px', fontSize: '12px', lineHeight: 1.5, color: '#666' }}>
+                We save your contact details when you start checkout so we can help you complete your order.
+              </p>
 
               <div className="checkout-field">
                 <label>Date of Birth</label>
