@@ -765,6 +765,39 @@ header.scrolled .bag-count {
   transform: translateY(-3px);
 }
 
+.home-shop-all {
+  text-align: center;
+  padding: 36px 0 20px;
+}
+
+.home-shop-all-link {
+  position: relative;
+  display: inline-block;
+  color: var(--ink);
+  font-family: 'Montserrat', 'Montserrat Fallback', sans-serif;
+  font-size: clamp(15px, 1.15vw, 20px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.home-shop-all-link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 45px;
+  height: 1px;
+  background: var(--ink);
+  transform: translateX(-50%);
+  transition: width 0.2s ease;
+}
+
+.home-shop-all-link:hover::after {
+  width: 66px;
+}
+
 /* ── STATS STRIP ───────────────────────────────────────── */
 .stats-strip {
   background: var(--paper);

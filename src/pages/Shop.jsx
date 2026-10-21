@@ -224,13 +224,19 @@ function GalleryScroller() {
       .catch(err => console.error(err));
   }, []);
 
+  const activeItem = items[activeIdx];
+  const activeIsVideo = Boolean(activeItem && ((activeItem.media_type || activeItem.mediaType) === 'video' || activeItem.video_url || activeItem.videoUrl));
+
   useEffect(() => {
     if (items.length <= 1 || isDragging) return;
-    const interval = setInterval(() => {
+    // Image slides: 5s. Video slides advance from the video's own ended event;
+    // the long timeout is only a safety net if the video never plays.
+    const delay = activeIsVideo ? 45000 : 5000;
+    const timer = setTimeout(() => {
       setActiveIdx(prev => (prev + 1) % items.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [items, isDragging]);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [items, isDragging, activeIdx, activeIsVideo]);
 
   if (items.length === 0) return null;
 
@@ -393,7 +399,15 @@ function GalleryScroller() {
                           />
                         }
                       >
-                        <GalleryVideoCard item={item} isActive={idx === activeIdx} />
+                        <GalleryVideoCard
+                          item={item}
+                          isActive={idx === activeIdx}
+                          loop={items.length <= 1}
+                          onEnded={() => {
+                            if (dragRef.current.isActive) return;
+                            setActiveIdx(prev => (prev + 1) % items.length);
+                          }}
+                        />
                       </React.Suspense>
                     ) : (
                       <img src={mediaUrl(item.imageUrl)} alt={item.title || 'logcloth gallery image'} loading="lazy" decoding="async" />
@@ -941,8 +955,8 @@ export default function Shop({ onAddToCart }) {
         </div>
 
         {isDefaultView && (
-          <div className="home-shop-all" style={{ textAlign: 'center', marginTop: '32px' }}>
-            <a href={appPath('/shop')} className="btn-outline">Shop all designs</a>
+          <div className="home-shop-all">
+            <a href={appPath('/shop')} className="home-shop-all-link">Shop all designs</a>
           </div>
         )}
       </section>

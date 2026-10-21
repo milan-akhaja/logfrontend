@@ -2166,3 +2166,66 @@ describe('Homepage product grid and Home collection', () => {
     unmount();
   });
 });
+
+describe('Gallery video slides wait for the video to finish', () => {
+  const videoItem = { id: 'g1', title: 'Reel', media_type: 'video', video_url: '/uploads/r.mp4', poster_url: '/uploads/r.webp' };
+
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: false, media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(),
+      addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn()
+    }));
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(() => Promise.resolve());
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
+  });
+
+  it('card reports the end of the video only while it is the active slide, and can drop loop', async () => {
+    const GalleryVideoCard = (await import('./components/GalleryVideoCard')).default;
+    const { fireEvent } = await import('@testing-library/react');
+    const onEnded = vi.fn();
+
+    const active = render(<GalleryVideoCard item={videoItem} isActive={true} loop={false} onEnded={onEnded} />);
+    const video = active.container.querySelector('video');
+    expect(video.hasAttribute('loop')).toBe(false);
+    fireEvent.ended(video);
+    expect(onEnded).toHaveBeenCalledTimes(1);
+    active.unmount();
+
+    const inactive = render(<GalleryVideoCard item={videoItem} isActive={false} loop={false} onEnded={onEnded} />);
+    fireEvent.ended(inactive.container.querySelector('video'));
+    expect(onEnded).toHaveBeenCalledTimes(1);
+    inactive.unmount();
+  });
+
+  it('carousel stays on the video past 5s and moves on once the video ends', async () => {
+    const { default: Shop, resetCachedHeroConfig } = await import('./pages/Shop');
+    const { invalidateProducts } = await import('./lib/products');
+    const { render: r, fireEvent, waitFor, act } = await import('@testing-library/react');
+    const { MemoryRouter } = await import('react-router-dom');
+    resetCachedHeroConfig();
+    invalidateProducts();
+    const items = [videoItem, { id: 'g2', title: 'Photo', imageUrl: '/uploads/p.webp' }];
+    window.fetch = vi.fn().mockImplementation((url) => {
+      if (typeof url === 'string' && url.includes('/api/gallery')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(items) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    const { container, unmount } = r(<MemoryRouter><Shop onAddToCart={() => {}} /></MemoryRouter>);
+    await waitFor(() => expect(container.querySelectorAll('.gallery-slide').length).toBe(2));
+    const activeIsVideo = () => Boolean(container.querySelector('.gallery-slide.active video'));
+    expect(activeIsVideo()).toBe(true);
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      await act(async () => { vi.advanceTimersByTime(8000); });
+      expect(activeIsVideo()).toBe(true);
+      fireEvent.ended(container.querySelector('.gallery-slide.active video'));
+      expect(activeIsVideo()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+    unmount();
+  });
+});
