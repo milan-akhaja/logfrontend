@@ -252,23 +252,6 @@ function formatCurrency(value) {
 }
 
 export function OrderReceiptModal({ order, onClose }) {
-  useEffect(() => {
-    if (order && typeof window !== 'undefined') {
-      try {
-        window.goaffpro_order = {
-          number: String(order.id || ''),
-          total: Number(order.total || 0),
-          email: order.customerInfo?.email || ''
-        };
-        if (typeof window.goaffproTrackConversion !== 'undefined') {
-          window.goaffproTrackConversion(window.goaffpro_order);
-        }
-      } catch (err) {
-        console.warn('GoAffPro conversion tracking warning:', err);
-      }
-    }
-  }, [order]);
-
   if (!order) return null;
 
   return (
