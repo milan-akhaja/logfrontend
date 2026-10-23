@@ -672,10 +672,7 @@ export default function CartDrawer({
         });
         setLastOrderSummary(data.order || null);
         setEmailHtml(data.emailHtml || '');
-        setOrderEmailSent(Boolean(data.emailSent));
-        if (!data.emailSent || !data.ownerEmailSent) {
-          onToast('Order saved, but one email notification did not send. Check SMTP settings.');
-        }
+        setOrderEmailSent(Boolean(data.emailQueued || data.emailSent));
         localStorage.removeItem(CHECKOUT_ORDER_KEY);
         localStorage.removeItem(CHECKOUT_DRAFT_KEY);
         onClearCart();
@@ -1459,7 +1456,7 @@ export default function CartDrawer({
               </h2>
               <p style={{ fontSize: '14px', fontWeight: '600', color: '#388e3c', margin: 0 }}>
                 {orderEmailSent
-                  ? 'Order details are received on your mail.'
+                  ? 'Order details are on their way to your mail.'
                   : 'Your order is saved. Our team will contact you if the confirmation email is delayed.'}
               </p>
             </div>
