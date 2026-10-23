@@ -44,6 +44,7 @@ function getSavedCustomerInfo(defaultInfo) {
     const saved = JSON.parse(localStorage.getItem(CHECKOUT_DRAFT_KEY) || 'null');
     if (!saved || typeof saved !== 'object') return defaultInfo;
     const merged = { ...defaultInfo, ...saved };
+    delete merged.dob;
     const rawPhone = String(merged.phone || '').trim();
     const matchedCode = PHONE_COUNTRY_CODES.find((code) => rawPhone.startsWith(code.value));
     if (matchedCode) {
@@ -230,7 +231,6 @@ export default function CartDrawer({
     city: '',
     state: 'Gujarat',
     pinCode: '',
-    dob: '',
     saveInfo: false
   };
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
@@ -1069,11 +1069,6 @@ export default function CartDrawer({
               <p style={{ margin: '-4px 0 12px', fontSize: '12px', lineHeight: 1.5, color: '#666' }}>
                 We save your contact details when you start checkout so we can help you complete your order.
               </p>
-
-              <div className="checkout-field">
-                <label>Date of Birth</label>
-                <input type="date" name="dob" value={customerInfo.dob} onChange={handleInputChange} required />
-              </div>
 
               <label className="checkout-save-row">
                 <input type="checkbox" name="saveInfo" checked={customerInfo.saveInfo} onChange={handleInputChange} />

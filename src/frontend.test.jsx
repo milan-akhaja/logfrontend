@@ -1961,7 +1961,6 @@ describe('Direct COD and Founder Delivery checkout', () => {
       city: 'Ahmedabad',
       state: 'Gujarat',
       pinCode: '380001',
-      dob: '2000-01-01',
       saveInfo: false
     }));
   });
