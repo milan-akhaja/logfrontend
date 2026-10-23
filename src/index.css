@@ -7213,7 +7213,13 @@ header.scrolled .nav-action-icon-btn {
     bottom: 10px;
     left: 10px;
     right: 10px;
-    padding: 14px;
+    padding: 10px 12px;
+  }
+
+  .log-consent-banner-text {
+    margin-bottom: 8px;
+    font-size: 11.5px;
+    line-height: 1.4;
   }
 
   .log-consent-banner-actions .btn {
@@ -7225,6 +7231,7 @@ header.scrolled .nav-action-icon-btn {
 
   .log-consent-banner-actions .btn.btn-customize {
     flex: 1 1 100%;
+    padding: 6px 8px;
   }
 }
 
