@@ -7229,9 +7229,17 @@ header.scrolled .nav-action-icon-btn {
     white-space: normal;
   }
 
-  .log-consent-banner-actions .btn.btn-customize {
+  .log-consent-banner-actions .btn.btn-accent {
+    order: -1;
     flex: 1 1 100%;
-    padding: 6px 8px;
+    min-height: 46px;
+    padding: 13px 8px;
+    font-size: 12px;
+  }
+
+  .log-consent-banner-actions .btn.btn-customize {
+    flex: 1 1 calc(50% - 4px);
+    padding: 9px 8px;
   }
 }
 
