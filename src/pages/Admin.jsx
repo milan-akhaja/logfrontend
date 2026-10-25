@@ -691,6 +691,9 @@ function AbandonedAdminTab({ onToast }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [confirmId, setConfirmId] = useState(null);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetText, setResetText] = useState('');
+  const [resetting, setResetting] = useState(false);
 
   const authHeaders = () => {
     const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
@@ -735,6 +738,26 @@ function AbandonedAdminTab({ onToast }) {
       onToast('Could not delete this record.');
     } finally {
       setConfirmId(null);
+    }
+  };
+
+  const resetAll = async () => {
+    setResetting(true);
+    try {
+      const res = await fetch('/api/admin/abandoned-checkouts', { method: 'DELETE', headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        onToast(data.error || 'Could not reset abandoned checkouts.');
+        return;
+      }
+      setRows([]);
+      setResetOpen(false);
+      setResetText('');
+      onToast(`${data.deleted ?? 0} records reset.`);
+    } catch {
+      onToast('Could not reset abandoned checkouts.');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -785,7 +808,49 @@ function AbandonedAdminTab({ onToast }) {
         >
           Download CSV
         </button>
+        <button
+          type="button"
+          className="btn btn-outline"
+          style={{ padding: '10px 16px', fontSize: '11px' }}
+          onClick={() => setResetOpen(true)}
+          disabled={rows.length === 0 || resetOpen}
+        >
+          Reset all
+        </button>
       </div>
+      {resetOpen && (
+        <div style={{ border: '1px solid var(--admin-danger, #b00020)', padding: '12px', margin: '0 0 16px', fontSize: '13px' }}>
+          <p style={{ margin: '0 0 8px' }}>
+            This permanently deletes all {rows.length} abandoned checkout records. Download the CSV first if you need a copy. Type RESET to confirm.
+          </p>
+          <input
+            type="text"
+            value={resetText}
+            onChange={(e) => setResetText(e.target.value)}
+            aria-label="Type RESET to confirm"
+            autoComplete="off"
+            style={{ padding: '8px', marginRight: '8px' }}
+          />
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '8px 14px', fontSize: '11px', marginRight: '6px' }}
+            onClick={resetAll}
+            disabled={resetText !== 'RESET' || resetting}
+          >
+            {resetting ? 'Resetting...' : 'Confirm reset'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: '8px 14px', fontSize: '11px' }}
+            onClick={() => { setResetOpen(false); setResetText(''); }}
+            disabled={resetting}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       <p style={{ fontSize: '12px', color: 'var(--admin-muted, #666)', margin: '0 0 16px' }}>
         Saved after the checkout notice, not as marketing consent. Use these details only to help finish the order. Send promotions only to rows where Marketing consent is Yes.
       </p>
