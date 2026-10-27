@@ -168,7 +168,7 @@ function availabilityLabelOf(product) {
 function productTitle(product) {
   return isDropProduct(product)
     ? `${product.name} — Oversized 240 GSM Tee | logcloth`
-    : `${product.name} — Oversized Tee | logcloth`;
+    : `${product.name} | logcloth`;
 }
 
 function productDescription(product) {
@@ -181,7 +181,7 @@ function productDescription(product) {
     );
   }
   return truncate(
-    `${product.name}${colour ? ` in ${colour}` : ''} — unisex oversized tee from logcloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`,
+    `${product.name}${colour ? ` in ${colour}` : ''} — unisex tee from logcloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`,
     DESCRIPTION_MAX
   );
 }
