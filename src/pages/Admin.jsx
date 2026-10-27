@@ -779,6 +779,11 @@ function AbandonedAdminTab({ onToast }) {
   };
 
   const describeItems = (items) => (items || []).map((item) => `${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity}`).join(', ');
+  const whatsappLink = (row) => {
+    const firstItem = (row.items || [])[0]?.name;
+    const text = `Namaste ji 🙏\nMain Sahaj, logcloth se. Aapne hamari website par ${firstItem || 'kuch items'} dekha tha aur order poora nahi hua.\nAgar size ya delivery ko lekar koi sawaal ho to yahin poochh lijiye, main madad kar dunga. COD bhi available hai.\nOrder yahan se poora kar sakte hain: https://logcloth.com`;
+    return `https://wa.me/${row.phone}?text=${encodeURIComponent(text)}`;
+  };
   const left = rows.filter((row) => !row.recovered);
   const recovered = rows.filter((row) => row.recovered);
   const leftValue = left.reduce((sum, row) => sum + Number(row.bagTotal || 0), 0);
@@ -902,7 +907,7 @@ function AbandonedAdminTab({ onToast }) {
                   <td style={cell}>{row.updatedAt ? new Date(row.updatedAt).toLocaleString('en-IN') : '—'}</td>
                   <td style={{ ...cell, whiteSpace: 'nowrap' }}>
                     {row.phone && !row.recovered && (
-                      <a href={`https://wa.me/${row.phone}`} target="_blank" rel="noreferrer" style={{ marginRight: '10px' }}>WhatsApp</a>
+                      <a href={whatsappLink(row)} target="_blank" rel="noreferrer" style={{ marginRight: '10px' }}>WhatsApp</a>
                     )}
                     {row.email && !row.recovered && (
                       <a href={`mailto:${row.email}`} style={{ marginRight: '10px' }}>Email</a>
