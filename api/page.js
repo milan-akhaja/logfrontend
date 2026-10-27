@@ -176,7 +176,7 @@ function productDescription(product) {
   if (isDropProduct(product)) {
     const total = Number(product.piecesTotal || DROP_PIECES);
     return truncate(
-      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${total} numbered pieces from the ${DROP_NAME} drop.`,
+      `${product.name} — ${/oversized/i.test(product.name) ? `unisex fit${colour ? ` in ${colour}` : ''}` : `unisex oversized ${colour ? `${colour} ` : ''}tee`}, 240 GSM cotton, for men and women. One of ${total} numbered pieces from the ${DROP_NAME} drop.`,
       DESCRIPTION_MAX
     );
   }

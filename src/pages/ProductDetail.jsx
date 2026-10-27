@@ -224,7 +224,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     ? `${product.name} — ${/oversized/i.test(product.name) ? '240 GSM' : 'Oversized 240 GSM Tee'} | logcloth`
     : `${product.name} | logcloth`;
   const seoDescriptionFull = isDropDesign
-    ? `${product.name} — unisex oversized ${productColour ? `${productColour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${dropTotal} numbered pieces from the No Permission 3.0 drop.`
+    ? `${product.name} — ${/oversized/i.test(product.name) ? `unisex fit${productColour ? ` in ${productColour}` : ''}` : `unisex oversized ${productColour ? `${productColour} ` : ''}tee`}, 240 GSM cotton, for men and women. One of ${dropTotal} numbered pieces from the No Permission 3.0 drop.`
     : `${product.name}${productColour ? ` in ${productColour}` : ''} — unisex tee from logcloth. Heavyweight 240 GSM cotton streetwear for men and women. ${product.description || product.desc || ''}`.replace(/\s+/g, ' ').trim();
   const productDescription = seoDescriptionFull.length <= 155
     ? seoDescriptionFull
