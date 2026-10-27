@@ -781,17 +781,20 @@ function AbandonedAdminTab({ onToast }) {
   const describeItems = (items) => (items || []).map((item) => `${item.name}${item.size ? ` (${item.size})` : ''} x${item.quantity}`).join(', ');
   const whatsappLink = (row) => {
     const firstItem = (row.items || [])[0]?.name;
-    const text = `Namaste ji 🙏\nMain Sahaj, logcloth se. Aapne hamari website par ${firstItem || 'kuch items'} dekha tha aur order poora nahi hua.\nAgar size ya delivery ko lekar koi sawaal ho to yahin poochh lijiye, main madad kar dunga. COD bhi available hai.\nOrder yahan se poora kar sakte hain: https://logcloth.com`;
+    const greeting = row.customerName ? `Namaste ${row.customerName} ji` : 'Namaste ji';
+    const text = `${greeting} 🙏\nMain Sahaj, logcloth se. Aapne hamari website par ${firstItem || 'kuch items'} dekha tha aur order poora nahi hua.\nAgar size ya delivery ko lekar koi sawaal ho to yahin poochh lijiye, main madad kar dunga. COD bhi available hai.\nOrder yahan se poora kar sakte hain: https://logcloth.com`;
     return `https://wa.me/${row.phone}?text=${encodeURIComponent(text)}`;
   };
   const left = rows.filter((row) => !row.recovered);
   const recovered = rows.filter((row) => row.recovered);
   const leftValue = left.reduce((sum, row) => sum + Number(row.bagTotal || 0), 0);
   const cell = { padding: '8px', borderBottom: '1px solid var(--admin-border)', verticalAlign: 'top' };
+  const visibleBtn = { color: 'var(--ink)', borderColor: 'var(--ink)' };
 
   const downloadCsv = () => {
-    const header = ['email', 'phone', 'items', 'bag_total', 'status', 'marketing_consent', 'first_seen', 'last_seen'];
+    const header = ['name', 'email', 'phone', 'items', 'bag_total', 'status', 'marketing_consent', 'first_seen', 'last_seen'];
     const lines = rows.map((row) => [
+      row.customerName,
       row.email,
       row.phone ? '+' + row.phone : '',
       describeItems(row.items),
@@ -824,7 +827,7 @@ function AbandonedAdminTab({ onToast }) {
         <button
           type="button"
           className="btn btn-outline"
-          style={{ marginLeft: 'auto', padding: '10px 16px', fontSize: '11px' }}
+          style={{ ...visibleBtn, marginLeft: 'auto', padding: '10px 16px', fontSize: '11px' }}
           onClick={downloadCsv}
           disabled={rows.length === 0}
         >
@@ -833,7 +836,7 @@ function AbandonedAdminTab({ onToast }) {
         <button
           type="button"
           className="btn btn-outline"
-          style={{ padding: '10px 16px', fontSize: '11px' }}
+          style={{ ...visibleBtn, padding: '10px 16px', fontSize: '11px' }}
           onClick={() => setResetOpen(true)}
           disabled={rows.length === 0 || resetOpen}
         >
@@ -856,7 +859,7 @@ function AbandonedAdminTab({ onToast }) {
           <button
             type="button"
             className="btn btn-outline"
-            style={{ padding: '8px 14px', fontSize: '11px', marginRight: '6px' }}
+            style={{ ...visibleBtn, padding: '8px 14px', fontSize: '11px', marginRight: '6px' }}
             onClick={resetAll}
             disabled={resetText !== 'RESET' || resetting}
           >
@@ -865,7 +868,7 @@ function AbandonedAdminTab({ onToast }) {
           <button
             type="button"
             className="btn btn-outline"
-            style={{ padding: '8px 14px', fontSize: '11px' }}
+            style={{ ...visibleBtn, padding: '8px 14px', fontSize: '11px' }}
             onClick={() => { setResetOpen(false); setResetText(''); }}
             disabled={resetting}
           >
@@ -890,7 +893,7 @@ function AbandonedAdminTab({ onToast }) {
           <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr>
-                {['Email', 'Phone', 'Bag', 'Total', 'Status', 'Marketing consent', 'Last activity', ''].map((label) => (
+                {['Name', 'Email', 'Phone', 'Bag', 'Total', 'Status', 'Marketing consent', 'Last activity', ''].map((label) => (
                   <th key={label} style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid var(--admin-border)' }}>{label}</th>
                 ))}
               </tr>
@@ -898,6 +901,7 @@ function AbandonedAdminTab({ onToast }) {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id}>
+                  <td style={cell}>{row.customerName || '—'}</td>
                   <td style={cell}>{row.email || '—'}</td>
                   <td style={cell}>{row.phone ? '+' + row.phone : '—'}</td>
                   <td style={cell}>{describeItems(row.items) || '—'}</td>
@@ -914,11 +918,11 @@ function AbandonedAdminTab({ onToast }) {
                     )}
                     {confirmId === row.id ? (
                       <>
-                        <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px', marginRight: '6px' }} onClick={() => removeRow(row.id)}>Confirm delete</button>
-                        <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(null)}>Cancel</button>
+                        <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px', marginRight: '6px' }} onClick={() => removeRow(row.id)}>Confirm delete</button>
+                        <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(null)}>Cancel</button>
                       </>
                     ) : (
-                      <button type="button" className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(row.id)}>Delete</button>
+                      <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px' }} onClick={() => setConfirmId(row.id)}>Delete</button>
                     )}
                   </td>
                 </tr>

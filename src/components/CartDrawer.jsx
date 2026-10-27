@@ -393,6 +393,7 @@ export default function CartDrawer({
         sessionKey: captureKeyRef.current,
         email: emailOk ? email : '',
         phone: phoneOk ? `${String(customerInfo.phoneCountryCode || '+91').replace(/\D/g, '')}${localDigits}` : '',
+        customerName: `${customerInfo.firstName || ''} ${customerInfo.lastName || ''}`.trim(),
         items: cart.map((item) => ({
           name: item.name,
           size: item.selectedSize || item.selectedSize1 || '',
@@ -408,7 +409,7 @@ export default function CartDrawer({
         .catch(() => { });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [showCheckoutForm, cart, customerInfo.email, customerInfo.phone, customerInfo.phoneCountryCode, clientSubtotal]);
+  }, [showCheckoutForm, cart, customerInfo.email, customerInfo.phone, customerInfo.phoneCountryCode, customerInfo.firstName, customerInfo.lastName, clientSubtotal]);
 
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
