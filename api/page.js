@@ -272,7 +272,11 @@ function productBody(product) {
   const alt = imageAlt(product);
   const details = String(product.details || '').split('\n').map((line) => line.trim()).filter(Boolean);
   const dropTotal = Number(product.piecesTotal || 0);
-  const left = Math.max(0, dropTotal - Number(product.piecesClaimed || 0));
+  // Offline sales only reduce size stock, so cap the pieces left at the stock.
+  const sizeStock = product.sizes && typeof product.sizes === 'object' && !Array.isArray(product.sizes)
+    ? Object.values(product.sizes).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0)
+    : Number(product.stock ?? Infinity);
+  const left = Math.min(Math.max(0, dropTotal - Number(product.piecesClaimed || 0)), sizeStock);
   const claimed = dropTotal > 0
     ? `<p>${left} of ${dropTotal} left</p>`
     : '';
@@ -281,7 +285,7 @@ function productBody(product) {
   <article>
     <h1>${escapeHtml(product.name)}</h1>
     <p>${escapeHtml(formatInr(price))}${price !== original ? ` <s>${escapeHtml(formatInr(original))}</s>` : ''} · ${escapeHtml(availabilityLabelOf(product))}</p>
-    ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${dropTotal || DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex oversized graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
+    ${isDropProduct(product) ? `<p>Unisex oversized tee · 240 GSM · ${dropTotal || DROP_PIECES} numbered pieces · ${escapeHtml(DROP_NAME)} · For men and women</p>${claimed}` : '<p>Unisex graphic tee · Heavyweight 240 GSM cotton · For men and women</p>'}
     ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
     ${details.length ? `<ul>${details.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>` : ''}
     ${productImages(product).map((url, index) => `<img src="${escapeHtml(url)}"${srcSetAttr(url)} alt="${escapeHtml(alt)}"${index ? ' loading="lazy"' : ' fetchpriority="high"'}>`).join('\n    ')}

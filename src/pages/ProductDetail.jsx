@@ -327,6 +327,12 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     Object.keys(product.sizes).length > 0 &&
     Object.values(product.sizes).every(count => Number(count) <= 0)
   );
+  // Pieces sold offline only come off the size stock, never off the numbered
+  // pieces, so never show more pieces left than there is stock.
+  const sizeStockTotal = product.sizes && typeof product.sizes === 'object' && !Array.isArray(product.sizes)
+    ? Object.values(product.sizes).reduce((sum, count) => sum + Math.max(0, Number(count) || 0), 0)
+    : Number(product.stock ?? Infinity);
+  const dropPiecesLeft = Math.min(Math.max(0, Number(product.piecesTotal) - Number(product.piecesClaimed || 0)), sizeStockTotal);
   const dropNotOpen = isDrop && product.preorderPhase === 'before';
   const dropSoldOut = isDrop && (product.soldOut === true || isDropAllSizesZero);
   const dropBlocked = dropNotOpen || dropSoldOut;
@@ -496,7 +502,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
               )}
               {isDrop && Number(product.piecesTotal) > 0 && (
                 <div className="drop-claimed-count">
-                  {Math.max(0, Number(product.piecesTotal) - Number(product.piecesClaimed || 0))} of {product.piecesTotal} left
+                  {dropPiecesLeft} of {product.piecesTotal} left
                 </div>
               )}
             </div>
