@@ -167,7 +167,7 @@ function availabilityLabelOf(product) {
 
 function productTitle(product) {
   return isDropProduct(product)
-    ? `${product.name} — Oversized 240 GSM Tee | logcloth`
+    ? `${product.name} — ${/oversized/i.test(product.name) ? '240 GSM' : 'Oversized 240 GSM Tee'} | logcloth`
     : `${product.name} | logcloth`;
 }
 
