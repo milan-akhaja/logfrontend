@@ -115,6 +115,21 @@ export default function OurMission() {
         </div>
       </section>
 
+      {/* FOUNDER */}
+      <section className="manifesto-section" style={{ background: 'var(--paper)' }}>
+        <div className="container">
+          <div className="manifesto-layout" style={{ textAlign: 'left' }}>
+            <div className="manifesto-label reveal">Founder</div>
+            <div className="manifesto-quote reveal">
+              <strong>Sahaj Rasadiya</strong>
+              <p>
+                logcloth was founded in 2026 in Ahmedabad by Sahaj Rasadiya, at the age of 23. As a student, Sahaj could not afford the expensive clothes of big brands. logcloth is his answer: premium Indian streetwear that doesn't need a big-brand price tag, made in small numbered drops, with Rs. 23 from every product sold going to charity.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* STATEMENT CTA */}
       <section className="statement-section" style={{ background: missionStatement.background || 'var(--ink)' }}>
         <div className="container" style={{ textAlign: missionStatement.align || 'center' }}>

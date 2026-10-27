@@ -30,7 +30,7 @@ const API_TIMEOUT_MS = 2500;
 const STATIC_PAGES = {
   '/shop': ['Shop Unisex Oversized T-Shirts & Streetwear | logcloth', 'Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India.'],
   '/new-in': ['New In - Latest logcloth Streetwear Drops', 'Explore the newest logcloth streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases across India.'],
-  '/our-mission': ['Our Mission - Streetwear With a Conscience | logcloth', 'Learn how logcloth combines premium Indian streetwear with an automatic Rs. 23 charity donation from every product sold. Shop with a conscience.'],
+  '/our-mission': ['Our Mission - Streetwear With a Conscience | logcloth', 'logcloth is premium Indian streetwear founded in 2026 in Ahmedabad by Sahaj Rasadiya, with Rs. 23 from every product sold donated to charity.'],
   '/log-book': ['LOG Book - Streetwear Stories & Lookbook | logcloth', 'Explore the logcloth LOG Book for streetwear styling guides, drop stories, lookbook editorials, and social impact updates across India.'],
   '/refund-policy': ['Refund & Exchange Policy | logcloth', 'Read the logcloth return, refund, exchange, and charity donation policy for streetwear orders across India. 100% complimentary doorstep size exchanges.'],
   '/make-return': ['Make a Return or Exchange | logcloth', 'Request a logcloth return, refund, or size exchange for eligible orders within the return window. Free doorstep pickup and exchange across India.'],

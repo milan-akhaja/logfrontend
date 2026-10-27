@@ -787,7 +787,7 @@ function AppContent({
           <Route path="/" element={<><SEO canonicalPath="/" /><Shop onAddToCart={onAddToCart} /></>} />
           <Route path="/shop" element={<><SEO title="Shop Unisex Oversized T-Shirts & Streetwear | logcloth" description="Shop unisex oversized graphic t-shirts and streetwear in India. Heavyweight 240 GSM cotton tees for men and women. Delivered across India." canonicalPath="/shop" /><ShopPage onAddToCart={onAddToCart} /></>} />
           <Route path="/new-in" element={<Navigate to="/shop" replace />} />
-          <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience | logcloth" description="Learn how logcloth combines premium Indian streetwear with an automatic Rs. 23 charity donation from every product sold. Shop with a conscience." canonicalPath="/our-mission" /><OurMission /></>} />
+          <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience | logcloth" description="logcloth is premium Indian streetwear founded in 2026 in Ahmedabad by Sahaj Rasadiya, with Rs. 23 from every product sold donated to charity." canonicalPath="/our-mission" /><OurMission /></>} />
           <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories & Lookbook | logcloth" description="Explore the logcloth LOG Book for streetwear styling guides, drop stories, lookbook editorials, and social impact updates across India." canonicalPath="/log-book" type="blog" /><LogBook /></>} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/product/:id" element={<ProductDetail onAddToCart={onAddToCart} onBuyNow={onBuyNow} />} />
