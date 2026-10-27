@@ -214,6 +214,7 @@ export default function CartDrawer({
   onQtyChange,
   onRemove,
   onClearCart,
+  onSyncCart,
   onPurchase,
   onToast
 }) {
@@ -243,7 +244,8 @@ export default function CartDrawer({
   const [dropIds, setDropIds] = useState(() => new Set());
   const [dropProducts, setDropProducts] = useState(() => new Map());
   const [quote, setQuote] = useState(null);
-  const [quoteError, setQuoteError] = useState(false);
+  // Empty when fine, otherwise the reason the totals could not be worked out.
+  const [quoteError, setQuoteError] = useState('');
   const [quoteRetry, setQuoteRetry] = useState(0);
   const [wallOptIn, setWallOptIn] = useState(false);
   const [wallDisplayName, setWallDisplayName] = useState('');
@@ -273,6 +275,16 @@ export default function CartDrawer({
     localStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(customerInfo));
   }, [customerInfo]);
 
+  // Saved bag prices go stale when a price changes or a product is removed;
+  // the server then refuses the order. Update the bag and tell the shopper.
+  const syncCartRef = useRef(onSyncCart);
+  syncCartRef.current = onSyncCart;
+  const syncBagWithCatalog = (list) => {
+    const notes = syncCartRef.current ? syncCartRef.current(list) : [];
+    if (notes.length) onToast(notes.join(' '));
+    return notes.length > 0;
+  };
+
   useEffect(() => {
     if (!isOpen) return undefined;
     let active = true;
@@ -281,6 +293,7 @@ export default function CartDrawer({
         if (active) {
           setDropIds(new Set(list.filter((p) => p.isPreorder === true).map((p) => String(p.id))));
           setDropProducts(new Map(list.map((p) => [String(p.id), p])));
+          syncBagWithCatalog(list);
         }
       })
       .catch(() => { });
@@ -400,12 +413,12 @@ export default function CartDrawer({
   useEffect(() => {
     if (!isOpen || cart.length === 0) {
       setQuote(null);
-      setQuoteError(false);
+      setQuoteError('');
       return undefined;
     }
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      setQuoteError(false);
+      setQuoteError('');
       apiJson('/api/orders/quote', {
         method: 'POST',
         signal: controller.signal,
@@ -427,30 +440,36 @@ export default function CartDrawer({
         .then((data) => {
           if (data?.success) {
             setQuote(data);
-            setQuoteError(false);
+            setQuoteError('');
           } else {
             if (data?.code === 'FIRST_ORDER_ONLY') {
               onToast('This coupon is only valid on your first order.');
               setSelectedCoupon(null);
             }
             setQuote(null);
-            setQuoteError(true);
+            setQuoteError(data?.error || 'Could not calculate order totals.');
           }
         })
         .catch((err) => {
           if (err?.name !== 'AbortError') {
             const errCode = err?.data?.code || err?.code;
+            const isBagOutOfDate = ['PRICE_CHANGED', 'PRODUCT_NOT_FOUND'].includes(errCode);
             const isFirstOrderError = errCode === 'FIRST_ORDER_ONLY' || err?.message?.includes('first order');
-            const isCouponError = isFirstOrderError
+            const isCouponError = !isBagOutOfDate && (isFirstOrderError
               || ['PHONE_REQUIRED_FOR_COUPON', 'COUPON_PREPAID_ONLY', 'COUPON_PREORDER_CONFLICT', 'INVALID_COUPON', 'FIRST_ORDER_CHECK_FAILED'].includes(errCode)
-              || (Boolean(expectedCoupon) && err?.status >= 400 && err?.status < 500);
+              || (Boolean(expectedCoupon) && err?.status >= 400 && err?.status < 500));
             if (isCouponError) {
               onToast(isFirstOrderError ? 'This coupon is only valid on your first order.' : (err?.message || 'This offer cannot be applied to this order.'));
               setSelectedCoupon(null);
               return;
             }
             setQuote(null);
-            setQuoteError(true);
+            setQuoteError(err?.message || 'Could not calculate order totals.');
+            // Fetch the live list (not the cached one) and fix the bag; the
+            // changed bag asks for a fresh quote by itself.
+            if (isBagOutOfDate) {
+              getProducts({ force: true }).then(syncBagWithCatalog).catch(() => { });
+            }
           }
         });
     }, 300);
@@ -601,7 +620,11 @@ export default function CartDrawer({
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    if (cart.length === 0 || isSubmittingOrder || !quoteMatchesCart) return;
+    if (cart.length === 0 || isSubmittingOrder) return;
+    if (!quoteMatchesCart) {
+      onToast(quoteError || 'Order totals are still being calculated. Please wait a moment.');
+      return;
+    }
 
     const currentDonation = donation;
     setLastDonation(currentDonation);
@@ -1222,13 +1245,13 @@ export default function CartDrawer({
                   {isSubmittingOrder
                     ? 'Placing Order...'
                     : !quoteMatchesCart
-                      ? 'Calculating...'
+                      ? (quoteError ? 'Review Your Bag' : 'Calculating...')
                       : 'Place Order'}
                 </button>
               </div>
               {quoteError && !quoteMatchesCart && (
                 <p style={{ color: '#c51616', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-                  Could not calculate order totals.{' '}
+                  {quoteError}{' '}
                   <button
                     type="button"
                     onClick={() => setQuoteRetry((c) => c + 1)}

@@ -696,6 +696,7 @@ function AppContent({
   onQtyChange,
   onRemove,
   onClearCart,
+  onSyncCart,
   toast,
   showToast,
   cartOpen,
@@ -843,6 +844,7 @@ function AppContent({
         onQtyChange={onQtyChange}
         onRemove={onRemove}
         onClearCart={onClearCart}
+        onSyncCart={onSyncCart}
         onPurchase={(order) => trackPurchase(order)}
         onToast={showToast}
       />
@@ -1065,6 +1067,32 @@ export default function App() {
     saveCartState([]);
   };
 
+  // A saved bag can be days old. Bring its prices up to date from the live
+  // product list and drop products that no longer exist. Returns what changed
+  // so the shopper is told; the server still re-checks every price.
+  const handleSyncCart = (products) => {
+    if (!Array.isArray(products) || products.length === 0) return [];
+    const byId = new Map(products.map((p) => [String(p.id), p]));
+    const notes = [];
+    const updated = [];
+    for (const item of cart) {
+      const fresh = byId.get(String(item.id));
+      if (!fresh) {
+        notes.push(`${item.name} is no longer available and was removed from your bag.`);
+        continue;
+      }
+      const price = Number(fresh.price);
+      if (Number.isFinite(price) && price > 0 && price !== Number(item.price)) {
+        notes.push(`The price of ${item.name} is now ₹${price.toLocaleString('en-IN')}.`);
+        updated.push({ ...item, price });
+      } else {
+        updated.push(item);
+      }
+    }
+    if (notes.length) saveCartState(updated);
+    return notes;
+  };
+
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => {
@@ -1081,6 +1109,7 @@ export default function App() {
         onQtyChange={handleQtyChange}
         onRemove={handleRemove}
         onClearCart={handleClearCart}
+        onSyncCart={handleSyncCart}
         toast={toast}
         showToast={showToast}
         cartOpen={cartOpen}

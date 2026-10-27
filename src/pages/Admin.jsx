@@ -57,7 +57,12 @@ const ADMIN_TABS = [
 
 const PRODUCT_IMAGE_LIMIT = 20;
 const MAX_IMAGE_UPLOAD_MB = 25;
-const MAX_VIDEO_UPLOAD_MB = 80;
+// The live server refuses any request over 10 MB, and a video grows by a third
+// when it is sent, so 7 MB is the largest video that gets through.
+const MAX_VIDEO_UPLOAD_MB = 7;
+const MAX_UPLOAD_REQUEST_CHARS = 9.5 * 1024 * 1024;
+// Gallery reels are capped at 4 MB by the server.
+const MAX_GALLERY_VIDEO_MB = 4;
 const IMAGE_UPLOAD_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'bmp'];
 const VIDEO_UPLOAD_EXTENSIONS = ['mp4', 'mov', 'webm', 'm4v'];
 const UNSAFE_IMAGE_TYPES = ['image/svg+xml'];
@@ -241,10 +246,22 @@ function compressImageFile(file) {
       const ctx = canvas.getContext('2d', { alpha: false });
       ctx.drawImage(image, 0, 0, width, height);
       const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+      // Safari (iPhone, iPad, Mac) cannot make WebP and silently returns a huge
+      // PNG instead, which the server's 10 MB request limit rejects. Use JPEG there.
+      let fileData = canvas.toDataURL('image/webp', 0.82);
+      let ext = 'webp';
+      if (!fileData.startsWith('data:image/webp')) {
+        ext = 'jpeg';
+        fileData = canvas.toDataURL('image/jpeg', 0.85);
+        for (const quality of [0.75, 0.65]) {
+          if (fileData.length <= MAX_UPLOAD_REQUEST_CHARS) break;
+          fileData = canvas.toDataURL('image/jpeg', quality);
+        }
+      }
       resolve({
-        fileName: `${baseName || 'upload'}.webp`,
-        fileType: 'image/webp',
-        fileData: canvas.toDataURL('image/webp', 0.82)
+        fileName: `${baseName || 'upload'}.${ext}`,
+        fileType: `image/${ext}`,
+        fileData
       });
     };
     image.onerror = () => {
@@ -1611,6 +1628,10 @@ export default function Admin({ onToast }) {
       onToast(`Gallery video limit reached. Maximum ${MAX_GALLERY_VIDEOS} videos are allowed in the gallery.`);
       return;
     }
+    if (videoReelFile.size > MAX_GALLERY_VIDEO_MB * 1024 * 1024) {
+      onToast(`${videoReelFile.name} is too large. Gallery reels must be under ${MAX_GALLERY_VIDEO_MB} MB.`);
+      return;
+    }
     setIsUploadingVideo(true);
     try {
       const posterData = await captureVideoPoster(videoReelFile);
@@ -1822,8 +1843,14 @@ export default function Admin({ onToast }) {
         if (res.ok && data.success) {
           onUploadDone(data.url);
           onToast(`${file.name} uploaded successfully.`);
+        } else if (res.status === 413) {
+          onToast(`${file.name} is too large for the server (10 MB limit). Use a smaller file.`);
+        } else if (res.status === 401) {
+          onToast(`${file.name} was not uploaded: your admin login has expired. Log in again and retry.`);
+        } else if (res.status === 429) {
+          onToast(`${file.name} was not uploaded: too many uploads in a short time. Wait a few minutes and retry.`);
         } else {
-          onToast(data.error || `Failed to upload ${file.name}.`);
+          onToast(data.error || `Failed to upload ${file.name} (server error ${res.status}). Please retry.`);
         }
       } catch (err) {
         console.error(err);
@@ -3549,7 +3576,7 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-label">PC / Laptop Hero Video File/Link</label>
+                  <label className="admin-label">PC / Laptop Hero Video File/Link (Max {MAX_VIDEO_UPLOAD_MB} MB)</label>
                   <input
                     type="file"
                     accept=".mp4,.mov,.webm,.m4v,video/mp4,video/quicktime,video/webm"
@@ -3649,7 +3676,7 @@ export default function Admin({ onToast }) {
                 </div>
 
                 <div className="admin-form-group">
-                  <label className="admin-label">Mobile Hero Video File/Link</label>
+                  <label className="admin-label">Mobile Hero Video File/Link (Max {MAX_VIDEO_UPLOAD_MB} MB)</label>
                   <input
                     type="file"
                     accept=".mp4,.mov,.webm,.m4v,video/mp4,video/quicktime,video/webm"
@@ -4631,7 +4658,7 @@ export default function Admin({ onToast }) {
               </div>
               <div className="admin-form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '12px' }}>
                 <div className="admin-form-group">
-                  <label className="admin-label">MP4 Video File (Max 4 MB)</label>
+                  <label className="admin-label">MP4 Video File (Max {MAX_GALLERY_VIDEO_MB} MB)</label>
                   <input
                     id="admin-gallery-video-input"
                     type="file"
