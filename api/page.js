@@ -167,7 +167,7 @@ function availabilityLabelOf(product) {
 
 function productTitle(product) {
   return isDropProduct(product)
-    ? `${product.name} — Oversized 240 GSM Tee | logcloth`
+    ? `${product.name} — ${/oversized/i.test(product.name) ? '240 GSM' : 'Oversized 240 GSM Tee'} | logcloth`
     : `${product.name} | logcloth`;
 }
 
@@ -176,7 +176,7 @@ function productDescription(product) {
   if (isDropProduct(product)) {
     const total = Number(product.piecesTotal || DROP_PIECES);
     return truncate(
-      `${product.name} — unisex oversized ${colour ? `${colour} ` : ''}tee, 240 GSM cotton, for men and women. One of ${total} numbered pieces from the ${DROP_NAME} drop.`,
+      `${product.name} — ${/oversized/i.test(product.name) ? `unisex fit${colour ? ` in ${colour}` : ''}` : `unisex oversized ${colour ? `${colour} ` : ''}tee`}, 240 GSM cotton, for men and women. One of ${total} numbered pieces from the ${DROP_NAME} drop.`,
       DESCRIPTION_MAX
     );
   }
