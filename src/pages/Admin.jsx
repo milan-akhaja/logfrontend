@@ -711,10 +711,35 @@ function AbandonedAdminTab({ onToast }) {
   const [resetOpen, setResetOpen] = useState(false);
   const [resetText, setResetText] = useState('');
   const [resetting, setResetting] = useState(false);
+  const [emailConfirmId, setEmailConfirmId] = useState(null);
+  const [emailingId, setEmailingId] = useState(null);
 
   const authHeaders = () => {
     const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
     return { Authorization: `Bearer ${token}` };
+  };
+
+  const sendReminderEmail = async (row) => {
+    setEmailingId(row.id);
+    try {
+      const res = await fetch(`/api/admin/abandoned-checkouts/${row.id}/send-reminder`, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: Boolean(row.reminderEmailedAt) })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        onToast(data.error || 'Could not send the reminder email.');
+        return;
+      }
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, reminderEmailedAt: new Date().toISOString() } : r)));
+      onToast('Reminder email sent.');
+    } catch {
+      onToast('Could not send the reminder email.');
+    } finally {
+      setEmailingId(null);
+      setEmailConfirmId(null);
+    }
   };
 
   const loadRows = async () => {
@@ -914,7 +939,28 @@ function AbandonedAdminTab({ onToast }) {
                       <a href={whatsappLink(row)} target="_blank" rel="noreferrer" style={{ marginRight: '10px' }}>WhatsApp</a>
                     )}
                     {row.email && !row.recovered && (
-                      <a href={`mailto:${row.email}`} style={{ marginRight: '10px' }}>Email</a>
+                      emailConfirmId === row.id ? (
+                        <>
+                          <span style={{ marginRight: '6px', fontSize: '11px' }}>
+                            {row.reminderEmailedAt ? 'Already emailed. Send again to ' : 'Send to '}{row.email}?
+                          </span>
+                          <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px', marginRight: '6px' }} onClick={() => sendReminderEmail(row)} disabled={emailingId === row.id}>
+                            {emailingId === row.id ? 'Sending...' : 'Confirm send'}
+                          </button>
+                          <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px', marginRight: '10px' }} onClick={() => setEmailConfirmId(null)} disabled={emailingId === row.id}>Cancel</button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" className="btn btn-outline" style={{ ...visibleBtn, padding: '4px 8px', fontSize: '11px', marginRight: '6px' }} onClick={() => setEmailConfirmId(row.id)}>
+                            {row.reminderEmailedAt ? 'Send again' : 'Send email'}
+                          </button>
+                          {row.reminderEmailedAt && (
+                            <span style={{ marginRight: '10px', fontSize: '11px', color: 'var(--admin-muted, #666)' }}>
+                              Emailed {new Date(row.reminderEmailedAt).toLocaleDateString('en-IN')}
+                            </span>
+                          )}
+                        </>
+                      )
                     )}
                     {confirmId === row.id ? (
                       <>
