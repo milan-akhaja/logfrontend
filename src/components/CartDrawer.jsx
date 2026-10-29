@@ -978,7 +978,9 @@ export default function CartDrawer({
                 placeholder="Email address"
               />
 
-              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address (flat, street, area)" />
+              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address line 1 (flat, building)" autoComplete="address-line1" />
+
+              <input type="text" name="apartment" value={customerInfo.apartment} onChange={handleInputChange} className="checkout-input" placeholder="Address line 2 (street, area, landmark)" autoComplete="address-line2" />
 
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
                 <input
