@@ -175,6 +175,7 @@ export default function CartDrawer({
   const [customerInfo, setCustomerInfo] = useState(() => getSavedCustomerInfo(defaultCustomerInfo));
   const [paymentMethod, setPaymentMethod] = useState('payu');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // Numbered drop. dropIds comes from the product list; quote is the server's
   // own pricing of this exact cart. Neither is ever used to set a price - the
@@ -786,7 +787,6 @@ export default function CartDrawer({
 
   const bagOffersSection = (
     <div className="bag-offers">
-      <div className="bag-offers-label">Offers · one per order</div>
       {couponDisabledNote && (
         <p className="checkout-coupon-disabled-note">{couponDisabledNote}</p>
       )}
@@ -1069,6 +1069,11 @@ export default function CartDrawer({
                 </div>
               )}
 
+              <button type="button" className="checkout-summary-toggle" aria-expanded={summaryOpen} onClick={() => setSummaryOpen((open) => !open)}>
+                <span>Order summary</span>
+                <span className="checkout-summary-toggle-total">{totalPending ? '' : formatCurrency(total)} <span aria-hidden="true">{summaryOpen ? '\u25B4' : '\u25BE'}</span></span>
+              </button>
+              {summaryOpen && (
               <div className="checkout-order-summary">
                 {cart.map((item) => {
                   const qty = Number(item.quantity) || 1;
@@ -1117,6 +1122,7 @@ export default function CartDrawer({
                   </div>
                 )}
               </div>
+              )}
 
               <p className="checkout-policy-line">
                 {cartHasDrop

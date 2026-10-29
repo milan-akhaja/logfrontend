@@ -1936,15 +1936,6 @@ header.scrolled .bag-count {
   margin-top: 4px;
 }
 
-.bag-offers-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--grey-muted);
-  margin-bottom: 10px;
-}
-
 .bag-offers-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2573,6 +2564,28 @@ header.scrolled .bag-count {
   color: #ffffff;
 }
 
+.checkout-summary-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.checkout-summary-toggle-total {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .checkout-order-summary {
   border: 1px solid var(--border);
   border-radius: 8px;

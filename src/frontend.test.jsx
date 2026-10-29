@@ -1261,6 +1261,7 @@ describe('ConsentBanner and Consent Management', () => {
     });
 
     // Verify discount label in checkout order summary
+    fireEvent.click(screen.getByRole('button', { name: /Order summary/i }));
     expect(screen.getAllByText('Prepaid: 15% off').length).toBeGreaterThan(0);
 
     window.fetch = originalFetch;
@@ -1638,6 +1639,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       expect(lastReq.couponCode).toBeNull();
     });
 
+    fireEvent.click(screen.getByRole('button', { name: /Order summary/i }));
     // Now fill a valid 10-digit phone number
     const phoneInput = container.querySelector('input[name="phone"]');
     fireEvent.change(phoneInput, { target: { value: '9876543210' } });
@@ -2032,6 +2034,7 @@ describe('Direct COD and Founder Delivery checkout', () => {
       expect(screen.getByText('Cash on Delivery')).toBeDefined();
     });
     fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
+    fireEvent.click(screen.getByRole('button', { name: /Order summary/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Cash on Delivery')).toBeDefined();
