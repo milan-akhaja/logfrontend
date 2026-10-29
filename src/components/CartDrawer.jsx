@@ -145,68 +145,6 @@ function getClientOrderId() {
   return value;
 }
 
-function CheckoutTags({ cart, cartHasDrop }) {
-  const [idx, setIdx] = useState(0);
-  const scrollerRef = useRef(null);
-  const count = cart.length;
-  const multi = count > 1;
-  const active = Math.min(idx, Math.max(count - 1, 0));
-
-  const getStep = (el) => {
-    const slides = el.children;
-    return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : (el.clientWidth || 1);
-  };
-
-  const handleScroll = (e) => {
-    const el = e.currentTarget;
-    const next = Math.max(0, Math.min(count - 1, Math.round(el.scrollLeft / getStep(el))));
-    setIdx((prev) => (prev === next ? prev : next));
-  };
-
-  if (count === 0) return null;
-
-  return (
-    <div className="checkout-tags">
-      <div className="checkout-tags-scroller" ref={scrollerRef} onScroll={handleScroll}>
-        {cart.map((item, i) => {
-          const qty = Number(item.quantity) || 1;
-          return (
-            <div
-              className={`checkout-tag-slide${i === active ? ' is-active' : ''}`}
-              key={item.cartItemId}
-              role="group"
-              aria-label={`Piece ${i + 1} of ${count}`}
-            >
-              <div className="checkout-tag">
-                <span className="checkout-tag-string" aria-hidden="true"></span>
-                <span className="checkout-tag-eyelet" aria-hidden="true"><span></span></span>
-                <div className="checkout-tag-body">
-                  <div className="checkout-tag-top">
-                    <span>{cartHasDrop ? 'NUMBERED DROP' : 'LOGCLOTH'}</span>
-                    {multi && <span className="checkout-tag-count">{i + 1} / {count}</span>}
-                  </div>
-                  <div className="checkout-tag-name">{item.name}</div>
-                  <div className="checkout-tag-meta">
-                    <div>
-                      <span className="checkout-tag-k">SIZE</span>
-                      <span className="checkout-tag-v">{item.selectedSize}{qty > 1 ? ` × ${qty}` : ''}</span>
-                    </div>
-                    <div>
-                      <span className="checkout-tag-k">PRICE</span>
-                      <span className="checkout-tag-v">{formatCurrency((Number(item.price) || 0) * qty)}</span>
-                    </div>
-                  </div>
-                  <div className="checkout-tag-barcode" aria-hidden="true"></div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export default function CartDrawer({
   isOpen,
   onClose,
@@ -896,10 +834,6 @@ export default function CartDrawer({
   const offersSection = (
     <div className="checkout-coupon-section">
       <h4>Offers & Coupons</h4>
-      <p style={{ fontSize: '11px', color: 'var(--grey-muted)', margin: '0 0 8px' }}>
-        One offer per order. Tap APPLY to use it.
-      </p>
-
       {couponDisabledNote && (
         <p className="checkout-coupon-disabled-note">{couponDisabledNote}</p>
       )}
@@ -990,62 +924,11 @@ export default function CartDrawer({
         <div className={`cart-body${showCheckoutForm ? '' : ' cart-body-bag'}`}>
           {showCheckoutForm ? (
             <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
-              <CheckoutTags cart={cart} cartHasDrop={cartHasDrop} />
-
               <h3 className="checkout-delivery-title">Delivery</h3>
 
               <div className="checkout-ship-card">
 
-              <div className="checkout-field">
-                <label>Country/Region</label>
-                <select name="country" value={customerInfo.country} onChange={handleInputChange} required>
-                  <option value="India">India</option>
-                </select>
-              </div>
-
-              <div className="checkout-two-col">
-                <input type="text" name="firstName" value={customerInfo.firstName} onChange={handleInputChange} required placeholder="First name" />
-                <input type="text" name="lastName" value={customerInfo.lastName} onChange={handleInputChange} required placeholder="Last name" />
-              </div>
-              <input
-                type="email"
-                name="email"
-                value={customerInfo.email}
-                onChange={handleInputChange}
-                required
-                className="checkout-input"
-                placeholder="Email address"
-              />
-
-              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address" />
-              <input type="text" name="apartment" value={customerInfo.apartment} onChange={handleInputChange} className="checkout-input" placeholder="Apartment, suite, etc. (optional)" />
-
-              <div className="checkout-three-col">
-                <input type="text" name="city" value={customerInfo.city} onChange={handleInputChange} required placeholder="City" />
-                <select name="state" value={customerInfo.state} onChange={handleInputChange} required>
-                  {INDIAN_STATES.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-                  <input
-                    type="text"
-                    name="pinCode"
-                    value={customerInfo.pinCode}
-                    onChange={handleInputChange}
-                    required
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="PIN code"
-                    style={{ width: '100%' }}
-                  />
-                  {isLoadingPincode && (
-                    <span style={{ position: 'absolute', right: '12px', fontSize: '11px', color: '#666', pointerEvents: 'none', background: '#fff', padding: '2px 4px', borderRadius: '3px' }}>
-                      Auto-filling...
-                    </span>
-                  )}
-                </div>
-              </div>
+              <input type="text" name="firstName" value={customerInfo.firstName} onChange={handleInputChange} required className="checkout-input" placeholder="Full name" autoComplete="name" />
 
               <div className="checkout-field">
                 <div className="checkout-phone-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1087,57 +970,64 @@ export default function CartDrawer({
                 </div>
               </div>
 
-              <p style={{ margin: '-4px 0 12px', fontSize: '12px', lineHeight: 1.5, color: '#666' }}>
-                We save your contact details when you start checkout so we can help you complete your order.
-              </p>
+              <input
+                type="email"
+                name="email"
+                value={customerInfo.email}
+                onChange={handleInputChange}
+                required
+                className="checkout-input"
+                placeholder="Email address"
+              />
 
-              <label className="checkout-save-row">
-                <input type="checkbox" name="saveInfo" checked={customerInfo.saveInfo} onChange={handleInputChange} />
-                <span>Save this information for next time</span>
-              </label>
-
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                <input
+                  type="text"
+                  name="pinCode"
+                  value={customerInfo.pinCode}
+                  onChange={handleInputChange}
+                  required
+                  className="checkout-input"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="PIN code"
+                  style={{ width: '100%' }}
+                />
+                {isLoadingPincode && (
+                  <span style={{ position: 'absolute', right: '12px', fontSize: '11px', color: '#666', pointerEvents: 'none', background: '#fff', padding: '2px 4px', borderRadius: '3px' }}>
+                    Auto-filling...
+                  </span>
+                )}
               </div>
 
-              <div className="checkout-shipping-method">
-                <h4>Shipping method</h4>
-                <div>Enter your shipping address to view available shipping methods.</div>
+              <div className="checkout-two-col">
+                <input type="text" name="city" value={customerInfo.city} onChange={handleInputChange} required placeholder="City" />
+                <select name="state" value={customerInfo.state} onChange={handleInputChange} required>
+                  {INDIAN_STATES.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address (include flat / apartment)" />
+
               </div>
 
               <div className="checkout-payment-section">
                 <h4>Payment Option</h4>
-                <div className="checkout-payment-options">
+                <div className="checkout-payment-options" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
                     <label className={`checkout-payment-card ${paymentMethod === 'payu' ? 'selected' : ''}`}>
                       <input type="radio" name="paymentMethod" value="payu" checked={paymentMethod === 'payu'} onChange={() => setPaymentMethod('payu')} />
                       <span style={{ width: '100%' }}>
-                        <span className="checkout-payment-card-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
-                          <span>Online Payment (PayU){!isPreorderActive && <span className="checkout-payment-offer-badge">15% OFF</span>}</span>
-                          <span style={{ fontSize: '9px', background: 'var(--ink)', color: '#FFFFFF', padding: '2px 7px', borderRadius: '3px', fontWeight: '800', letterSpacing: '0.05em' }}>UPI • CARDS • NETBANKING</span>
-                        </span>
-                        <span className="checkout-payment-card-note">Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking</span>
+                        <span className="checkout-payment-card-main">Online (PayU)</span>
+                        <span className="checkout-payment-card-note">UPI, Cards, Net Banking</span>
                       </span>
                     </label>
                     <label className={`checkout-payment-card ${paymentMethod === 'cod' ? 'selected' : ''}`}>
                       <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} />
-                      <span className="checkout-payment-card-main">Cash on Delivery (COD){!isPreorderActive && <span className="checkout-payment-offer-badge">10% OFF · FIRST ORDER</span>}</span>
-                    </label>
-                    <label className={`checkout-payment-card ${paymentMethod === 'founder_delivery' ? 'selected' : ''} ${!founderDeliveryAvailable ? 'disabled' : ''}`}>
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="founder_delivery"
-                        checked={paymentMethod === 'founder_delivery'}
-                        disabled={!founderDeliveryAvailable}
-                        onChange={() => {
-                          if (!founderDeliveryAvailable) {
-                            onToast('Delivery by founder is available only in Ahmedabad.');
-                            return;
-                          }
-                          setPaymentMethod('founder_delivery');
-                        }}
-                      />
-                      <span>
-                        <span className="checkout-payment-card-main">Delivery by Founder</span>
-                        <span className="checkout-payment-card-note">Ahmedabad only. Founder delivery charge +₹3,000. Pay online via PayU.</span>
+                      <span style={{ width: '100%' }}>
+                        <span className="checkout-payment-card-main">Cash on Delivery</span>
+                        <span className="checkout-payment-card-note">Pay when it arrives</span>
                       </span>
                     </label>
                 </div>
@@ -1180,6 +1070,15 @@ export default function CartDrawer({
               )}
 
               <div className="checkout-order-summary">
+                {cart.map((item) => {
+                  const qty = Number(item.quantity) || 1;
+                  return (
+                    <div className="cart-totals-row" key={item.cartItemId}>
+                      <span className="cart-totals-label">{item.name}{item.selectedSize ? ` (${item.selectedSize})` : ''} × {qty}</span>
+                      <span className="cart-totals-val">{formatCurrency((Number(item.price) || 0) * qty)}</span>
+                    </div>
+                  );
+                })}
                 <div className="cart-totals-row">
                   <span className="cart-totals-label">Subtotal</span>
                   <span className="cart-totals-val">{formatCurrency(subtotal)}</span>

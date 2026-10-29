@@ -1257,7 +1257,7 @@ describe('ConsentBanner and Consent Management', () => {
 
     // Verify payment card text in checkout
     await waitFor(() => {
-      expect(screen.getByText(/Pay securely via GPay, PhonePe, Paytm, Cards & Net Banking/i)).toBeDefined();
+      expect(screen.getByText('UPI, Cards, Net Banking')).toBeDefined();
     });
 
     // Verify discount label in checkout order summary
@@ -1538,7 +1538,7 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
     });
 
     // Select COD: PREPAID15 becomes disabled with a note, FIRST10 stays available
-    const codCard = screen.getByText('Cash on Delivery (COD)');
+    const codCard = screen.getByText('Cash on Delivery');
     fireEvent.click(codCard);
 
     await waitFor(() => {
@@ -1846,15 +1846,15 @@ describe('Coupon System Frontend Tests (KAAM 4)', () => {
       unmount();
     });
 
-    it('payment cards carry the 15% OFF and 10% OFF first-order badges', async () => {
+    it('payment cards show no hard-coded discount badges', async () => {
       const { waitFor, fireEvent } = await import('@testing-library/react');
       const { container, unmount } = await mountDrawer();
 
       fireEvent.click(container.querySelector('.checkout-btn'));
       await waitFor(() => {
-        const badges = Array.from(container.querySelectorAll('.checkout-payment-offer-badge')).map((el) => el.textContent);
-        expect(badges).toEqual(['15% OFF', '10% OFF · FIRST ORDER']);
+        expect(container.querySelectorAll('.checkout-payment-card').length).toBe(2);
       });
+      expect(container.querySelectorAll('.checkout-payment-offer-badge').length).toBe(0);
       unmount();
     });
   });
@@ -2029,12 +2029,12 @@ describe('Direct COD and Founder Delivery checkout', () => {
     fireEvent.click(container.querySelector('.checkout-btn'));
 
     await waitFor(() => {
-      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+      expect(screen.getByText('Cash on Delivery')).toBeDefined();
     });
     fireEvent.click(container.querySelector('input[type="radio"][value="cod"]'));
 
     await waitFor(() => {
-      expect(screen.getByText('Cash on Delivery (COD)')).toBeDefined();
+      expect(screen.getByText('Cash on Delivery')).toBeDefined();
       expect(screen.queryByText(/pay ₹.* now/i)).toBeNull();
       expect(screen.getByText('Grand Total')).toBeDefined();
       expect(screen.getByRole('button', { name: 'Place Order' })).toBeDefined();
@@ -2047,86 +2047,6 @@ describe('Direct COD and Founder Delivery checkout', () => {
       expect(orderCalls[0].paymentId).toBe('COD');
     });
 
-    window.fetch = originalFetch;
-    unmount();
-  });
-
-  it('Founder Delivery flow remains unchanged', async () => {
-    const CartDrawer = (await import('./components/CartDrawer')).default;
-    const { render, screen, fireEvent, waitFor } = await import('@testing-library/react');
-    const { MemoryRouter } = await import('react-router-dom');
-
-    const initiateCalls = [];
-    const originalFetch = window.fetch;
-    window.fetch = vi.fn().mockImplementation((url, options) => {
-      if (typeof url === 'string' && url.includes('/api/orders/quote')) {
-        const body = options?.body ? JSON.parse(options.body) : {};
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            success: true,
-            subtotal: 2400,
-            discount: 0,
-            shipping: 3000,
-            founderDeliveryFee: 3000,
-            total: 5400,
-            paymentMethod: body.paymentMethod || 'founder_delivery',
-            couponCode: null,
-            lines: [{ id: 'tee-1', price: 2400, quantity: 1, isPreorder: false, preorderDiscount: 0 }]
-          })
-        });
-      }
-      if (typeof url === 'string' && url.includes('/api/payments/payu/initiate')) {
-        const body = options?.body ? JSON.parse(options.body) : {};
-        initiateCalls.push(body);
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            action: 'https://test.payu.in/_payment',
-            fields: { key: 'testKey', txnid: 'txn123', amount: '5400.00' }
-          })
-        });
-      }
-      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
-    });
-
-    const formSubmitSpy = vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(() => {});
-
-    const { container, unmount } = render(
-      <MemoryRouter>
-        <CartDrawer
-          isOpen={true}
-          onClose={() => {}}
-          cart={mockCart}
-          onQtyChange={() => {}}
-          onRemove={() => {}}
-          onClearCart={() => {}}
-          onPurchase={() => {}}
-          onToast={() => {}}
-        />
-      </MemoryRouter>
-    );
-
-    fireEvent.click(container.querySelector('.checkout-btn'));
-
-    await waitFor(() => {
-      expect(screen.getByText('Delivery by Founder')).toBeDefined();
-    });
-    fireEvent.click(container.querySelector('input[type="radio"][value="founder_delivery"]'));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Place Order' })).toBeDefined();
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Place Order' }));
-
-    await waitFor(() => {
-      expect(initiateCalls.length).toBe(1);
-      expect(initiateCalls[0].deliveryOption).toBe('founder_delivery');
-      expect(formSubmitSpy).toHaveBeenCalled();
-    });
-
-    formSubmitSpy.mockRestore();
     window.fetch = originalFetch;
     unmount();
   });
