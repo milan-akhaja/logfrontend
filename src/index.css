@@ -2213,14 +2213,6 @@ header.scrolled .bag-count {
   color: #000;
 }
 
-.checkout-delivery-title {
-  margin: 0 0 4px;
-  font-size: 24px;
-  line-height: 1.1;
-  font-weight: 800;
-  text-transform: none;
-}
-
 .checkout-field {
   position: relative;
 }
@@ -2681,9 +2673,6 @@ header.scrolled .bag-count {
     gap: 8px;
   }
 
-  .checkout-delivery-title {
-    font-size: 22px;
-  }
 }
 
 /* ── FOOTER ───────────────────────────────────────────── */
@@ -7461,24 +7450,11 @@ header.scrolled .nav-action-icon-btn {
   background: repeating-linear-gradient(90deg, var(--paper) 0 3px, transparent 3px 6px, var(--paper) 6px 7px, transparent 7px 11px, var(--paper) 11px 15px, transparent 15px 18px);
 }
 
-.checkout-delivery-form .checkout-delivery-title {
-  margin: 6px 0 -4px;
-  color: #5F5F63;
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .checkout-ship-card {
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-width: 0;
-  padding: 16px;
-  border: 2px dashed rgba(15, 15, 17, 0.4);
-  border-radius: 12px;
 }
 
 .checkout-delivery-form .checkout-shipping-method h4,
@@ -7560,7 +7536,6 @@ header.scrolled .nav-action-icon-btn {
 @media (max-width: 480px) {
   .cart-body:not(.cart-body-bag) { padding: 20px 16px; }
   .checkout-tags { margin-top: -20px; }
-  .checkout-ship-card { padding: 14px; }
   .checkout-actions-bar {
     bottom: -20px;
     margin-left: -16px;

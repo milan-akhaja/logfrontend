@@ -924,8 +924,6 @@ export default function CartDrawer({
         <div className={`cart-body${showCheckoutForm ? '' : ' cart-body-bag'}`}>
           {showCheckoutForm ? (
             <form onSubmit={handleCheckoutSubmit} className="checkout-delivery-form">
-              <h3 className="checkout-delivery-title">Delivery</h3>
-
               <div className="checkout-ship-card">
 
               <input type="text" name="firstName" value={customerInfo.firstName} onChange={handleInputChange} required className="checkout-input" placeholder="Full name" autoComplete="name" />
@@ -980,6 +978,8 @@ export default function CartDrawer({
                 placeholder="Email address"
               />
 
+              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address (flat, street, area)" />
+
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
                 <input
                   type="text"
@@ -1000,7 +1000,7 @@ export default function CartDrawer({
                 )}
               </div>
 
-              <div className="checkout-two-col">
+              <div className="checkout-two-col" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
                 <input type="text" name="city" value={customerInfo.city} onChange={handleInputChange} required placeholder="City" />
                 <select name="state" value={customerInfo.state} onChange={handleInputChange} required>
                   {INDIAN_STATES.map(s => (
@@ -1008,8 +1008,6 @@ export default function CartDrawer({
                   ))}
                 </select>
               </div>
-
-              <input type="text" name="address" value={customerInfo.address} onChange={handleInputChange} required className="checkout-input" placeholder="Address (include flat / apartment)" />
 
               </div>
 
