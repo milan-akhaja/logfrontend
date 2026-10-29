@@ -7690,3 +7690,21 @@ header.scrolled .nav-action-icon-btn {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@media (max-width: 767px) {
+  .checkout-delivery-form,
+  .checkout-ship-card {
+    gap: 10px;
+  }
+
+  .checkout-delivery-form input:not([type="radio"]):not([type="checkbox"]),
+  .checkout-delivery-form select,
+  .checkout-phone-row .checkout-input,
+  .checkout-phone-row select {
+    min-height: 44px;
+  }
+
+  .checkout-two-col {
+    gap: 10px;
+  }
+}
