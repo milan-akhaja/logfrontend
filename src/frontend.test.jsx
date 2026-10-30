@@ -2368,20 +2368,9 @@ describe('Customer reviews', () => {
     restore();
   });
 
-  it('footer shows the Reviews link only when reviews exist', async () => {
-    let restore = mockFetch({ count: 0, reviews: [] });
-    let { default: FooterWithoutReviews } = await import('./components/Footer');
-    const first = render(<MemoryRouter><FooterWithoutReviews /></MemoryRouter>);
-    await waitFor(() => expect(window.fetch).toHaveBeenCalled());
-    expect(first.container.querySelector('a[href="/reviews"]')).toBeNull();
-    first.unmount();
-    restore();
-
-    vi.resetModules();
-    restore = mockFetch(approved);
-    ({ default: FooterWithoutReviews } = await import('./components/Footer'));
-    const second = render(<MemoryRouter><FooterWithoutReviews /></MemoryRouter>);
-    await waitFor(() => expect(second.container.querySelector('a[href="/reviews"]')).not.toBeNull());
-    restore();
+  it('footer always links to the Reviews page so the first reviews can be collected', async () => {
+    const { default: Footer } = await import('./components/Footer');
+    const { container } = render(<MemoryRouter><Footer /></MemoryRouter>);
+    expect(container.querySelector('a[href="/reviews"]')).not.toBeNull();
   });
 });

@@ -4,11 +4,9 @@ import { Mail, Clock, Instagram } from 'lucide-react';
 import ContentBlockLines from './ContentBlockLines';
 import useContentBlocks from '../hooks/useContentBlocks';
 import { getProducts } from '../lib/products';
-import { useReviews } from './ReviewsSection';
 
 export default function Footer({ onToast, onOpenCookieSettings }) {
   const [openSection, setOpenSection] = useState(null);
-  const { count: reviewCount } = useReviews();
   const [subCategories, setSubCategories] = useState([]);
   const [colors, setColors] = useState([]);
   const [activeTab, setActiveTab] = useState('category'); // category, color, popular
@@ -170,7 +168,7 @@ export default function Footer({ onToast, onOpenCookieSettings }) {
             <ul className="footer-links always-visible">
               <li><Link to="/our-mission">Our Mission</Link></li>
               <li><Link to="/log-book">Log book</Link></li>
-              {reviewCount > 0 && <li><Link to="/reviews">Reviews</Link></li>}
+              <li><Link to="/reviews">Reviews</Link></li>
             </ul>
           </div>
 
