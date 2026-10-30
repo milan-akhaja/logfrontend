@@ -7700,10 +7700,35 @@ header.scrolled .nav-action-icon-btn {
 }
 
 .review-author {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.review-name {
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.review-role {
+  font-size: 12px;
+  font-weight: 500;
+  color: #777;
+}
+
+.review-hint {
+  margin-top: -4px;
+  font-size: 12px;
+  color: #777;
+}
+
+.reviews-row .review-body {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .reviews-all-link {
@@ -7886,6 +7911,20 @@ header.scrolled .nav-action-icon-btn {
   .review-btn {
     padding: 0 18px;
     white-space: nowrap;
+  }
+
+  .reviews-section:not(.reviews-page) .reviews-head {
+    margin-bottom: 14px;
+  }
+
+  .reviews-section:not(.reviews-page) .review-btn {
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 12px;
+  }
+
+  .reviews-row .review-body {
+    font-size: 14px;
   }
 
   .reviews-row {

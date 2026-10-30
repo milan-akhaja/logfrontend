@@ -2333,7 +2333,8 @@ describe('Customer reviews', () => {
     const { default: ReviewsSection } = await import('./components/ReviewsSection');
     render(<MemoryRouter><ReviewsSection /></MemoryRouter>);
     expect(await screen.findByText('2 reviews')).toBeDefined();
-    expect(screen.getByText('Asha · Photographer')).toBeDefined();
+    expect(screen.getByText('Asha')).toBeDefined();
+    expect(screen.getByText('Photographer')).toBeDefined();
     expect(screen.getByText('Dev')).toBeDefined();
     expect(screen.getByRole('link', { name: /see all reviews/i }).getAttribute('href')).toBe('/reviews');
     restore();

@@ -48,8 +48,8 @@ function ReviewCard({ review }) {
       <Stars value={review.rating} />
       <p className="review-body">{review.body}</p>
       <div className="review-author">
-        {review.name}
-        {review.profession ? ` · ${review.profession}` : ''}
+        <span className="review-name">{review.name}</span>
+        {review.profession && <span className="review-role">{review.profession}</span>}
       </div>
     </article>
   );
@@ -147,11 +147,12 @@ function ReviewForm({ onClose }) {
             <input
               type="text"
               className="review-input"
-              placeholder="What you do (optional)"
+              placeholder="Your profession (optional)"
               value={profession}
               onChange={(event) => setProfession(event.target.value)}
               maxLength={100}
             />
+            <span className="review-hint">For example: Student, Designer, Shop owner, Doctor</span>
             <textarea
               className="review-input review-textarea"
               placeholder="Your review"
