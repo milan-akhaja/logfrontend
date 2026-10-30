@@ -212,7 +212,9 @@ export default function ReviewsSection() {
             <ReviewCard key={review.id} review={review} />
           ))}
         </div>
-        <Link to="/reviews" className="reviews-all-link">See all reviews</Link>
+        <div className="reviews-all-wrap">
+          <Link to="/reviews" className="reviews-all-link">See all reviews</Link>
+        </div>
       </div>
       {formOpen && <ReviewForm onClose={() => setFormOpen(false)} />}
     </section>

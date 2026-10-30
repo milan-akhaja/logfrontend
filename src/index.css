@@ -7731,6 +7731,10 @@ header.scrolled .nav-action-icon-btn {
   overflow: hidden;
 }
 
+.reviews-all-wrap {
+  text-align: center;
+}
+
 .reviews-all-link {
   display: inline-block;
   margin-top: 18px;
