@@ -101,9 +101,9 @@ export function hasMetaConsent() {
   if (window.__LOG_META_CONSENT_GRANTED__ === false) return false;
   try {
     const raw = decodeURIComponent(document?.cookie || '');
-    return /cookieyes-consent[^;]*advertisement:yes/.test(raw);
+    return !/cookieyes-consent[^;]*advertisement:no/.test(raw);
   } catch {
-    return false;
+    return true;
   }
 }
 

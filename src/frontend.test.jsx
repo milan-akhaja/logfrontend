@@ -320,6 +320,20 @@ describe('Meta Pixel Analytics', () => {
     document.cookie = 'cookieyes-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   });
 
+  it('tracks Meta events by default when the visitor has not answered the banner, and stops after Reject', async () => {
+    const { hasMetaConsent, canTrackMeta, trackMetaEvent } = await import('./lib/analytics');
+    const mockFbq = vi.fn();
+    window.fbq = mockFbq;
+
+    expect(hasMetaConsent()).toBe(true);
+    expect(canTrackMeta()).toBe(true);
+    expect(trackMetaEvent('ViewContent', { content_ids: ['prod-1'] })).toBe(true);
+    expect(mockFbq).toHaveBeenCalledWith('track', 'ViewContent', { content_ids: ['prod-1'] });
+
+    document.cookie = 'cookieyes-consent=consentid:1,action:yes,necessary:yes,advertisement:no; path=/;';
+    expect(hasMetaConsent()).toBe(false);
+    expect(trackMetaEvent('AddToCart', { content_ids: ['prod-1'] })).toBe(false);
+  });
   it('with consent denied or fbq missing nothing throws and nothing is sent', async () => {
     const { canTrackMeta, hasMetaConsent, trackMetaEvent, trackPurchase } = await import('./lib/analytics');
 
@@ -1050,10 +1064,10 @@ describe('ConsentBanner and Consent Management', () => {
     unmount();
   });
 
-  it('ViewContent fires when consent is granted AFTER the product page is already mounted', async () => {
+  it('ViewContent fires when marketing consent is granted AFTER a rejected visitor already has the product page mounted', async () => {
     const mockFbq = vi.fn();
     window.fbq = mockFbq;
-    delete window.__LOG_META_CONSENT_GRANTED__;
+    window.__LOG_META_CONSENT_GRANTED__ = false;
 
     const mockProduct = { id: 'prod-late-consent', name: 'Late Consent Tee', price: 1999, stock: 10, sizes: { M: 10 } };
     vi.spyOn(productsModule, 'getProducts').mockResolvedValue([mockProduct]);
@@ -1067,7 +1081,7 @@ describe('ConsentBanner and Consent Management', () => {
     );
 
     await screen.findByText('Late Consent Tee');
-    // Before consent, ViewContent must not have fired
+    // While marketing is rejected, ViewContent must not have fired
     const beforeCalls = mockFbq.mock.calls.filter(c => c[0] === 'track' && c[1] === 'ViewContent');
     expect(beforeCalls.length).toBe(0);
 

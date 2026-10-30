@@ -95,16 +95,17 @@
         })();
       } catch (err) {}
 
-      // Consent gate. If the visitor already granted consent in a prior
-      // session (stored in cookieyes-consent cookie), grant immediately so
-      // events are not deadlocked in the queue. Only revoke when consent is
-      // not yet granted or denied.
-      var metaGranted = false;
+      // Consent gate (opt-out). Meta measurement is on by default so ad clicks
+      // are counted even if the banner is not answered. It is switched off only
+      // when the visitor has rejected marketing cookies (cookieyes-consent cookie
+      // with advertisement:no) and the banner's Reject / Customize choices revoke it.
+      var metaGranted = true;
+      window.__LOG_META_CONSENT_GRANTED__ = true;
       try {
         var rawCookie = decodeURIComponent(document.cookie || '');
-        if (/cookieyes-consent[^;]*advertisement:yes/.test(rawCookie)) {
-          metaGranted = true;
-          window.__LOG_META_CONSENT_GRANTED__ = true;
+        if (/cookieyes-consent[^;]*advertisement:no/.test(rawCookie)) {
+          metaGranted = false;
+          window.__LOG_META_CONSENT_GRANTED__ = false;
         }
         if (/cookieyes-consent[^;]*analytics:yes/.test(rawCookie)) {
           window.__LOG_GA4_CONSENT_GRANTED__ = true;

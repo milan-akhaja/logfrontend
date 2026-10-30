@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, ShoppingCart, Package, Gift, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import ContentBlockLines from '../components/ContentBlockLines';
 import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
@@ -979,42 +979,6 @@ export default function Shop({ onAddToCart }) {
 
       {/* CUSTOMER REVIEWS (hidden until a review is approved) */}
       <ReviewsSection />
-
-      {/* PROCESS SECTION WITH OUTLINE ICONS */}
-      <section className="process-section">
-        <div className="container">
-          <div className="process-grid">
-            <div className="process-card reveal">
-              <div className="process-num" style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: '15px', color: 'var(--accent)' }}>
-                <Heart size={36} strokeWidth={1.5} color="var(--accent)" fill="var(--accent)" />
-              </div>
-              <h3 className="process-card-title">Pick your tee</h3>
-              <p className="process-card-text">Browse the drop. Find the one that speaks to you. No clutter, no confusion.</p>
-            </div>
-            <div className="process-card reveal">
-              <div className="process-num" style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: '15px', color: 'var(--ink)' }}>
-                <ShoppingCart size={36} strokeWidth={1.5} />
-              </div>
-              <h3 className="process-card-title">Checkout</h3>
-              <p className="process-card-text">Pay securely. ₹23 per item is automatically earmarked for donation. Nothing extra to click.</p>
-            </div>
-            <div className="process-card reveal">
-              <div className="process-num" style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: '15px', color: 'var(--ink)' }}>
-                <Package size={36} strokeWidth={1.5} />
-              </div>
-              <h3 className="process-card-title">We ship it</h3>
-              <p className="process-card-text">Straight to your door. Minimal packaging. Your tee, delivered.</p>
-            </div>
-            <div className="process-card reveal">
-              <div className="process-num" style={{ display: 'inline-flex', justifyContent: 'center', marginBottom: '15px', color: 'var(--ink)' }}>
-                <Gift size={36} strokeWidth={1.5} />
-              </div>
-              <h3 className="process-card-title">We donate it</h3>
-              <p className="process-card-text">₹23 per product goes where it's needed. Every order. No exceptions. You just wore something that mattered.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* STATEMENT SECTION */}
       <section className="statement-section">
