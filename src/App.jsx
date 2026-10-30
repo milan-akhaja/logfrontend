@@ -29,6 +29,7 @@ import ShopPage from './pages/ShopPage';
 
 const OurMission = React.lazy(() => import('./pages/OurMission'));
 const LogBook = React.lazy(() => import('./pages/LogBook'));
+const ReviewsPage = React.lazy(() => import('./components/ReviewsSection').then((module) => ({ default: module.ReviewsPage })));
 const BlogDetail = React.lazy(() => import('./pages/BlogDetail'));
 const ProductDetail = React.lazy(() => import('./pages/ProductDetail'));
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'test') {
@@ -789,6 +790,7 @@ function AppContent({
           <Route path="/new-in" element={<Navigate to="/shop" replace />} />
           <Route path="/our-mission" element={<><SEO title="Our Mission - Streetwear With a Conscience | logcloth" description="logcloth is premium Indian streetwear founded in 2026 in Ahmedabad by Sahaj Rasadiya, with Rs. 23 from every product sold donated to charity." canonicalPath="/our-mission" /><OurMission /></>} />
           <Route path="/log-book" element={<><SEO title="LOG Book - Streetwear Stories & Lookbook | logcloth" description="Explore the logcloth LOG Book for streetwear styling guides, drop stories, lookbook editorials, and social impact updates across India." canonicalPath="/log-book" type="blog" /><LogBook /></>} />
+          <Route path="/reviews" element={<><SEO title="Customer Reviews | logcloth" description="Read what customers say about logcloth oversized streetwear, or write your own review." canonicalPath="/reviews" /><ReviewsPage /></>} />
           <Route path="/blog/:id" element={<BlogDetail />} />
           <Route path="/product/:id" element={<ProductDetail onAddToCart={onAddToCart} onBuyNow={onBuyNow} />} />
           <Route path="/admin" element={<><SEO title="Admin" description="logcloth admin panel." noindex canonicalPath="/admin" /><Admin onToast={showToast} /></>} />

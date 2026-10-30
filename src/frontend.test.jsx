@@ -2272,3 +2272,102 @@ describe('Gallery video slides wait for the video to finish', () => {
     unmount();
   });
 });
+
+describe('Customer reviews', () => {
+  const approved = {
+    count: 2,
+    reviews: [
+      { id: 'r2', name: 'Asha', profession: 'Photographer', rating: 5, body: 'Heavy fabric and a clean fit.' },
+      { id: 'r1', name: 'Dev', profession: '', rating: 4, body: 'Print has not faded after washes.' }
+    ]
+  };
+
+  const mockFetch = (reviewsPayload, onPost) => {
+    const original = window.fetch;
+    window.fetch = vi.fn(async (url, options = {}) => {
+      if (String(url).startsWith('/api/reviews') && options.method === 'POST') {
+        if (onPost) onPost(JSON.parse(options.body));
+        return { ok: true, status: 200, json: async () => ({ success: true }) };
+      }
+      if (String(url).startsWith('/api/reviews')) {
+        return { ok: true, status: 200, json: async () => reviewsPayload };
+      }
+      return { ok: true, status: 200, json: async () => [] };
+    });
+    return () => { window.fetch = original; };
+  };
+
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('home section renders nothing while no review is approved', async () => {
+    const restore = mockFetch({ count: 0, reviews: [] });
+    const { default: ReviewsSection } = await import('./components/ReviewsSection');
+    const { container } = render(<MemoryRouter><ReviewsSection /></MemoryRouter>);
+    await waitFor(() => expect(window.fetch).toHaveBeenCalled());
+    expect(container.querySelector('.reviews-section')).toBeNull();
+    restore();
+  });
+
+  it('home section shows the real count and the approved reviews', async () => {
+    const restore = mockFetch(approved);
+    const { default: ReviewsSection } = await import('./components/ReviewsSection');
+    render(<MemoryRouter><ReviewsSection /></MemoryRouter>);
+    expect(await screen.findByText('2 reviews')).toBeDefined();
+    expect(screen.getByText('Asha · Photographer')).toBeDefined();
+    expect(screen.getByText('Dev')).toBeDefined();
+    expect(screen.getByRole('link', { name: /see all reviews/i }).getAttribute('href')).toBe('/reviews');
+    restore();
+  });
+
+  it('reviews page works with zero reviews so the link can be shared', async () => {
+    const restore = mockFetch({ count: 0, reviews: [] });
+    const { ReviewsPage } = await import('./components/ReviewsSection');
+    render(<MemoryRouter><ReviewsPage /></MemoryRouter>);
+    expect(await screen.findByText(/be the first to write one/i)).toBeDefined();
+    expect(screen.getByRole('button', { name: /write a review/i })).toBeDefined();
+    restore();
+  });
+
+  it('the form needs a rating, then posts the review and promises moderation', async () => {
+    const posted = [];
+    const restore = mockFetch({ count: 0, reviews: [] }, (body) => posted.push(body));
+    const { ReviewsPage } = await import('./components/ReviewsSection');
+    render(<MemoryRouter><ReviewsPage /></MemoryRouter>);
+    fireEvent.click(await screen.findByRole('button', { name: /write a review/i }));
+
+    fireEvent.change(screen.getByPlaceholderText('Your name'), { target: { value: 'Asha' } });
+    fireEvent.change(screen.getByPlaceholderText('Your review'), { target: { value: 'Great fabric and fit' } });
+    fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
+    expect(await screen.findByRole('alert')).toBeDefined();
+    expect(posted.length).toBe(0);
+
+    fireEvent.click(screen.getByRole('radio', { name: '5 stars' }));
+    fireEvent.click(screen.getByRole('button', { name: /submit review/i }));
+    expect(await screen.findByText(/once we approve it/i)).toBeDefined();
+    expect(posted[0]).toMatchObject({ name: 'Asha', rating: 5, body: 'Great fabric and fit', website: '' });
+    restore();
+  });
+
+  it('footer shows the Reviews link only when reviews exist', async () => {
+    let restore = mockFetch({ count: 0, reviews: [] });
+    let { default: FooterWithoutReviews } = await import('./components/Footer');
+    const first = render(<MemoryRouter><FooterWithoutReviews /></MemoryRouter>);
+    await waitFor(() => expect(window.fetch).toHaveBeenCalled());
+    expect(first.container.querySelector('a[href="/reviews"]')).toBeNull();
+    first.unmount();
+    restore();
+
+    vi.resetModules();
+    restore = mockFetch(approved);
+    ({ default: FooterWithoutReviews } = await import('./components/Footer'));
+    const second = render(<MemoryRouter><FooterWithoutReviews /></MemoryRouter>);
+    await waitFor(() => expect(second.container.querySelector('a[href="/reviews"]')).not.toBeNull());
+    restore();
+  });
+});

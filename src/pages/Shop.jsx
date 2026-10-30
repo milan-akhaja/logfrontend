@@ -7,6 +7,7 @@ import useContentBlocks from '../hooks/useContentBlocks';
 import useIsMobile from '../hooks/useIsMobile';
 import { getProducts, getCachedProducts } from '../lib/products';
 import { appPath, mediaSrcSet, mediaUrl, srcSetFallback } from '../lib/urls';
+import ReviewsSection from '../components/ReviewsSection';
 import { saveScrollPosition } from '../lib/scrollRestoration';
 
 const slideIntervalMs = (value) => {
@@ -975,6 +976,9 @@ export default function Shop({ onAddToCart }) {
 
       {/* GALLERY LOOKBOOK SCROLLER */}
       <GalleryScroller />
+
+      {/* CUSTOMER REVIEWS (hidden until a review is approved) */}
+      <ReviewsSection />
 
       {/* PROCESS SECTION WITH OUTLINE ICONS */}
       <section className="process-section">

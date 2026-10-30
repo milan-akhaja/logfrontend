@@ -47,6 +47,7 @@ const ADMIN_TABS = [
   ['coupons', 'Coupons'],
   ['stories', 'Stories'],
   ['blogs', 'Blogs'],
+  ['reviews', 'Reviews'],
   ['gallery', 'Gallery'],
   ['contentblocks', 'Banners & Quotes'],
   ['heroconfig', 'Hero'],
@@ -699,6 +700,179 @@ function CouponsAdminTab({ onToast, products }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ReviewsAdminTab({ onToast }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [filter, setFilter] = useState('pending');
+  const [editId, setEditId] = useState(null);
+  const [draft, setDraft] = useState({ name: '', profession: '', body: '' });
+
+  const authHeaders = () => {
+    const token = sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token') || '';
+    return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  };
+
+  const loadRows = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await fetch('/api/admin/reviews', { headers: authHeaders() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setRows([]);
+        setLoadError(data.error || 'Reviews could not load.');
+      } else {
+        setRows(await res.json());
+      }
+    } catch {
+      setRows([]);
+      setLoadError('Reviews could not load.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRows();
+  }, []);
+
+  const update = async (id, changes, successMessage) => {
+    try {
+      const res = await fetch(`/api/admin/reviews/${encodeURIComponent(id)}`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(changes)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        onToast(data.error || 'Could not update the review.');
+        return;
+      }
+      setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...data.review } : row)));
+      setEditId(null);
+      onToast(successMessage);
+    } catch {
+      onToast('Could not update the review.');
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this review permanently?')) return;
+    try {
+      const res = await fetch(`/api/admin/reviews/${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders() });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        onToast(data.error || 'Could not delete the review.');
+        return;
+      }
+      setRows((prev) => prev.filter((row) => row.id !== id));
+      onToast('Review deleted.');
+    } catch {
+      onToast('Could not delete the review.');
+    }
+  };
+
+  const startEdit = (row) => {
+    setEditId(row.id);
+    setDraft({ name: row.name, profession: row.profession || '', body: row.body });
+  };
+
+  const counts = {
+    pending: rows.filter((row) => row.status === 'pending').length,
+    approved: rows.filter((row) => row.status === 'approved').length,
+    hidden: rows.filter((row) => row.status === 'hidden').length
+  };
+  const visible = rows.filter((row) => row.status === filter);
+  const cell = { padding: '12px 0', borderBottom: '1px solid var(--admin-border)' };
+
+  return (
+    <div className="admin-section">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+        {['pending', 'approved', 'hidden'].map((status) => (
+          <button
+            key={status}
+            type="button"
+            className={filter === status ? 'btn btn-primary' : 'btn btn-outline'}
+            style={{ padding: '10px 16px', fontSize: '11px', textTransform: 'capitalize' }}
+            onClick={() => setFilter(status)}
+          >
+            {status} ({counts[status]})
+          </button>
+        ))}
+        <button
+          type="button"
+          className="btn btn-outline"
+          style={{ marginLeft: 'auto', padding: '10px 16px', fontSize: '11px' }}
+          onClick={loadRows}
+        >
+          Refresh
+        </button>
+      </div>
+
+      {loading && <p style={{ fontSize: '14px' }}>Loading...</p>}
+      {loadError && <p style={{ fontSize: '14px', color: '#b00020' }}>{loadError}</p>}
+      {!loading && !loadError && visible.length === 0 && (
+        <p style={{ fontSize: '14px', color: 'var(--admin-muted, #666)' }}>No {filter} reviews.</p>
+      )}
+
+      {visible.map((row) => (
+        <div key={row.id} style={cell}>
+          <div style={{ fontSize: '12px', color: 'var(--admin-muted, #666)', marginBottom: '6px' }}>
+            {'★'.repeat(row.rating)}{'☆'.repeat(5 - row.rating)} · {row.createdAt ? new Date(row.createdAt).toLocaleString('en-IN') : ''}
+          </div>
+          {editId === row.id ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '560px' }}>
+              <input
+                className="admin-input"
+                value={draft.name}
+                maxLength={80}
+                placeholder="Name"
+                onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
+              />
+              <input
+                className="admin-input"
+                value={draft.profession}
+                maxLength={100}
+                placeholder="Profession"
+                onChange={(event) => setDraft((prev) => ({ ...prev, profession: event.target.value }))}
+              />
+              <textarea
+                className="admin-input"
+                rows={4}
+                value={draft.body}
+                maxLength={1000}
+                onChange={(event) => setDraft((prev) => ({ ...prev, body: event.target.value }))}
+              />
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" className="btn btn-primary" style={{ padding: '10px 16px', fontSize: '11px' }} onClick={() => update(row.id, draft, 'Review saved.')}>Save</button>
+                <button type="button" className="btn btn-outline" style={{ padding: '10px 16px', fontSize: '11px' }} onClick={() => setEditId(null)}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: '14px', fontWeight: 700 }}>
+                {row.name}{row.profession ? ` · ${row.profession}` : ''}
+              </div>
+              <p style={{ margin: '6px 0 10px', fontSize: '14px', lineHeight: 1.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{row.body}</p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {row.status !== 'approved' && (
+                  <button type="button" className="btn btn-primary" style={{ padding: '10px 16px', fontSize: '11px' }} onClick={() => update(row.id, { status: 'approved' }, 'Review approved and live.')}>Approve</button>
+                )}
+                {row.status !== 'hidden' && (
+                  <button type="button" className="btn btn-outline" style={{ padding: '10px 16px', fontSize: '11px' }} onClick={() => update(row.id, { status: 'hidden' }, 'Review hidden.')}>Hide</button>
+                )}
+                <button type="button" className="btn btn-outline" style={{ padding: '10px 16px', fontSize: '11px' }} onClick={() => startEdit(row)}>Edit</button>
+                <button type="button" className="admin-icon-btn admin-icon-btn-danger" onClick={() => remove(row.id)}>Delete</button>
+              </div>
+            </>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
@@ -2730,6 +2904,7 @@ export default function Admin({ onToast }) {
               {activeTab === 'heroconfig' && 'Hero Banner Customization'}
               {activeTab === 'subscribers' && 'Drop List'}
               {activeTab === 'abandoned' && 'Abandoned Checkouts'}
+                {activeTab === 'reviews' && 'Customer Reviews'}
             </h1>
 
           </div>
@@ -4919,6 +5094,7 @@ export default function Admin({ onToast }) {
 
         {activeTab === 'coupons' && <CouponsAdminTab onToast={onToast} products={products} />}
         {activeTab === 'abandoned' && <AbandonedAdminTab onToast={onToast} />}
+        {activeTab === 'reviews' && <ReviewsAdminTab onToast={onToast} />}
       </main>
 
 
