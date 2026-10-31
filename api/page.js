@@ -32,6 +32,7 @@ const STATIC_PAGES = {
   '/new-in': ['New In - Latest logcloth Streetwear Drops', 'Explore the newest logcloth streetwear drops, oversized graphic T-shirts, fresh fits, and limited collection releases across India.'],
   '/our-mission': ['Our Mission - Streetwear With a Conscience | logcloth', 'logcloth is premium Indian streetwear founded in 2026 in Ahmedabad by Sahaj Rasadiya, with Rs. 23 from every product sold donated to charity.'],
   '/log-book': ['LOG Book - Streetwear Stories & Lookbook | logcloth', 'Explore the logcloth LOG Book for streetwear styling guides, drop stories, lookbook editorials, and social impact updates across India.'],
+  '/reviews': ['Customer Reviews | logcloth', 'Read what customers say about logcloth oversized streetwear, or write your own review.'],
   '/refund-policy': ['Refund & Exchange Policy | logcloth', 'Read the logcloth return, refund, exchange, and charity donation policy for streetwear orders across India. 100% complimentary doorstep size exchanges.'],
   '/make-return': ['Make a Return or Exchange | logcloth', 'Request a logcloth return, refund, or size exchange for eligible orders within the return window. Free doorstep pickup and exchange across India.'],
   '/shipping-policy': ['Shipping Policy | logcloth', 'Read logcloth shipping timelines, delivery details, order dispatch estimates, and customer support information for streetwear orders across India.'],
