@@ -946,7 +946,14 @@ export default function Shop({ onAddToCart }) {
 
 
 
-        <div className="product-grid">
+        <div className="product-grid" aria-busy={products.length === 0}>
+          {products.length === 0 && Array.from({ length: 8 }).map((_, i) => (
+            <div className="product-card-skeleton" key={`skeleton-${i}`} aria-hidden="true">
+              <div className="skeleton-img" />
+              <div className="skeleton-line" />
+              <div className="skeleton-line short" />
+            </div>
+          ))}
           {displayedProducts.map(product => (
             <ProductGridCard
               product={product}
