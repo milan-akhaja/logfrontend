@@ -970,7 +970,7 @@ export default function App() {
         }]
       }, atcEventId);
     } catch {}
-    showToast(`${product.name} (${finalSize}) added to Bag`);
+    setCartOpen(true);
   };
 
   const handleBuyNow = (product, size, secondSize) => {
