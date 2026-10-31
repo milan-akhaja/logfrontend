@@ -355,11 +355,11 @@ function addToHead(html, extra) {
 
 // The crawler copy stays in the page but is visually hidden, so shoppers never
 // see an unstyled list while the app loads; React replaces it on mount.
-const CRAWLER_COPY_STYLE = '<style>#root>main{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>';
+const CRAWLER_COPY_STYLE = '<style>.crawler-copy{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}</style>';
 
 function setBody(html, content) {
   return addToHead(html, CRAWLER_COPY_STYLE)
-    .replace('<div id="root"></div>', `<div id="root">${content}</div>`);
+    .replace('<div id="root"></div>', `<div id="root"><div class="crawler-copy">${content}</div></div>`);
 }
 
 function templateDescription(html) {
