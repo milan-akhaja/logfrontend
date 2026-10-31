@@ -7999,3 +7999,42 @@ header.scrolled .nav-action-icon-btn {
   .bag-btn { transition: none; }
   .bag-btn:active { transform: none; }
 }
+/* ── CARD + SIZE MICRO-INTERACTIONS ─────────────────────── */
+.product-img-wrapper img {
+  transition: transform 600ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover .product-img-wrapper img {
+    transform: scale(1.04);
+  }
+}
+
+.product-card:active {
+  transform: scale(0.99);
+}
+
+.detail-size-option-btn {
+  transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.detail-size-option-btn:active:not(.disabled) {
+  transform: scale(0.95);
+}
+
+.detail-size-option-btn.selected {
+  animation: size-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes size-pop {
+  0% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-img-wrapper img { transition: none; }
+  .product-card:hover .product-img-wrapper img { transform: none; }
+  .product-card:active { transform: none; }
+  .detail-size-option-btn { transition: none; }
+  .detail-size-option-btn.selected { animation: none; }
+}
