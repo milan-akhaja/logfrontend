@@ -49,8 +49,8 @@ let blogsCache = null; // { at, data }
 function loadTemplate() {
   if (template) return template;
   const candidates = [
-    path.join(process.cwd(), 'dist', 'index.html'),
-    new URL('../dist/index.html', import.meta.url)
+    path.join(process.cwd(), 'dist', 'shell.html'),
+    new URL('../dist/shell.html', import.meta.url)
   ];
   for (const candidate of candidates) {
     try {
@@ -476,7 +476,9 @@ async function renderSitemap() {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
 }
 
-// Last resort if the bundled copy of index.html is ever missing: the same file
+// The build renames dist/index.html to dist/shell.html so that "/" is no longer
+// a static file and goes through this function like every other page.
+// Last resort if the bundled copy of shell.html is ever missing: the same file
 // is also served as a plain static file, so fetch it once and keep it. Without
 // this a missing template would take every page down instead of just losing
 // the extra tags.
@@ -485,7 +487,7 @@ async function ensureTemplate(req) {
   const host = req.headers?.['x-forwarded-host'] || req.headers?.host;
   if (!host) return;
   try {
-    const response = await fetch(`https://${host}/index.html`);
+    const response = await fetch(`https://${host}/shell.html`);
     if (response.ok) template = await response.text();
   } catch { /* stays null; the handler reports it */ }
 }
