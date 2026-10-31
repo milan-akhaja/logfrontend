@@ -7957,3 +7957,45 @@ header.scrolled .nav-action-icon-btn {
     font-size: 26px;
   }
 }
+
+/* ── ACCESSIBILITY + SIZE ERROR + MICRO-INTERACTIONS ───── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.size-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #c0392b;
+  animation: size-error-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes size-error-in {
+  0% { opacity: 0; transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  70% { transform: translateX(-3px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.bag-btn {
+  transition: transform 0.15s ease;
+}
+
+.bag-btn:active {
+  transform: scale(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .size-error { animation: none; }
+  .bag-btn { transition: none; }
+  .bag-btn:active { transform: none; }
+}

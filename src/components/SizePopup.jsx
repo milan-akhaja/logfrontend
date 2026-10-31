@@ -8,12 +8,18 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedSecondSize, setSelectedSecondSize] = useState('');
   const [showChart, setShowChart] = useState(false);
+  const [sizeError, setSizeError] = useState('');
+
+  useEffect(() => {
+    setSizeError('');
+  }, [selectedSize, selectedSecondSize]);
 
   useEffect(() => {
     if (isOpen) {
       lockBodyScroll();
       setSelectedSize(''); // Reset size selection on open
       setSelectedSecondSize('');
+      setSizeError('');
     }
     return () => {
       if (isOpen) unlockBodyScroll();
@@ -46,13 +52,13 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   const handleAdd = () => {
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
-        alert('Please select both sizes for the BOGO offer');
+        setSizeError('Please select both sizes for the BOGO offer');
         return;
       }
       onAddToBag(product, selectedSize, selectedSecondSize);
     } else {
       if (!selectedSize) {
-        alert('Please select a size first');
+        setSizeError('Please select a size first');
         return;
       }
       onAddToBag(product, selectedSize);
@@ -63,13 +69,13 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
   const handleBuy = () => {
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
-        alert('Please select both sizes for the BOGO offer');
+        setSizeError('Please select both sizes for the BOGO offer');
         return;
       }
       onBuyNow(product, selectedSize, selectedSecondSize);
     } else {
       if (!selectedSize) {
-        alert('Please select a size first');
+        setSizeError('Please select a size first');
         return;
       }
       onBuyNow(product, selectedSize);
@@ -202,6 +208,7 @@ export default function SizePopup({ isOpen, onClose, product, onAddToBag, onBuyN
               </div>
             )}
 
+            {sizeError && <p className="size-error" role="alert">{sizeError}</p>}
             <div className="size-popup-actions">
               <button className="btn btn-outline" onClick={handleAdd}>
                 ADD TO BAG

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import ContentBlockLines from '../components/ContentBlockLines';
 import ProductPrice from '../components/ProductPrice';
 import useContentBlocks from '../hooks/useContentBlocks';
@@ -784,6 +783,8 @@ export default function Shop({ onAddToCart }) {
 
   return (
     <>
+      <h1 className="sr-only">logcloth - numbered streetwear drops</h1>
+
       {/* PC HERO SECTION */}
       {!isMobileViewport && (
       <section className="hero-section pc-only" style={!isHeroLoaded ? { background: 'var(--paper)' } : undefined}>
@@ -814,7 +815,7 @@ export default function Shop({ onAddToCart }) {
                     srcSet={mediaSrcSet(image)}
                     sizes="100vw"
                     onError={srcSetFallback}
-                    alt=""
+                    alt={`logcloth numbered streetwear, look ${index + 1}`}
                     className={`hero-bg-image hero-slideshow-image ${index === desktopHeroSlideIndex ? 'active' : ''}`}
                     loading={index === 0 ? 'eager' : 'lazy'}
                     decoding="async"
@@ -858,7 +859,7 @@ export default function Shop({ onAddToCart }) {
                       srcSet={mediaSrcSet(activeSrc)}
                       sizes="100vw"
                       onError={srcSetFallback}
-                      alt=""
+                      alt={`logcloth numbered streetwear, look ${index + 1}`}
                       className={`mobile-hero-image mobile-hero-slide ${index === mobileHeroSlideIndex ? 'active' : ''}`}
                       style={{ objectPosition: getHeroObjectPosition(activeSrc) }}
                       loading={index === 0 ? 'eager' : 'lazy'}

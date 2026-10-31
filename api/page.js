@@ -255,6 +255,18 @@ function productJsonLd(product, url) {
   };
 }
 
+function breadcrumbJsonLd(product, url) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'logcloth', item: `${SITE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Shop', item: `${SITE_URL}/shop` },
+      { '@type': 'ListItem', position: 3, name: product.name, item: url }
+    ]
+  };
+}
+
 // Same phone-sized copies the app asks for (src/lib/urls.js), so the browser
 // downloads one image here and reuses it when React takes over the page.
 function srcSetAttr(url) {
@@ -386,7 +398,8 @@ async function renderPage(pagePath) {
     html = addToHead(html, [
       `  <meta property="product:price:amount" content="${currentPrice(product)}">`,
       '  <meta property="product:price:currency" content="INR">',
-      `  ${jsonLdScript(productJsonLd(product, url))}`
+      `  ${jsonLdScript(productJsonLd(product, url))}`,
+      `  ${jsonLdScript(breadcrumbJsonLd(product, url))}`
     ].join('\n'));
     html = setBody(html, productBody(product));
     return { status: 200, html };

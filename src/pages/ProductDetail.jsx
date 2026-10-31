@@ -44,6 +44,8 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   
   const [slideIdx, setSlideIdx] = useState(0);
   const [offerCoupons, setOfferCoupons] = useState(FALLBACK_COUPONS);
+  const [sizeError, setSizeError] = useState('');
+  useEffect(() => { setSizeError(''); }, [selectedSize, selectedSecondSize]);
 
   useEffect(() => {
     let active = true;
@@ -287,13 +289,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     if (isChosenSoldOut) return;
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
-        alert('Please select both sizes for the BOGO offer');
+        setSizeError('Please select both sizes for the BOGO offer');
         return;
       }
       onAddToCart(product, selectedSize, selectedSecondSize);
     } else {
       if (!selectedSize) {
-        alert('Please select a size');
+        setSizeError('Please select a size first');
         return;
       }
       onAddToCart(product, selectedSize);
@@ -304,13 +306,13 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
     if (isChosenSoldOut) return;
     if (product.bogoOffer?.enabled) {
       if (!selectedSize || !selectedSecondSize) {
-        alert('Please select both sizes for the BOGO offer');
+        setSizeError('Please select both sizes for the BOGO offer');
         return;
       }
       onBuyNow(product, selectedSize, selectedSecondSize);
     } else {
       if (!selectedSize) {
-        alert('Please select a size');
+        setSizeError('Please select a size first');
         return;
       }
       onBuyNow(product, selectedSize);
@@ -599,6 +601,7 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
             )}
 
             {/* CTA Buy Buttons */}
+            {sizeError && <p className="size-error" role="alert">{sizeError}</p>}
             {dropBlocked ? (
               <div className="detail-actions-row">
                 <button className="detail-action-btn btn-add-bag" disabled>

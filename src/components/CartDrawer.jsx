@@ -500,10 +500,8 @@ export default function CartDrawer({
           ...(result.city ? { city: result.city } : {}),
           ...(result.state ? { state: result.state } : {})
         }));
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.log('Pincode auto-fill failed across all sources:', err);
-        }
+      } catch {
+        // Auto-fill is best-effort; the customer can type city and state.
       } finally {
         if (isMounted) setIsLoadingPincode(false);
       }
