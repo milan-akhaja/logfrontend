@@ -190,6 +190,9 @@ function ReviewForm({ onClose }) {
 // same card in the middle, which looks identical, so the row never ends.
 function ReviewCarousel({ reviews }) {
   const rowRef = useRef(null);
+  // Card the arrows are heading to, so a click during the slide moves on from
+  // there instead of from wherever the animation happens to be.
+  const targetRef = useRef(null);
   const loop = reviews.length > 3;
   const items = loop ? [...reviews, ...reviews, ...reviews] : reviews;
 
@@ -211,6 +214,7 @@ function ReviewCarousel({ reviews }) {
       clearTimeout(timer);
       // Wait for the swipe (and any momentum) to stop before jumping.
       timer = setTimeout(() => {
+        targetRef.current = null;
         const width = copyWidth();
         if (!width) return;
         if (row.scrollLeft < width * 0.5) row.scrollLeft += width;
@@ -228,7 +232,14 @@ function ReviewCarousel({ reviews }) {
     const row = rowRef.current;
     const cards = row?.children;
     if (!row || !cards || cards.length < 2) return;
-    row.scrollBy({ left: direction * (cards[1].offsetLeft - cards[0].offsetLeft), behavior: 'smooth' });
+    // Move by a whole screen of cards: three at a time on desktop. Aim at an
+    // exact card; a relative scrollBy was sometimes dropped by scroll-snap.
+    const cardStep = cards[1].offsetLeft - cards[0].offsetLeft;
+    const perView = Math.max(1, Math.round(row.clientWidth / cardStep));
+    const from = targetRef.current ?? Math.round(row.scrollLeft / cardStep);
+    const target = Math.min(cards.length - 1, Math.max(0, from + direction * perView));
+    targetRef.current = target;
+    row.scrollTo({ left: cards[target].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
   };
 
   return (
