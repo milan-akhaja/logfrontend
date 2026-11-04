@@ -7670,11 +7670,62 @@ header.scrolled .nav-action-icon-btn {
   font-weight: 600;
 }
 
-.reviews-row,
 .reviews-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.reviews-carousel {
+  position: relative;
+}
+
+.reviews-row {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.reviews-row::-webkit-scrollbar {
+  display: none;
+}
+
+.reviews-slide {
+  display: flex;
+  flex: 0 0 calc((100% - 36px) / 3);
+  scroll-snap-align: start;
+}
+
+.reviews-slide .review-card {
+  flex: 1;
+}
+
+.reviews-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.reviews-nav-prev {
+  left: -20px;
+}
+
+.reviews-nav-next {
+  right: -20px;
 }
 
 .review-card {
@@ -7932,17 +7983,21 @@ header.scrolled .nav-action-icon-btn {
   }
 
   .reviews-row {
-    display: flex;
-    overflow-x: auto;
     gap: 10px;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
+  }
+
+  .reviews-slide {
+    flex: 0 0 82%;
+    /* One review per finger swipe, even on a fast flick. */
+    scroll-snap-stop: always;
   }
 
   .reviews-row .review-card {
-    flex: 0 0 82%;
-    scroll-snap-align: start;
     padding: 14px;
+  }
+
+  .reviews-nav {
+    display: none;
   }
 
   .reviews-grid {

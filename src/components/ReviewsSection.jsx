@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const CACHE_MS = 30 * 1000;
@@ -184,6 +184,86 @@ function ReviewForm({ onClose }) {
   );
 }
 
+// Endless side-swipe row. With more reviews than fit on screen the list is
+// rendered three times and the scroll is parked in the middle copy; once a
+// swipe settles in the first or last copy it jumps by one copy width to the
+// same card in the middle, which looks identical, so the row never ends.
+function ReviewCarousel({ reviews }) {
+  const rowRef = useRef(null);
+  // Card the arrows are heading to, so a click during the slide moves on from
+  // there instead of from wherever the animation happens to be.
+  const targetRef = useRef(null);
+  const loop = reviews.length > 3;
+  const items = loop ? [...reviews, ...reviews, ...reviews] : reviews;
+
+  const copyWidth = () => {
+    const cards = rowRef.current?.children;
+    if (!cards || cards.length < reviews.length * 2) return 0;
+    return cards[reviews.length].offsetLeft - cards[0].offsetLeft;
+  };
+
+  useLayoutEffect(() => {
+    if (loop && rowRef.current) rowRef.current.scrollLeft = copyWidth();
+  }, [loop, reviews.length]);
+
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!loop || !row) return undefined;
+    let timer;
+    const onScroll = () => {
+      clearTimeout(timer);
+      // Wait for the swipe (and any momentum) to stop before jumping.
+      timer = setTimeout(() => {
+        targetRef.current = null;
+        const width = copyWidth();
+        if (!width) return;
+        if (row.scrollLeft < width * 0.5) row.scrollLeft += width;
+        else if (row.scrollLeft > width * 1.5) row.scrollLeft -= width;
+      }, 150);
+    };
+    row.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      row.removeEventListener('scroll', onScroll);
+    };
+  }, [loop, reviews.length]);
+
+  const step = (direction) => {
+    const row = rowRef.current;
+    const cards = row?.children;
+    if (!row || !cards || cards.length < 2) return;
+    // Move by a whole screen of cards: three at a time on desktop. Aim at an
+    // exact card; a relative scrollBy was sometimes dropped by scroll-snap.
+    const cardStep = cards[1].offsetLeft - cards[0].offsetLeft;
+    const perView = Math.max(1, Math.round(row.clientWidth / cardStep));
+    const from = targetRef.current ?? Math.round(row.scrollLeft / cardStep);
+    const target = Math.min(cards.length - 1, Math.max(0, from + direction * perView));
+    targetRef.current = target;
+    row.scrollTo({ left: cards[target].offsetLeft - cards[0].offsetLeft, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="reviews-carousel">
+      {loop && (
+        <button type="button" className="reviews-nav reviews-nav-prev" aria-label="Previous reviews" onClick={() => step(-1)}>‹</button>
+      )}
+      <div className="reviews-row" ref={rowRef}>
+        {items.map((review, index) => {
+          const copy = Math.floor(index / reviews.length);
+          return (
+            <div key={`${copy}-${review.id}`} className="reviews-slide" aria-hidden={loop && copy !== 1 ? 'true' : undefined}>
+              <ReviewCard review={review} />
+            </div>
+          );
+        })}
+      </div>
+      {loop && (
+        <button type="button" className="reviews-nav reviews-nav-next" aria-label="Next reviews" onClick={() => step(1)}>›</button>
+      )}
+    </div>
+  );
+}
+
 function WriteReviewButton({ onOpen }) {
   return (
     <button type="button" className="review-btn" onClick={onOpen}>
@@ -207,11 +287,7 @@ export default function ReviewsSection() {
           <div className="reviews-count">{count} {count === 1 ? 'review' : 'reviews'}</div>
           <WriteReviewButton onOpen={() => setFormOpen(true)} />
         </div>
-        <div className="reviews-row">
-          {reviews.slice(0, 3).map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
-        </div>
+        <ReviewCarousel reviews={reviews} />
         <div className="reviews-all-wrap">
           <Link to="/reviews" className="reviews-all-link">See all reviews</Link>
         </div>
