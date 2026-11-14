@@ -42,10 +42,15 @@ const STATIC_PAGES = {
 };
 
 const BLOGS_API_URL = 'https://api.logcloth.com/api/blogs';
+const HERO_API_URL = 'https://api.logcloth.com/api/hero-config';
+// Matches MOBILE_BREAKPOINT in src/hooks/useIsMobile.js.
+const MOBILE_MEDIA = '(max-width: 767px)';
+const DESKTOP_MEDIA = '(min-width: 768px)';
 
 let template = null;
 let productsCache = null; // { at, data }
 let blogsCache = null; // { at, data }
+let heroCache = null; // { at, data }
 
 function loadTemplate() {
   if (template) return template;
@@ -94,6 +99,24 @@ async function loadBlogs() {
     return data;
   } catch {
     return blogsCache ? blogsCache.data : null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadHero() {
+  if (heroCache && Date.now() - heroCache.at < PRODUCTS_TTL_MS) return heroCache.data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  try {
+    const response = await fetch(HERO_API_URL, { signal: controller.signal });
+    if (!response.ok) throw new Error(`hero ${response.status}`);
+    const data = await response.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('hero not an object');
+    heroCache = { at: Date.now(), data };
+    return data;
+  } catch {
+    return heroCache ? heroCache.data : null;
   } finally {
     clearTimeout(timer);
   }
@@ -350,6 +373,36 @@ function setRobots(html, content) {
   return html.replace(/<meta name="robots" content="[^"]*">/, `<meta name="robots" content="${content}">`);
 }
 
+// Same phone-sized copies and "sizes" the hero <img> uses in Shop.jsx, so the
+// preloaded file is the one the page picks and nothing downloads twice.
+function heroPreloadTag(url, media) {
+  if (typeof url !== 'string' || !/^https?:\/\//.test(url)) return '';
+  const set = /\/uploads\/[^?#]+\.webp$/i.test(url) && !/-\d+w\.webp$/i.test(url)
+    ? [400, 800].map((width) => `${url.replace(/\.webp$/i, `-${width}w.webp`)} ${width}w`).concat(`${url} 1600w`).join(', ')
+    : '';
+  return `  <link rel="preload" as="image" media="${media}" href="${escapeHtml(url)}"${set ? ` imagesrcset="${escapeHtml(set)}" imagesizes="100vw"` : ''} fetchpriority="high">`;
+}
+
+// First hero image per device, chosen with the same rules as Shop.jsx.
+function heroFirstImage(hero, type, slides, single) {
+  const list = Array.isArray(slides) && slides.length ? slides : [single].filter(Boolean);
+  if (type === 'slideshow') return list[0] || '';
+  if (type === 'image') return single || list[0] || '';
+  return '';
+}
+
+// Hero data for the app's first render (Shop.jsx reads window.__LOG_HERO__),
+// plus a preload for the first hero image of each device size.
+function heroHeadTags(hero) {
+  const mobile = heroFirstImage(hero, hero.mobileMediaType, hero.mobileSlides, hero.mobileImageUrl || hero.bgImage);
+  const desktop = heroFirstImage(hero, hero.desktopMediaType, hero.desktopSlides, hero.bgImage);
+  return [
+    `  <script>window.__LOG_HERO__=${JSON.stringify(hero).replace(/</g, '\\u003c')}</script>`,
+    heroPreloadTag(mobile, MOBILE_MEDIA),
+    heroPreloadTag(desktop, DESKTOP_MEDIA)
+  ].filter(Boolean).join('\n');
+}
+
 function addToHead(html, extra) {
   return html.replace('</head>', `${extra}\n</head>`);
 }
@@ -380,9 +433,12 @@ async function renderPage(pagePath) {
   if (!base) return null;
 
   if (pagePath === '/') {
+    const heroPromise = loadHero();
     const products = await loadProducts();
+    const hero = await heroPromise;
     let html = setTitle(base, HOME_TITLE);
     html = setUrl(html, `${SITE_URL}/`);
+    if (hero) html = addToHead(html, heroHeadTags(hero));
     html = setBody(html, homeBody(products, templateDescription(base)));
     return { status: 200, html };
   }
