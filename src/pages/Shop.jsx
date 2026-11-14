@@ -429,7 +429,9 @@ function GalleryScroller() {
   );
 }
 
-let cachedHeroConfig = null;
+// The server puts the hero data in the page (api/page.js), so the first paint
+// already knows the hero image instead of waiting for an API call.
+let cachedHeroConfig = typeof window !== 'undefined' && window.__LOG_HERO__ ? window.__LOG_HERO__ : null;
 let cachedCollections = null;
 
 export function resetCachedHeroConfig() {
