@@ -26,12 +26,12 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
   const [selectedSize, setSelectedSize] = useState(() => {
     if (!product) return '';
     const available = productSizes(product);
-    return available[0] || '';
+    return available.length === 1 ? available[0] : '';
   });
   const [selectedSecondSize, setSelectedSecondSize] = useState(() => {
     if (!product) return '';
     const available = productSizes(product);
-    return available[0] || '';
+    return available.length === 1 ? available[0] : '';
   });
   const [showSizeChart, setShowSizeChart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState(() => {
@@ -76,26 +76,10 @@ export default function ProductDetail({ onAddToCart, onBuyNow }) {
         setProduct(found || null);
         setLoading(false);
         if (found) {
-          if (found.sizes) {
-            // If sizes is array
-            if (Array.isArray(found.sizes) && found.sizes.length > 0) {
-              const available = productSizes(found);
-              if (available.length > 0) {
-                setSelectedSize(prev => prev || available[0]);
-                setSelectedSecondSize(prev => prev || available[0]);
-              }
-            } else {
-              // If sizes is object (e.g. { S: 30, M: 40 })
-              const keys = productSizes(found);
-              const inStockSize = keys.find(k => found.sizes[k] > 0);
-              if (inStockSize) {
-                setSelectedSize(prev => prev || inStockSize);
-                setSelectedSecondSize(prev => prev || inStockSize);
-              } else if (keys.length > 0) {
-                setSelectedSize(prev => prev || keys[0]);
-                setSelectedSecondSize(prev => prev || keys[0]);
-              }
-            }
+          const onlySize = productSizes(found);
+          if (onlySize.length === 1) {
+            setSelectedSize(prev => prev || onlySize[0]);
+            setSelectedSecondSize(prev => prev || onlySize[0]);
           }
           const related = data.filter(p => String(p.id) !== String(found.id));
           setRelatedProducts(related);
